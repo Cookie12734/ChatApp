@@ -27,12 +27,20 @@ export async function HomePage() {
               </Link>
             </>
           ) : (
-            <Link
-              href="/api/auth/signin"
-              className="rounded-lg bg-white px-6 py-2 font-medium text-zinc-950 transition hover:bg-zinc-200"
-            >
-              ログイン
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/auth/login"
+                className="rounded-lg bg-white px-6 py-2 font-medium text-zinc-950 transition hover:bg-zinc-200"
+              >
+                ログイン
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="rounded-lg border border-zinc-700 px-6 py-2 font-medium transition hover:bg-zinc-900"
+              >
+                新規登録
+              </Link>
+            </div>
           )}
         </div>
       </div>

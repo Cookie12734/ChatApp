@@ -157,6 +157,7 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   emailVerified: 'emailVerified',
+  passwordHash: 'passwordHash',
   image: 'image'
 };
 
