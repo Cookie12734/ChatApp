@@ -11,7 +11,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { auth } from "~/server/auth";
+import { auth } from "~/features/auth";
 import { db } from "~/server/db";
 
 /**
@@ -68,7 +68,7 @@ export const createCallerFactory = t.createCallerFactory;
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
  *
  * These are the pieces you use to build your tRPC API. You should import these a lot in the
- * "/src/server/api/routers" directory.
+ * "src/features/{feature}/server" directories.
  */
 
 /**

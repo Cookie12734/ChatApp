@@ -1,10 +1,10 @@
-import { postRouter } from "~/server/api/routers/post";
+import { postRouter } from "~/features/post/server/router";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
  * This is the primary router for your server.
  *
- * All routers added in /api/routers should be manually added here.
+ * All feature routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
