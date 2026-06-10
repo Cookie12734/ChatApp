@@ -10,7 +10,7 @@ export async function HomePage() {
       <div className="flex flex-col items-center gap-8 px-4 text-center">
         <h1 className="text-5xl font-bold tracking-tight">ChatApp</h1>
         <p className="max-w-md text-lg text-zinc-400">
-          チャットアプリへようこそ
+          ChatAppへようこそ
         </p>
 
         <div className="flex flex-col items-center gap-4">
