@@ -19,6 +19,15 @@ const loginSchema = z.object({
 
 const signUpSchema = z
   .object({
+    userId: z
+      .string()
+      .trim()
+      .min(3, "ユーザーIDは3文字以上にしてください")
+      .max(32, "ユーザーIDは32文字以内にしてください")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "ユーザーIDは半角英数字とアンダースコアのみ使用できます",
+      ),
     name: z.string().min(1, "名前を入力してください"),
     email: z.string().email("有効なメールアドレスを入力してください"),
     password: z.string().min(8, "パスワードは8文字以上にしてください"),
@@ -39,7 +48,9 @@ export async function signInWithCredentials(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "入力内容を確認してください" };
+    return {
+      error: parsed.error.errors[0]?.message ?? "入力内容を確認してください",
+    };
   }
 
   const normalizedEmail = parsed.data.email.trim();
@@ -62,7 +73,9 @@ export async function signInWithCredentials(
   })) as { error?: string } | undefined;
 
   if (result?.error) {
-    return { error: "メールアドレスまたはパスワードが正しくありません" };
+    return {
+      error: "メールアドレスまたはパスワードが正しくありません",
+    };
   }
 
   redirect("/");
@@ -73,6 +86,7 @@ export async function signUp(
   formData: FormData,
 ): Promise<AuthFormState> {
   const parsed = signUpSchema.safeParse({
+    userId: formData.get("userId"),
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
@@ -80,11 +94,14 @@ export async function signUp(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "入力内容を確認してください" };
+    return {
+      error: parsed.error.errors[0]?.message ?? "入力内容を確認してください",
+    };
   }
 
-  const { name, email, password } = parsed.data;
+  const { userId, name, email, password } = parsed.data;
   const normalizedEmail = email.trim();
+  const normalizedUserId = userId.trim();
   const passwordHash = await bcrypt.hash(password, 12);
 
   const existing = await db.user.findUnique({
@@ -95,10 +112,22 @@ export async function signUp(
     return { error: "このメールアドレスは既に登録されています" };
   }
 
+  const existingUserId = await db.user.findFirst({
+    where: {
+      userId: normalizedUserId,
+      NOT: { email: normalizedEmail },
+    },
+  });
+
+  if (existingUserId) {
+    return { error: "そのユーザーIDは既に使用されています" };
+  }
+
   if (existing) {
     await db.user.update({
       where: { email: normalizedEmail },
       data: {
+        userId: normalizedUserId,
         name: name.trim(),
         passwordHash,
       },
@@ -106,6 +135,7 @@ export async function signUp(
   } else {
     await db.user.create({
       data: {
+        userId: normalizedUserId,
         name: name.trim(),
         email: normalizedEmail,
         passwordHash,
@@ -117,7 +147,9 @@ export async function signUp(
   try {
     await createAndSendVerificationToken(normalizedEmail);
   } catch {
-    return { error: "確認メールの送信に失敗しました。もう一度お試しください" };
+    return {
+      error: "確認メールの送信に失敗しました。もう一度お試しください",
+    };
   }
 
   redirect("/auth/verify-email/sent");

@@ -6,10 +6,10 @@ import { useActionState } from "react";
 import { signUp, type AuthFormState } from "~/features/auth/actions";
 
 export function SignUpForm() {
-  const [state, formAction, isPending] = useActionState<AuthFormState, FormData>(
-    signUp,
-    {},
-  );
+  const [state, formAction, isPending] = useActionState<
+    AuthFormState,
+    FormData
+  >(signUp, {});
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
@@ -19,6 +19,24 @@ export function SignUpForm() {
             {state.error}
           </p>
         )}
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="userId" className="text-left text-sm text-zinc-400">
+            ユーザーID
+          </label>
+          <input
+            id="userId"
+            name="userId"
+            type="text"
+            required
+            autoComplete="username"
+            minLength={3}
+            maxLength={32}
+            pattern="[A-Za-z0-9_]+"
+            placeholder="yamada_taro"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+          />
+        </div>
 
         <div className="flex flex-col gap-2">
           <label htmlFor="name" className="text-left text-sm text-zinc-400">
