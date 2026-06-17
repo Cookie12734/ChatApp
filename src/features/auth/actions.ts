@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -66,16 +67,20 @@ export async function signInWithCredentials(
     };
   }
 
-  const result = (await signIn("credentials", {
-    email: normalizedEmail,
-    password: parsed.data.password,
-    redirect: false,
-  })) as { error?: string } | undefined;
+  try {
+    await signIn("credentials", {
+      email: normalizedEmail,
+      password: parsed.data.password,
+      redirect: false,
+    });
+  } catch (error) {
+    if (error instanceof AuthError && error.type === "CredentialsSignin") {
+      return {
+        error: "メールアドレスまたはパスワードが正しくありません",
+      };
+    }
 
-  if (result?.error) {
-    return {
-      error: "メールアドレスまたはパスワードが正しくありません",
-    };
+    throw error;
   }
 
   redirect("/");
