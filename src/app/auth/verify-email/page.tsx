@@ -1,3 +1,4 @@
+import { Check, X } from "lucide-react";
 import Link from "next/link";
 
 import { verifyEmailToken } from "~/features/auth/lib/verification-token";
@@ -15,9 +16,9 @@ export default async function VerifyEmailPage({
     return (
       <VerifyEmailResult
         title="無効なリンクです"
-        message="確認リンクが正しくありません。"
+        message="確認リンクが正しくありません。もう一度登録をお試しください。"
         linkHref="/auth/signup"
-        linkLabel="新規登録に戻る"
+        linkLabel="新規登録へ戻る"
       />
     );
   }
@@ -27,15 +28,15 @@ export default async function VerifyEmailPage({
   if (!result.success) {
     const message =
       result.reason === "expired"
-        ? "確認リンクの有効期限が切れています。再度新規登録を行ってください。"
-        : "確認リンクが無効です。再度新規登録を行ってください。";
+        ? "確認リンクの有効期限が切れています。もう一度登録をお試しください。"
+        : "確認リンクが無効です。もう一度登録をお試しください。";
 
     return (
       <VerifyEmailResult
         title="確認に失敗しました"
         message={message}
         linkHref="/auth/signup"
-        linkLabel="新規登録に戻る"
+        linkLabel="新規登録へ戻る"
       />
     );
   }
@@ -43,7 +44,7 @@ export default async function VerifyEmailPage({
   return (
     <VerifyEmailResult
       title="メールアドレスを確認しました"
-      message="アカウントの確認が完了しました。ログインしてください。"
+      message="アカウントの確認が完了しました。ログインしてYohakuを始めましょう。"
       linkHref="/auth/login?verified=1"
       linkLabel="ログインする"
       success
@@ -64,25 +65,29 @@ function VerifyEmailResult({
   linkLabel: string;
   success?: boolean;
 }) {
+  const Icon = success ? Check : X;
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-white">
-      <div className="flex max-w-md flex-col items-center gap-6 px-4 text-center">
+    <main className="flex min-h-screen items-center justify-center bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
+      <section className="w-full max-w-md rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-8 text-center shadow-[10px_10px_0_#d8efee]">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-full text-xl ${
-            success ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+          className={`mx-auto flex h-12 w-12 items-center justify-center rounded-md ${
+            success
+              ? "bg-[#e4f2dc] text-[#114744]"
+              : "bg-[#fff1e8] text-[#9f4122]"
           }`}
         >
-          {success ? "✓" : "!"}
+          <Icon className="h-6 w-6" aria-hidden="true" />
         </div>
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="text-zinc-400">{message}</p>
+        <h1 className="mt-6 text-3xl font-semibold">{title}</h1>
+        <p className="mt-4 leading-7 text-[#53615a]">{message}</p>
         <Link
           href={linkHref}
-          className="rounded-lg bg-white px-6 py-2 font-medium text-zinc-950 transition hover:bg-zinc-200"
+          className="mt-6 inline-flex rounded-md bg-[#18221f] px-5 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
         >
           {linkLabel}
         </Link>
-      </div>
+      </section>
     </main>
   );
 }

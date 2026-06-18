@@ -19,10 +19,10 @@ const loginSchema = z.object({
 
 const signUpSchema = z
   .object({
-    name: z.string().min(1, "名前を入力してください"),
+    name: z.string().min(1, "表示名を入力してください"),
     email: z.string().email("有効なメールアドレスを入力してください"),
     password: z.string().min(8, "パスワードは8文字以上にしてください"),
-    confirmPassword: z.string().min(1, "パスワード（確認）を入力してください"),
+    confirmPassword: z.string().min(1, "確認用のパスワードを入力してください"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "パスワードが一致しません",
@@ -39,7 +39,9 @@ export async function signInWithCredentials(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "入力内容を確認してください" };
+    return {
+      error: parsed.error.errors[0]?.message ?? "入力内容を確認してください",
+    };
   }
 
   const normalizedEmail = parsed.data.email.trim();
@@ -51,7 +53,7 @@ export async function signInWithCredentials(
   if (user && !user.emailVerified) {
     return {
       error:
-        "メールアドレスの確認が完了していません。確認メールのリンクをクリックしてください。",
+        "メールアドレスの確認が完了していません。確認メールのリンクを開いてください。",
     };
   }
 
@@ -62,7 +64,9 @@ export async function signInWithCredentials(
   })) as { error?: string } | undefined;
 
   if (result?.error) {
-    return { error: "メールアドレスまたはパスワードが正しくありません" };
+    return {
+      error: "メールアドレスまたはパスワードが正しくありません",
+    };
   }
 
   redirect("/");
@@ -80,7 +84,9 @@ export async function signUp(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "入力内容を確認してください" };
+    return {
+      error: parsed.error.errors[0]?.message ?? "入力内容を確認してください",
+    };
   }
 
   const { name, email, password } = parsed.data;
@@ -92,7 +98,9 @@ export async function signUp(
   });
 
   if (existing?.emailVerified) {
-    return { error: "このメールアドレスは既に登録されています" };
+    return {
+      error: "このメールアドレスはすでに登録されています",
+    };
   }
 
   if (existing) {
@@ -117,7 +125,9 @@ export async function signUp(
   try {
     await createAndSendVerificationToken(normalizedEmail);
   } catch {
-    return { error: "確認メールの送信に失敗しました。もう一度お試しください" };
+    return {
+      error: "確認メールの送信に失敗しました。もう一度お試しください",
+    };
   }
 
   redirect("/auth/verify-email/sent");

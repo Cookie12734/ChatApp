@@ -17,7 +17,7 @@ export async function sendSignupVerificationEmail(to: string, token: string) {
   const url = buildVerificationUrl(token);
 
   if (!env.EMAIL_SERVER) {
-    console.log(`\n[ChatApp] メール確認リンク (${to}):\n${url}\n`);
+    console.log(`\n[Yohaku] メール確認リンク (${to}):\n${url}\n`);
     return;
   }
 
@@ -25,16 +25,16 @@ export async function sendSignupVerificationEmail(to: string, token: string) {
   const result = await transport.sendMail({
     to,
     from: env.EMAIL_FROM ?? "noreply@localhost",
-    subject: "ChatApp - メールアドレスの確認",
-    text: `ChatApp へようこそ。\n\n以下のリンクをクリックしてメールアドレスを確認してください:\n\n${url}\n\nこのリンクは24時間有効です。`,
+    subject: "Yohaku - メールアドレスの確認",
+    text: `Yohakuへようこそ。\n\n以下のリンクを開いてメールアドレスを確認してください。\n\n${url}\n\nこのリンクは24時間有効です。`,
     html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2>ChatApp へようこそ</h2>
-        <p>以下のボタンをクリックしてメールアドレスを確認してください。</p>
-        <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #18181b; color: #fff; text-decoration: none; border-radius: 8px;">
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #18221f;">
+        <h2>Yohakuへようこそ</h2>
+        <p>以下のボタンを押してメールアドレスを確認してください。</p>
+        <a href="${url}" style="display: inline-block; padding: 12px 24px; background: #18221f; color: #f6f0e4; text-decoration: none; border-radius: 6px;">
           メールアドレスを確認する
         </a>
-        <p style="color: #71717a; font-size: 14px; margin-top: 24px;">
+        <p style="color: #68716b; font-size: 14px; margin-top: 24px;">
           このリンクは24時間有効です。心当たりがない場合は無視してください。
         </p>
       </div>

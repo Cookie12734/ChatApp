@@ -1,28 +1,29 @@
 "use client";
 
+import { ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
 
 import { signUp, type AuthFormState } from "~/features/auth/actions";
 
 export function SignUpForm() {
-  const [state, formAction, isPending] = useActionState<AuthFormState, FormData>(
-    signUp,
-    {},
-  );
+  const [state, formAction, isPending] = useActionState<
+    AuthFormState,
+    FormData
+  >(signUp, {});
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
         {state.error && (
-          <p className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <p className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]">
             {state.error}
           </p>
         )}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-left text-sm text-zinc-400">
-            ユーザー名
+          <label htmlFor="name" className="text-left text-sm text-[#5d665f]">
+            表示名
           </label>
           <input
             id="name"
@@ -31,12 +32,12 @@ export function SignUpForm() {
             required
             autoComplete="name"
             placeholder="山田 太郎"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-left text-sm text-zinc-400">
+          <label htmlFor="email" className="text-left text-sm text-[#5d665f]">
             メールアドレス
           </label>
           <input
@@ -46,12 +47,15 @@ export function SignUpForm() {
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="password" className="text-left text-sm text-zinc-400">
+          <label
+            htmlFor="password"
+            className="text-left text-sm text-[#5d665f]"
+          >
             パスワード
           </label>
           <input
@@ -62,16 +66,16 @@ export function SignUpForm() {
             autoComplete="new-password"
             minLength={8}
             placeholder="8文字以上"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
         </div>
 
         <div className="flex flex-col gap-2">
           <label
             htmlFor="confirmPassword"
-            className="text-left text-sm text-zinc-400"
+            className="text-left text-sm text-[#5d665f]"
           >
-            パスワード（確認）
+            パスワード確認
           </label>
           <input
             id="confirmPassword"
@@ -81,24 +85,25 @@ export function SignUpForm() {
             autoComplete="new-password"
             minLength={8}
             placeholder="もう一度入力"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-lg bg-white px-4 py-3 font-medium text-zinc-950 transition hover:bg-zinc-200 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
         >
           {isPending ? "登録中..." : "アカウントを作成"}
+          {!isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
         </button>
       </form>
 
-      <p className="text-center text-sm text-zinc-500">
+      <p className="text-center text-sm text-[#5d665f]">
         すでにアカウントをお持ちの方は{" "}
         <Link
           href="/auth/login"
-          className="text-white underline-offset-4 hover:underline"
+          className="font-semibold text-[#114744] underline-offset-4 hover:underline"
         >
           ログイン
         </Link>
@@ -106,9 +111,10 @@ export function SignUpForm() {
 
       <Link
         href="/"
-        className="text-center text-sm text-zinc-500 transition hover:text-zinc-300"
+        className="inline-flex items-center justify-center gap-2 text-sm text-[#5d665f] transition hover:text-[#18221f]"
       >
-        トップに戻る
+        <Home className="h-4 w-4" aria-hidden="true" />
+        トップへ戻る
       </Link>
     </div>
   );
