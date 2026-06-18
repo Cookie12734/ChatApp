@@ -8,7 +8,7 @@ export default async function SignUpPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/");
+    redirect("/servers");
   }
 
   return (
@@ -28,6 +28,7 @@ export default async function SignUpPage() {
           </h1>
           <p className="mt-5 leading-8 text-[#53615a]">
             登録後、確認メールのリンクからアカウントを有効化できます。
+            ユーザーIDはフレンド申請に使います。
           </p>
         </section>
 

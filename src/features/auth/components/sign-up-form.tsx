@@ -12,6 +12,9 @@ export function SignUpForm() {
     FormData
   >(signUp, {});
 
+  const inputClass =
+    "rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none";
+
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
@@ -22,7 +25,7 @@ export function SignUpForm() {
         )}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="userId" className="text-left text-sm text-zinc-400">
+          <label htmlFor="userId" className="text-left text-sm text-[#5d665f]">
             ユーザーID
           </label>
           <input
@@ -35,13 +38,13 @@ export function SignUpForm() {
             maxLength={32}
             pattern="[A-Za-z0-9_]+"
             placeholder="yamada_taro"
-            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+            className={inputClass}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-left text-sm text-zinc-400">
-            ユーザー名
+          <label htmlFor="name" className="text-left text-sm text-[#5d665f]">
+            表示名
           </label>
           <input
             id="name"
@@ -50,7 +53,7 @@ export function SignUpForm() {
             required
             autoComplete="name"
             placeholder="山田 太郎"
-            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            className={inputClass}
           />
         </div>
 
@@ -65,7 +68,7 @@ export function SignUpForm() {
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            className={inputClass}
           />
         </div>
 
@@ -84,7 +87,7 @@ export function SignUpForm() {
             autoComplete="new-password"
             minLength={8}
             placeholder="8文字以上"
-            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            className={inputClass}
           />
         </div>
 
@@ -103,7 +106,7 @@ export function SignUpForm() {
             autoComplete="new-password"
             minLength={8}
             placeholder="もう一度入力"
-            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            className={inputClass}
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { ArrowRight, LogOut, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -27,6 +27,10 @@ const sampleMessages = [
 
 export async function HomePage() {
   const session = await auth();
+
+  if (session?.user) {
+    redirect("/servers");
+  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f6f0e4] text-[#18221f]">
@@ -62,36 +66,19 @@ export async function HomePage() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {session?.user ? (
-                <>
-                  <Link
-                    href="/api/auth/signout"
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
-                  >
-                    <LogOut className="h-4 w-4" aria-hidden="true" />
-                    ログアウト
-                  </Link>
-                  <p className="flex items-center text-sm text-[#5d665f]">
-                    {session.user.name} として参加中
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/login"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] sm:w-auto"
-                  >
-                    ログイン
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                  <Link
-                    href="/auth/signup"
-                    className="inline-flex w-full items-center justify-center rounded-md border border-[#18221f]/25 bg-[#fff8ed] px-5 py-3 font-semibold text-[#18221f] transition hover:border-[#18221f]/50 sm:w-auto"
-                  >
-                    はじめる
-                  </Link>
-                </>
-              )}
+              <Link
+                href="/auth/login"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] sm:w-auto"
+              >
+                ログイン
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/auth/signup"
+                className="inline-flex w-full items-center justify-center rounded-md border border-[#18221f]/25 bg-[#fff8ed] px-5 py-3 font-semibold text-[#18221f] transition hover:border-[#18221f]/50 sm:w-auto"
+              >
+                はじめる
+              </Link>
             </div>
           </div>
 

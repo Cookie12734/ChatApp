@@ -95,7 +95,7 @@ export const friendRouter = createTRPCRouter({
       if (receiver.id === currentUserId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "自分自身にはフレンド申請できません",
+          message: "自分自身にフレンド申請はできません",
         });
       }
 
@@ -111,7 +111,7 @@ export const friendRouter = createTRPCRouter({
       if (existingFriendship) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "このユーザーは既にフレンドです",
+          message: "このユーザーはすでにフレンドです",
         });
       }
 
@@ -176,7 +176,7 @@ export const friendRouter = createTRPCRouter({
         },
       });
 
-      if (!request || request.receiverId !== currentUserId) {
+      if (request?.receiverId !== currentUserId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "フレンド申請が見つかりません",
@@ -235,7 +235,7 @@ export const friendRouter = createTRPCRouter({
         where: { id: input.requestId },
       });
 
-      if (!request || request.receiverId !== currentUserId) {
+      if (request?.receiverId !== currentUserId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "フレンド申請が見つかりません",

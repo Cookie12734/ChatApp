@@ -1,46 +1,44 @@
-import Link from "next/link";
 import {
   Bell,
-  Compass,
+  BookOpen,
   Hash,
   LogOut,
   MessageCircle,
   Plus,
   Search,
-  Settings,
   Sparkles,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 
-const servers = [
+const rooms = [
   {
     id: "lounge",
     name: "夜更かしラウンジ",
     initials: "夜",
-    accent: "bg-indigo-500",
+    accent: "bg-[#d8efee] text-[#114744]",
     unread: 4,
     members: 128,
     online: 36,
-    description: "雑談、作業通話、ちょっとした相談を気軽に置ける場所。",
+    description: "雑談、作業通話、ちょっとした相談を気軽に置ける部屋。",
     channels: ["general", "作業部屋", "music", "announcements"],
   },
   {
     id: "dev",
     name: "Dev Studio",
     initials: "DS",
-    accent: "bg-emerald-500",
+    accent: "bg-[#e4f2dc] text-[#224a22]",
     unread: 12,
     members: 84,
     online: 18,
-    description:
-      "プロダクト開発、コードレビュー、アイデア出しのためのサーバー。",
+    description: "プロダクト開発、コードレビュー、アイデア出しのための作業机。",
     channels: ["frontend", "backend", "design", "release"],
   },
   {
     id: "game",
     name: "Weekend Games",
     initials: "WG",
-    accent: "bg-rose-500",
+    accent: "bg-[#ffd8c6] text-[#8f3f1f]",
     unread: 0,
     members: 52,
     online: 9,
@@ -51,7 +49,7 @@ const servers = [
     id: "study",
     name: "Study Room",
     initials: "SR",
-    accent: "bg-amber-400",
+    accent: "bg-[#f8dda7] text-[#6c4b12]",
     unread: 2,
     members: 41,
     online: 7,
@@ -65,258 +63,229 @@ type ServerSelectionProps = {
 };
 
 export function ServerSelection({ userName }: ServerSelectionProps) {
-  const selectedServer = servers[0]!;
+  const selectedRoom = rooms[0]!;
+  const initial = userName?.slice(0, 1) ?? "Y";
 
   return (
-    <main className="min-h-screen bg-[#1e1f22] text-zinc-100">
-      <div className="grid min-h-screen grid-cols-[72px_minmax(0,1fr)] md:grid-cols-[72px_280px_minmax(0,1fr)]">
-        <aside className="flex flex-col items-center gap-3 bg-[#1a1b1e] px-3 py-4">
-          <Link
-            href="/servers"
-            className="flex size-12 items-center justify-center rounded-2xl bg-[#5865f2] text-white shadow-lg shadow-indigo-950/40 transition hover:rounded-xl"
-            aria-label="ホーム"
-          >
-            <MessageCircle className="size-6" />
+    <main className="min-h-screen bg-[#f6f0e4] text-[#18221f]">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#18221f]/15 pb-5">
+          <Link href="/servers" className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
+              余
+            </span>
+            <span>
+              <span className="block text-xl font-semibold">Yohaku</span>
+              <span className="block text-xs text-[#667163]">
+                Rooms on your desk
+              </span>
+            </span>
           </Link>
 
-          <div className="h-px w-8 bg-zinc-700" />
-
-          {servers.map((server) => (
-            <button
-              key={server.id}
-              type="button"
-              className="group relative flex size-12 items-center justify-center rounded-3xl bg-[#313338] text-sm font-bold transition hover:rounded-xl hover:bg-[#5865f2] focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              aria-label={server.name}
+          <div className="flex items-center gap-2">
+            <Link
+              href="/friends"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-[#fff8ed] px-3 text-sm font-semibold text-[#18221f] transition hover:border-[#18221f]/45"
             >
-              {server.id === selectedServer.id && (
-                <span className="absolute -left-3 h-10 w-1 rounded-r-full bg-white" />
-              )}
-              <span
-                className={`flex size-9 items-center justify-center rounded-2xl ${server.accent} text-zinc-950 transition group-hover:rounded-xl`}
-              >
-                {server.initials}
-              </span>
-              {server.unread > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-5 rounded-full bg-red-500 px-1.5 text-[11px] leading-5 font-bold text-white">
-                  {server.unread}
-                </span>
-              )}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            className="flex size-12 items-center justify-center rounded-3xl bg-[#313338] text-emerald-400 transition hover:rounded-xl hover:bg-emerald-500 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            aria-label="サーバーを追加"
-          >
-            <Plus className="size-6" />
-          </button>
-
-          <button
-            type="button"
-            className="flex size-12 items-center justify-center rounded-3xl bg-[#313338] text-zinc-300 transition hover:rounded-xl hover:bg-zinc-600 hover:text-white focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-            aria-label="サーバーを探す"
-          >
-            <Compass className="size-6" />
-          </button>
-        </aside>
-
-        <aside className="hidden border-r border-black/30 bg-[#2b2d31] md:flex md:flex-col">
-          <div className="flex h-14 items-center border-b border-black/30 px-4">
-            <h1 className="truncate text-base font-semibold">サーバー選択</h1>
+              <Users className="h-4 w-4" aria-hidden="true" />
+              フレンド
+            </Link>
+            <Link
+              href="/api/auth/signout"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-[#18221f] px-3 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+              aria-label="ログアウト"
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
+        </header>
 
-          <div className="p-3">
-            <label className="flex h-9 items-center gap-2 rounded-md bg-[#1e1f22] px-3 text-sm text-zinc-400">
-              <Search className="size-4" />
+        <section className="grid flex-1 gap-6 py-8 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="space-y-4">
+            <div className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-4 shadow-[8px_8px_0_#d8efee]">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#18221f] font-semibold text-[#f6f0e4]">
+                  {initial}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">
+                    {userName ?? "Yohaku user"}
+                  </p>
+                  <p className="text-sm text-[#68716b]">オンライン</p>
+                </div>
+              </div>
+            </div>
+
+            <label className="flex h-11 items-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm text-[#68716b]">
+              <Search className="h-4 w-4" aria-hidden="true" />
               <input
-                className="min-w-0 flex-1 bg-transparent text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
-                placeholder="サーバーを検索"
+                className="min-w-0 flex-1 bg-transparent text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                placeholder="部屋を検索"
               />
             </label>
-          </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto px-2 pb-4">
-            {servers.map((server) => (
-              <button
-                key={server.id}
-                type="button"
-                className={`flex h-12 w-full items-center gap-3 rounded-md px-2 text-left transition ${
-                  server.id === selectedServer.id
-                    ? "bg-zinc-700/70 text-white"
-                    : "text-zinc-300 hover:bg-zinc-700/40 hover:text-white"
-                }`}
-              >
-                <span
-                  className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${server.accent} text-sm font-bold text-zinc-950`}
+            <div className="space-y-2">
+              {rooms.map((room) => (
+                <button
+                  key={room.id}
+                  type="button"
+                  className={`flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left transition ${
+                    room.id === selectedRoom.id
+                      ? "border-[#18221f]/25 bg-[#18221f] text-[#f6f0e4]"
+                      : "border-[#18221f]/15 bg-[#fff8ed] text-[#18221f] hover:border-[#18221f]/35"
+                  }`}
                 >
-                  {server.initials}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">
-                    {server.name}
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${room.accent}`}
+                  >
+                    {room.initials}
                   </span>
-                  <span className="block truncate text-xs text-zinc-400">
-                    {server.online}人オンライン
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">
+                      {room.name}
+                    </span>
+                    <span
+                      className={`block truncate text-xs ${
+                        room.id === selectedRoom.id
+                          ? "text-[#d8efee]"
+                          : "text-[#68716b]"
+                      }`}
+                    >
+                      {room.online}人オンライン
+                    </span>
                   </span>
-                </span>
-                {server.unread > 0 && (
-                  <span className="rounded-full bg-red-500 px-2 text-xs font-semibold text-white">
-                    {server.unread}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          <div className="border-t border-black/30 bg-[#232428] p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-full bg-zinc-600 text-sm font-semibold">
-                {(userName ?? "U").slice(0, 1)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {userName ?? "ユーザー"}
-                </p>
-                <p className="text-xs text-emerald-400">オンライン</p>
-              </div>
-              <Link
-                href="/api/auth/signout"
-                className="flex size-8 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-700 hover:text-white"
-                aria-label="ログアウト"
-              >
-                <LogOut className="size-4" />
-              </Link>
+                  {room.unread > 0 && (
+                    <span className="rounded-md bg-[#cc5f2f] px-2 py-1 text-xs font-semibold text-white">
+                      {room.unread}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-          </div>
-        </aside>
 
-        <section className="flex min-w-0 flex-col bg-[#313338]">
-          <header className="flex h-14 items-center justify-between border-b border-black/30 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Hash className="size-5 shrink-0 text-zinc-400" />
+            <button
+              type="button"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-[#fff8ed] px-4 py-3 text-sm font-semibold transition hover:border-[#18221f]/45"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              部屋を追加
+            </button>
+          </aside>
+
+          <section className="min-w-0 rounded-md border border-[#18221f]/15 bg-[#fff8ed] shadow-[12px_12px_0_#d9e7d0]">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#18221f]/15 bg-[#e4f2dc] px-5 py-5 sm:px-7">
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold md:text-base">
-                  {selectedServer.name}
-                </h2>
-                <p className="hidden truncate text-xs text-zinc-400 sm:block">
-                  {selectedServer.description}
+                <p className="text-xs font-semibold text-[#667163] uppercase">
+                  Current room
+                </p>
+                <h1 className="mt-1 text-3xl font-semibold">
+                  {selectedRoom.name}
+                </h1>
+                <p className="mt-2 max-w-2xl leading-7 text-[#53615a]">
+                  {selectedRoom.description}
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Link
-                href="/friends"
-                className="flex size-9 items-center justify-center rounded-md text-zinc-300 transition hover:bg-zinc-700 hover:text-white"
-                aria-label="フレンド"
-              >
-                <Users className="size-5" />
-              </Link>
-              <button
-                type="button"
-                className="flex size-9 items-center justify-center rounded-md text-zinc-300 transition hover:bg-zinc-700 hover:text-white"
-                aria-label="通知"
-              >
-                <Bell className="size-5" />
-              </button>
-              <button
-                type="button"
-                className="flex size-9 items-center justify-center rounded-md text-zinc-300 transition hover:bg-zinc-700 hover:text-white"
-                aria-label="設定"
-              >
-                <Settings className="size-5" />
-              </button>
-            </div>
-          </header>
-
-          <div className="grid flex-1 grid-cols-1 overflow-hidden xl:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="min-w-0 overflow-y-auto p-4 sm:p-6">
-              <div className="mb-5 flex items-center gap-3 rounded-lg border border-white/10 bg-[#2b2d31] p-4">
-                <div
-                  className={`flex size-14 shrink-0 items-center justify-center rounded-2xl ${selectedServer.accent} text-lg font-bold text-zinc-950`}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-md bg-[#fff8ed] text-[#53615a] transition hover:text-[#18221f]"
+                  aria-label="通知"
                 >
-                  {selectedServer.initials}
+                  <Bell className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-md bg-[#fff8ed] text-[#53615a] transition hover:text-[#18221f]"
+                  aria-label="メモ"
+                >
+                  <BookOpen className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_280px]">
+              <div className="min-w-0 p-5 sm:p-7">
+                <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                  {[
+                    { label: "メンバー", value: `${selectedRoom.members}人` },
+                    { label: "オンライン", value: `${selectedRoom.online}人` },
+                    { label: "未読", value: `${selectedRoom.unread}件` },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
+                    >
+                      <p className="text-xs font-semibold text-[#667163] uppercase">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-xl font-semibold">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="truncate text-xl font-bold">
-                    {selectedServer.name}
-                  </h3>
-                  <p className="mt-1 text-sm leading-6 text-zinc-400">
-                    参加するサーバーを選択してください。チャンネルやメンバーの様子を確認してから入れます。
+
+                <div className="rounded-md border border-[#18221f]/10 bg-white p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <MessageCircle
+                      className="h-5 w-5 text-[#cc5f2f]"
+                      aria-hidden="true"
+                    />
+                    <h2 className="text-lg font-semibold">今日の入口を選ぶ</h2>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {rooms.map((room) => (
+                      <button
+                        key={room.id}
+                        type="button"
+                        className="group rounded-md border border-[#18221f]/10 bg-[#f6f0e4] p-4 text-left transition hover:border-[#18221f]/35"
+                      >
+                        <span className="flex items-start gap-3">
+                          <span
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sm font-semibold ${room.accent}`}
+                          >
+                            {room.initials}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">
+                              {room.name}
+                            </span>
+                            <span className="mt-1 line-clamp-2 block text-sm leading-6 text-[#53615a]">
+                              {room.description}
+                            </span>
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <aside className="border-t border-[#18221f]/15 bg-[#f1e4d0] p-5 lg:border-t-0 lg:border-l">
+                <h3 className="mb-3 text-xs font-semibold text-[#7b6757] uppercase">
+                  Channels
+                </h3>
+                <div className="space-y-1">
+                  {selectedRoom.channels.map((channel) => (
+                    <button
+                      key={channel}
+                      type="button"
+                      className="flex h-10 w-full items-center gap-2 rounded-md px-2 text-sm text-[#5f564d] transition hover:bg-[#fff8ed]"
+                    >
+                      <Hash className="h-4 w-4 text-[#9f4122]" />
+                      <span className="truncate">{channel}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-6 rounded-md border border-[#18221f]/10 bg-[#fff8ed] p-4">
+                  <Sparkles className="mb-3 h-5 w-5 text-[#cc5f2f]" />
+                  <p className="font-semibold">はじめましょう</p>
+                  <p className="mt-2 text-sm leading-6 text-[#68716b]">
+                    部屋を選ぶと、その部屋のチャンネル一覧と最近の動きを確認できます。
                   </p>
                 </div>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                {servers.map((server) => (
-                  <button
-                    key={server.id}
-                    type="button"
-                    className={`group flex min-h-36 flex-col items-start justify-between rounded-lg border p-4 text-left transition ${
-                      server.id === selectedServer.id
-                        ? "border-[#5865f2] bg-[#2b2d31]"
-                        : "border-white/10 bg-[#2b2d31]/70 hover:border-zinc-500 hover:bg-[#2b2d31]"
-                    }`}
-                  >
-                    <span className="flex w-full items-start gap-3">
-                      <span
-                        className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${server.accent} font-bold text-zinc-950 transition group-hover:rounded-xl`}
-                      >
-                        {server.initials}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold text-white">
-                          {server.name}
-                        </span>
-                        <span className="mt-1 line-clamp-2 block text-sm leading-6 text-zinc-400">
-                          {server.description}
-                        </span>
-                      </span>
-                    </span>
-                    <span className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-400">
-                      <span className="rounded bg-[#1e1f22] px-2 py-1">
-                        {server.members} members
-                      </span>
-                      <span className="rounded bg-[#1e1f22] px-2 py-1 text-emerald-300">
-                        {server.online} online
-                      </span>
-                      {server.unread > 0 && (
-                        <span className="rounded bg-red-500/20 px-2 py-1 text-red-200">
-                          {server.unread} unread
-                        </span>
-                      )}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              </aside>
             </div>
-
-            <aside className="hidden border-l border-black/30 bg-[#2b2d31] p-4 xl:block">
-              <h3 className="mb-3 text-xs font-semibold text-zinc-400 uppercase">
-                チャンネル
-              </h3>
-              <div className="space-y-1">
-                {selectedServer.channels.map((channel) => (
-                  <button
-                    key={channel}
-                    type="button"
-                    className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-sm text-zinc-300 transition hover:bg-zinc-700/50 hover:text-white"
-                  >
-                    <Hash className="size-4 text-zinc-500" />
-                    <span className="truncate">{channel}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-6 rounded-lg bg-[#1e1f22] p-4">
-                <Sparkles className="mb-3 size-5 text-amber-300" />
-                <p className="text-sm font-semibold">はじめましょう</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">
-                  サーバーを選ぶと、そのサーバーのチャンネル一覧と最近のアクティビティを表示できます。
-                </p>
-              </div>
-            </aside>
-          </div>
+          </section>
         </section>
       </div>
     </main>
