@@ -1,0 +1,19 @@
+
+> ChatApp@0.1.0 dev
+> next dev --turbo
+
+   ▲ Next.js 15.5.19 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://172.18.80.1:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 8.1s
+ GET / 200 in 8909ms
+ ○ Compiling /servers ...
+ ✓ Compiled /servers in 918ms
+ GET /servers 307 in 1336ms
+ GET /auth/login 200 in 1507ms
+ GET / 200 in 192ms

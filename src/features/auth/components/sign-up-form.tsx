@@ -22,8 +22,26 @@ export function SignUpForm() {
         )}
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-left text-sm text-[#5d665f]">
-            表示名
+          <label htmlFor="userId" className="text-left text-sm text-zinc-400">
+            ユーザーID
+          </label>
+          <input
+            id="userId"
+            name="userId"
+            type="text"
+            required
+            autoComplete="username"
+            minLength={3}
+            maxLength={32}
+            pattern="[A-Za-z0-9_]+"
+            placeholder="yamada_taro"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="name" className="text-left text-sm text-zinc-400">
+            ユーザー名
           </label>
           <input
             id="name"

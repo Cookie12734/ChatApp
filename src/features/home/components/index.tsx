@@ -1,5 +1,6 @@
 import { ArrowRight, LogOut, MessageCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { auth } from "~/features/auth";
 

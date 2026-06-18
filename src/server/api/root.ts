@@ -1,4 +1,5 @@
 import { postRouter } from "~/features/post/server/router";
+import { friendRouter } from "~/features/friend/server/router";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -7,6 +8,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  * All feature routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+  friend: friendRouter,
   post: postRouter,
 });
 

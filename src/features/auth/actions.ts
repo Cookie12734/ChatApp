@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -19,7 +20,20 @@ const loginSchema = z.object({
 
 const signUpSchema = z
   .object({
+<<<<<<< HEAD
     name: z.string().min(1, "表示名を入力してください"),
+=======
+    userId: z
+      .string()
+      .trim()
+      .min(3, "ユーザーIDは3文字以上にしてください")
+      .max(32, "ユーザーIDは32文字以内にしてください")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "ユーザーIDは半角英数字とアンダースコアのみ使用できます",
+      ),
+    name: z.string().min(1, "名前を入力してください"),
+>>>>>>> 460ed5a56e9bb4276fb13d20f21bf46c9dd763c9
     email: z.string().email("有効なメールアドレスを入力してください"),
     password: z.string().min(8, "パスワードは8文字以上にしてください"),
     confirmPassword: z.string().min(1, "確認用のパスワードを入力してください"),
@@ -57,19 +71,30 @@ export async function signInWithCredentials(
     };
   }
 
-  const result = (await signIn("credentials", {
-    email: normalizedEmail,
-    password: parsed.data.password,
-    redirect: false,
-  })) as { error?: string } | undefined;
+  try {
+    await signIn("credentials", {
+      email: normalizedEmail,
+      password: parsed.data.password,
+      redirect: false,
+    });
+  } catch (error) {
+    if (error instanceof AuthError && error.type === "CredentialsSignin") {
+      return {
+        error: "メールアドレスまたはパスワードが正しくありません",
+      };
+    }
 
+<<<<<<< HEAD
   if (result?.error) {
     return {
       error: "メールアドレスまたはパスワードが正しくありません",
     };
+=======
+    throw error;
+>>>>>>> 460ed5a56e9bb4276fb13d20f21bf46c9dd763c9
   }
 
-  redirect("/");
+  redirect("/servers");
 }
 
 export async function signUp(
@@ -77,6 +102,7 @@ export async function signUp(
   formData: FormData,
 ): Promise<AuthFormState> {
   const parsed = signUpSchema.safeParse({
+    userId: formData.get("userId"),
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
@@ -89,8 +115,9 @@ export async function signUp(
     };
   }
 
-  const { name, email, password } = parsed.data;
+  const { userId, name, email, password } = parsed.data;
   const normalizedEmail = email.trim();
+  const normalizedUserId = userId.trim();
   const passwordHash = await bcrypt.hash(password, 12);
 
   const existing = await db.user.findUnique({
@@ -103,10 +130,22 @@ export async function signUp(
     };
   }
 
+  const existingUserId = await db.user.findFirst({
+    where: {
+      userId: normalizedUserId,
+      NOT: { email: normalizedEmail },
+    },
+  });
+
+  if (existingUserId) {
+    return { error: "そのユーザーIDは既に使用されています" };
+  }
+
   if (existing) {
     await db.user.update({
       where: { email: normalizedEmail },
       data: {
+        userId: normalizedUserId,
         name: name.trim(),
         passwordHash,
       },
@@ -114,6 +153,7 @@ export async function signUp(
   } else {
     await db.user.create({
       data: {
+        userId: normalizedUserId,
         name: name.trim(),
         email: normalizedEmail,
         passwordHash,
