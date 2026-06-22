@@ -1,4 +1,5 @@
 import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -37,9 +38,14 @@ export async function HomePage() {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between border-b border-[#18221f]/15 pb-5">
           <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
-              余
-            </span>
+            <Image
+              src="/connect-icon.png"
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-md object-cover"
+              priority
+            />
             <span className="text-xl font-semibold">connect</span>
           </Link>
           <div className="hidden items-center gap-2 text-sm text-[#5d665f] sm:flex">
