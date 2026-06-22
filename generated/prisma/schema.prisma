@@ -54,6 +54,7 @@ model User {
   emailVerified          DateTime?
   passwordHash           String?
   image                  String?
+  bio                    String?
   accounts               Account[]
   friendships            Friendship[]    @relation("UserFriendships")
   friendOf               Friendship[]    @relation("FriendOf")

@@ -1,5 +1,6 @@
 import { postRouter } from "~/features/post/server/router";
 import { friendRouter } from "~/features/friend/server/router";
+import { profileRouter } from "~/features/profile/server/router";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -10,6 +11,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   friend: friendRouter,
   post: postRouter,
+  profile: profileRouter,
 });
 
 // export type definition of API

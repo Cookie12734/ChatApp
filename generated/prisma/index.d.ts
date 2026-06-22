@@ -5007,6 +5007,7 @@ export namespace Prisma {
     emailVerified: Date | null
     passwordHash: string | null
     image: string | null
+    bio: string | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -5017,6 +5018,7 @@ export namespace Prisma {
     emailVerified: Date | null
     passwordHash: string | null
     image: string | null
+    bio: string | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -5027,6 +5029,7 @@ export namespace Prisma {
     emailVerified: number
     passwordHash: number
     image: number
+    bio: number
     _all: number
   }
 
@@ -5039,6 +5042,7 @@ export namespace Prisma {
     emailVerified?: true
     passwordHash?: true
     image?: true
+    bio?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -5049,6 +5053,7 @@ export namespace Prisma {
     emailVerified?: true
     passwordHash?: true
     image?: true
+    bio?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -5059,6 +5064,7 @@ export namespace Prisma {
     emailVerified?: true
     passwordHash?: true
     image?: true
+    bio?: true
     _all?: true
   }
 
@@ -5142,6 +5148,7 @@ export namespace Prisma {
     emailVerified: Date | null
     passwordHash: string | null
     image: string | null
+    bio: string | null
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -5169,6 +5176,7 @@ export namespace Prisma {
     emailVerified?: boolean
     passwordHash?: boolean
     image?: boolean
+    bio?: boolean
     accounts?: boolean | User$accountsArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
@@ -5188,6 +5196,7 @@ export namespace Prisma {
     emailVerified?: boolean
     passwordHash?: boolean
     image?: boolean
+    bio?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5198,6 +5207,7 @@ export namespace Prisma {
     emailVerified?: boolean
     passwordHash?: boolean
     image?: boolean
+    bio?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -5208,9 +5218,10 @@ export namespace Prisma {
     emailVerified?: boolean
     passwordHash?: boolean
     image?: boolean
+    bio?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
@@ -5245,6 +5256,7 @@ export namespace Prisma {
       emailVerified: Date | null
       passwordHash: string | null
       image: string | null
+      bio: string | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -5683,6 +5695,7 @@ export namespace Prisma {
     readonly emailVerified: FieldRef<"User", 'DateTime'>
     readonly passwordHash: FieldRef<"User", 'String'>
     readonly image: FieldRef<"User", 'String'>
+    readonly bio: FieldRef<"User", 'String'>
   }
     
 
@@ -10584,7 +10597,8 @@ export namespace Prisma {
     email: 'email',
     emailVerified: 'emailVerified',
     passwordHash: 'passwordHash',
-    image: 'image'
+    image: 'image',
+    bio: 'bio'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -10966,6 +10980,7 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableFilter<"User"> | Date | string | null
     passwordHash?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
+    bio?: StringNullableFilter<"User"> | string | null
     accounts?: AccountListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
@@ -10984,6 +10999,7 @@ export namespace Prisma {
     emailVerified?: SortOrderInput | SortOrder
     passwordHash?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     accounts?: AccountOrderByRelationAggregateInput
     friendships?: FriendshipOrderByRelationAggregateInput
     friendOf?: FriendshipOrderByRelationAggregateInput
@@ -11005,6 +11021,7 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableFilter<"User"> | Date | string | null
     passwordHash?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
+    bio?: StringNullableFilter<"User"> | string | null
     accounts?: AccountListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
@@ -11023,6 +11040,7 @@ export namespace Prisma {
     emailVerified?: SortOrderInput | SortOrder
     passwordHash?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -11039,6 +11057,7 @@ export namespace Prisma {
     emailVerified?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     passwordHash?: StringNullableWithAggregatesFilter<"User"> | string | null
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
+    bio?: StringNullableWithAggregatesFilter<"User"> | string | null
   }
 
   export type VerificationTokenWhereInput = {
@@ -11492,6 +11511,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -11510,6 +11530,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -11528,6 +11549,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -11546,6 +11568,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
@@ -11564,6 +11587,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
   }
 
   export type UserUpdateManyMutationInput = {
@@ -11574,6 +11598,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -11584,6 +11609,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type VerificationTokenCreateInput = {
@@ -12158,6 +12184,7 @@ export namespace Prisma {
     emailVerified?: SortOrder
     passwordHash?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -12168,6 +12195,7 @@ export namespace Prisma {
     emailVerified?: SortOrder
     passwordHash?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -12178,6 +12206,7 @@ export namespace Prisma {
     emailVerified?: SortOrder
     passwordHash?: SortOrder
     image?: SortOrder
+    bio?: SortOrder
   }
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -13120,6 +13149,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -13137,6 +13167,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -13170,6 +13201,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -13187,6 +13219,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
@@ -13204,6 +13237,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -13221,6 +13255,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -13254,6 +13289,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -13271,6 +13307,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -13288,6 +13325,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -13305,6 +13343,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -13338,6 +13377,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -13355,6 +13395,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
@@ -13816,6 +13857,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -13833,6 +13875,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -13855,6 +13898,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -13872,6 +13916,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -13921,6 +13966,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -13938,6 +13984,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
@@ -13966,6 +14013,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -13983,6 +14031,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
@@ -14000,6 +14049,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -14017,6 +14067,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -14039,6 +14090,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
@@ -14056,6 +14108,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -14089,6 +14142,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -14106,6 +14160,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -14134,6 +14189,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
@@ -14151,6 +14207,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -14191,6 +14248,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
@@ -14208,6 +14266,7 @@ export namespace Prisma {
     emailVerified?: Date | string | null
     passwordHash?: string | null
     image?: string | null
+    bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
@@ -14270,6 +14329,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
@@ -14287,6 +14347,7 @@ export namespace Prisma {
     emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput

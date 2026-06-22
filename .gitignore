@@ -24,6 +24,8 @@ next-env.d.ts
 # misc
 .DS_Store
 *.pem
+/public/uploads/profile-icons/*
+!/public/uploads/profile-icons/.gitkeep
 
 # debug
 npm-debug.log*

@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Sparkles,
+  UserRound,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -59,10 +60,11 @@ const rooms = [
 ];
 
 type ServerSelectionProps = {
+  userImage?: string | null;
   userName?: string | null;
 };
 
-export function ServerSelection({ userName }: ServerSelectionProps) {
+export function ServerSelection({ userImage, userName }: ServerSelectionProps) {
   const selectedRoom = rooms[0]!;
   const initial = userName?.slice(0, 1) ?? "Y";
 
@@ -91,6 +93,13 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
               フレンド
             </Link>
             <Link
+              href="/profile"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-[#fff8ed] px-3 text-sm font-semibold text-[#18221f] transition hover:border-[#18221f]/45"
+            >
+              <UserRound className="h-4 w-4" aria-hidden="true" />
+              プロフィール
+            </Link>
+            <Link
               href="/api/auth/signout"
               className="inline-flex h-10 items-center justify-center rounded-md bg-[#18221f] px-3 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
               aria-label="ログアウト"
@@ -104,9 +113,18 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
           <aside className="space-y-4">
             <div className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-4 shadow-[8px_8px_0_#d8efee]">
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#18221f] font-semibold text-[#f6f0e4]">
-                  {initial}
-                </span>
+                {userImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={userImage}
+                    alt=""
+                    className="h-11 w-11 rounded-md border border-[#18221f]/15 object-cover"
+                  />
+                ) : (
+                  <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#18221f] font-semibold text-[#f6f0e4]">
+                    {initial}
+                  </span>
+                )}
                 <div className="min-w-0">
                   <p className="truncate font-semibold">
                     {userName ?? "Yohaku user"}
