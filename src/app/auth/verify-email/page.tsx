@@ -44,7 +44,7 @@ export default async function VerifyEmailPage({
   return (
     <VerifyEmailResult
       title="メールアドレスを確認しました"
-      message="アカウントの確認が完了しました。ログインしてYohakuを始めましょう。"
+      message="アカウントの確認が完了しました。ログインしてconnectを始めましょう。"
       linkHref="/auth/login?verified=1"
       linkLabel="ログインする"
       success

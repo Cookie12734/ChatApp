@@ -19,7 +19,7 @@ export default async function SignUpPage() {
             <PenLine className="h-6 w-6" aria-hidden="true" />
           </div>
           <p className="mb-4 text-sm font-semibold text-[#9f4122] uppercase">
-            Yohaku
+            connect
           </p>
           <h1 className="text-4xl leading-tight font-semibold sm:text-5xl">
             会話の置き場所を、

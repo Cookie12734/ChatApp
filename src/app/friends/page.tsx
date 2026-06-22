@@ -22,7 +22,7 @@ export default async function FriendsPage() {
             </span>
             <div>
               <p className="text-sm font-semibold text-[#9f4122] uppercase">
-                Yohaku
+                connect
               </p>
               <h1 className="text-2xl font-semibold">フレンド</h1>
             </div>

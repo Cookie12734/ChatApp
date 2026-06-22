@@ -40,7 +40,7 @@ export async function HomePage() {
             <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
               余
             </span>
-            <span className="text-xl font-semibold">Yohaku</span>
+            <span className="text-xl font-semibold">connect</span>
           </Link>
           <div className="hidden items-center gap-2 text-sm text-[#5d665f] sm:flex">
             <Sparkles className="h-4 w-4 text-[#cc5f2f]" aria-hidden="true" />
@@ -61,7 +61,7 @@ export async function HomePage() {
               残る会話を。
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-8 [overflow-wrap:anywhere] break-all text-[#53615a] sm:break-normal">
-              Yohakuは、会話をチャンネルの束ではなく、小さな机に並べるためのチャットです。
+              connectは、会話をチャンネルの束ではなく、小さな机に並べるためのチャットです。
               いま話すこと、あとで拾うこと、そのあいだの空気を分けて置けます。
             </p>
 

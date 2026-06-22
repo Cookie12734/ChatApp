@@ -22,7 +22,7 @@ export default async function ProfilePage() {
             </span>
             <div>
               <p className="text-sm font-semibold text-[#9f4122] uppercase">
-                Yohaku
+                connect
               </p>
               <h1 className="text-2xl font-semibold">プロフィール</h1>
             </div>

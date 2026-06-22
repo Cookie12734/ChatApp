@@ -6,7 +6,7 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
-  title: "Yohaku",
+  title: "connect",
   description: "会話に余白をつくるチャットアプリ",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

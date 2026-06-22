@@ -1,4 +1,4 @@
-# Yohaku - ChatApp
+# connect - ChatApp
 
 T3 Stackを利用して開発している、会員登録制のチャットアプリケーションです。
 
@@ -197,3 +197,4 @@ ChatApp/
 ├── start-database.ps1
 ├── start-database.sh
 └── README.md
+```

@@ -77,7 +77,7 @@ export function ServerSelection({ userImage, userName }: ServerSelectionProps) {
               余
             </span>
             <span>
-              <span className="block text-xl font-semibold">Yohaku</span>
+              <span className="block text-xl font-semibold">connect</span>
               <span className="block text-xs text-[#667163]">
                 Rooms on your desk
               </span>
@@ -127,7 +127,7 @@ export function ServerSelection({ userImage, userName }: ServerSelectionProps) {
                 )}
                 <div className="min-w-0">
                   <p className="truncate font-semibold">
-                    {userName ?? "Yohaku user"}
+                    {userName ?? "connect user"}
                   </p>
                   <p className="text-sm text-[#68716b]">オンライン</p>
                 </div>
