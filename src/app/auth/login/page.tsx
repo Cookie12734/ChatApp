@@ -13,7 +13,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { verified } = await searchParams;
 
   if (session?.user) {
-    redirect("/servers");
+    redirect("/");
   }
 
   return (
@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             静かに戻る。
           </h1>
           <p className="mt-5 leading-8 text-[#53615a]">
-            ログインすると、部屋一覧とフレンドの通知へ戻れます。
+            ログインすると、チャットとフレンドの通知へ戻れます。
           </p>
           {verified === "1" && (
             <p className="mt-6 rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 py-3 text-sm text-[#114744]">

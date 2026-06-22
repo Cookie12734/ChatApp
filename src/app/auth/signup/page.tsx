@@ -8,7 +8,7 @@ export default async function SignUpPage() {
   const session = await auth();
 
   if (session?.user) {
-    redirect("/servers");
+    redirect("/");
   }
 
   return (

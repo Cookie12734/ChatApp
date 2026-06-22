@@ -195,6 +195,15 @@ exports.Prisma.NotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.DirectMessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  createdAt: 'createdAt',
+  readAt: 'readAt',
+  receiverId: 'receiverId',
+  senderId: 'senderId'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -228,7 +237,8 @@ exports.Prisma.ModelName = {
   VerificationToken: 'VerificationToken',
   FriendRequest: 'FriendRequest',
   Friendship: 'Friendship',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  DirectMessage: 'DirectMessage'
 };
 
 /**

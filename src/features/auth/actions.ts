@@ -85,7 +85,7 @@ export async function signInWithCredentials(
     throw error;
   }
 
-  redirect("/servers");
+  redirect("/");
 }
 
 export async function signUp(

@@ -1,7 +1,7 @@
-import { ArrowLeft, UserRound } from "lucide-react";
-import Link from "next/link";
+import { UserRound } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { BackButton } from "~/components/back-button";
 import { auth } from "~/features/auth";
 import { ProfileForm } from "~/features/profile/components/profile-form";
 
@@ -27,13 +27,7 @@ export default async function ProfilePage() {
               <h1 className="text-2xl font-semibold">プロフィール</h1>
             </div>
           </div>
-          <Link
-            href="/servers"
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-[#18221f]/20 bg-[#fff8ed] px-3 text-sm font-semibold text-[#18221f] transition hover:border-[#18221f]/45"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            部屋一覧へ
-          </Link>
+          <BackButton />
         </header>
         <ProfileForm />
       </div>

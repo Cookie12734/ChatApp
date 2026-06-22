@@ -53,6 +53,11 @@ export type Friendship = $Result.DefaultSelection<Prisma.$FriendshipPayload>
  * 
  */
 export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
+/**
+ * Model DirectMessage
+ * 
+ */
+export type DirectMessage = $Result.DefaultSelection<Prisma.$DirectMessagePayload>
 
 /**
  * Enums
@@ -281,6 +286,16 @@ export class PrismaClient<
     * ```
     */
   get notification(): Prisma.NotificationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.directMessage`: Exposes CRUD operations for the **DirectMessage** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DirectMessages
+    * const directMessages = await prisma.directMessage.findMany()
+    * ```
+    */
+  get directMessage(): Prisma.DirectMessageDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -729,7 +744,8 @@ export namespace Prisma {
     VerificationToken: 'VerificationToken',
     FriendRequest: 'FriendRequest',
     Friendship: 'Friendship',
-    Notification: 'Notification'
+    Notification: 'Notification',
+    DirectMessage: 'DirectMessage'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -748,7 +764,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification"
+      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification" | "directMessage"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1344,6 +1360,80 @@ export namespace Prisma {
           }
         }
       }
+      DirectMessage: {
+        payload: Prisma.$DirectMessagePayload<ExtArgs>
+        fields: Prisma.DirectMessageFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DirectMessageFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DirectMessageFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          findFirst: {
+            args: Prisma.DirectMessageFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DirectMessageFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          findMany: {
+            args: Prisma.DirectMessageFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>[]
+          }
+          create: {
+            args: Prisma.DirectMessageCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          createMany: {
+            args: Prisma.DirectMessageCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DirectMessageCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>[]
+          }
+          delete: {
+            args: Prisma.DirectMessageDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          update: {
+            args: Prisma.DirectMessageUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          deleteMany: {
+            args: Prisma.DirectMessageDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DirectMessageUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DirectMessageUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>[]
+          }
+          upsert: {
+            args: Prisma.DirectMessageUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DirectMessagePayload>
+          }
+          aggregate: {
+            args: Prisma.DirectMessageAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDirectMessage>
+          }
+          groupBy: {
+            args: Prisma.DirectMessageGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DirectMessageGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DirectMessageCountArgs<ExtArgs>
+            result: $Utils.Optional<DirectMessageCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1448,6 +1538,7 @@ export namespace Prisma {
     friendRequest?: FriendRequestOmit
     friendship?: FriendshipOmit
     notification?: NotificationOmit
+    directMessage?: DirectMessageOmit
   }
 
   /* Types for Logging */
@@ -1529,10 +1620,12 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     accounts: number
+    receivedDirectMessages: number
     friendships: number
     friendOf: number
     notifications: number
     posts: number
+    sentDirectMessages: number
     receivedFriendRequests: number
     sentFriendRequests: number
     sessions: number
@@ -1540,10 +1633,12 @@ export namespace Prisma {
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs
+    receivedDirectMessages?: boolean | UserCountOutputTypeCountReceivedDirectMessagesArgs
     friendships?: boolean | UserCountOutputTypeCountFriendshipsArgs
     friendOf?: boolean | UserCountOutputTypeCountFriendOfArgs
     notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
     posts?: boolean | UserCountOutputTypeCountPostsArgs
+    sentDirectMessages?: boolean | UserCountOutputTypeCountSentDirectMessagesArgs
     receivedFriendRequests?: boolean | UserCountOutputTypeCountReceivedFriendRequestsArgs
     sentFriendRequests?: boolean | UserCountOutputTypeCountSentFriendRequestsArgs
     sessions?: boolean | UserCountOutputTypeCountSessionsArgs
@@ -1565,6 +1660,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountAccountsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: AccountWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountReceivedDirectMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DirectMessageWhereInput
   }
 
   /**
@@ -1593,6 +1695,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountPostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PostWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountSentDirectMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DirectMessageWhereInput
   }
 
   /**
@@ -5178,10 +5287,12 @@ export namespace Prisma {
     image?: boolean
     bio?: boolean
     accounts?: boolean | User$accountsArgs<ExtArgs>
+    receivedDirectMessages?: boolean | User$receivedDirectMessagesArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
+    sentDirectMessages?: boolean | User$sentDirectMessagesArgs<ExtArgs>
     receivedFriendRequests?: boolean | User$receivedFriendRequestsArgs<ExtArgs>
     sentFriendRequests?: boolean | User$sentFriendRequestsArgs<ExtArgs>
     sessions?: boolean | User$sessionsArgs<ExtArgs>
@@ -5224,10 +5335,12 @@ export namespace Prisma {
   export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
+    receivedDirectMessages?: boolean | User$receivedDirectMessagesArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
+    sentDirectMessages?: boolean | User$sentDirectMessagesArgs<ExtArgs>
     receivedFriendRequests?: boolean | User$receivedFriendRequestsArgs<ExtArgs>
     sentFriendRequests?: boolean | User$sentFriendRequestsArgs<ExtArgs>
     sessions?: boolean | User$sessionsArgs<ExtArgs>
@@ -5240,10 +5353,12 @@ export namespace Prisma {
     name: "User"
     objects: {
       accounts: Prisma.$AccountPayload<ExtArgs>[]
+      receivedDirectMessages: Prisma.$DirectMessagePayload<ExtArgs>[]
       friendships: Prisma.$FriendshipPayload<ExtArgs>[]
       friendOf: Prisma.$FriendshipPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       posts: Prisma.$PostPayload<ExtArgs>[]
+      sentDirectMessages: Prisma.$DirectMessagePayload<ExtArgs>[]
       receivedFriendRequests: Prisma.$FriendRequestPayload<ExtArgs>[]
       sentFriendRequests: Prisma.$FriendRequestPayload<ExtArgs>[]
       sessions: Prisma.$SessionPayload<ExtArgs>[]
@@ -5652,10 +5767,12 @@ export namespace Prisma {
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     accounts<T extends User$accountsArgs<ExtArgs> = {}>(args?: Subset<T, User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    receivedDirectMessages<T extends User$receivedDirectMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$receivedDirectMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     friendships<T extends User$friendshipsArgs<ExtArgs> = {}>(args?: Subset<T, User$friendshipsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     friendOf<T extends User$friendOfArgs<ExtArgs> = {}>(args?: Subset<T, User$friendOfArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     posts<T extends User$postsArgs<ExtArgs> = {}>(args?: Subset<T, User$postsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    sentDirectMessages<T extends User$sentDirectMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$sentDirectMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     receivedFriendRequests<T extends User$receivedFriendRequestsArgs<ExtArgs> = {}>(args?: Subset<T, User$receivedFriendRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sentFriendRequests<T extends User$sentFriendRequestsArgs<ExtArgs> = {}>(args?: Subset<T, User$sentFriendRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sessions<T extends User$sessionsArgs<ExtArgs> = {}>(args?: Subset<T, User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -6108,6 +6225,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.receivedDirectMessages
+   */
+  export type User$receivedDirectMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    where?: DirectMessageWhereInput
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    cursor?: DirectMessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DirectMessageScalarFieldEnum | DirectMessageScalarFieldEnum[]
+  }
+
+  /**
    * User.friendships
    */
   export type User$friendshipsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6201,6 +6342,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PostScalarFieldEnum | PostScalarFieldEnum[]
+  }
+
+  /**
+   * User.sentDirectMessages
+   */
+  export type User$sentDirectMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    where?: DirectMessageWhereInput
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    cursor?: DirectMessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DirectMessageScalarFieldEnum | DirectMessageScalarFieldEnum[]
   }
 
   /**
@@ -10537,6 +10702,1085 @@ export namespace Prisma {
 
 
   /**
+   * Model DirectMessage
+   */
+
+  export type AggregateDirectMessage = {
+    _count: DirectMessageCountAggregateOutputType | null
+    _min: DirectMessageMinAggregateOutputType | null
+    _max: DirectMessageMaxAggregateOutputType | null
+  }
+
+  export type DirectMessageMinAggregateOutputType = {
+    id: string | null
+    content: string | null
+    createdAt: Date | null
+    readAt: Date | null
+    receiverId: string | null
+    senderId: string | null
+  }
+
+  export type DirectMessageMaxAggregateOutputType = {
+    id: string | null
+    content: string | null
+    createdAt: Date | null
+    readAt: Date | null
+    receiverId: string | null
+    senderId: string | null
+  }
+
+  export type DirectMessageCountAggregateOutputType = {
+    id: number
+    content: number
+    createdAt: number
+    readAt: number
+    receiverId: number
+    senderId: number
+    _all: number
+  }
+
+
+  export type DirectMessageMinAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    readAt?: true
+    receiverId?: true
+    senderId?: true
+  }
+
+  export type DirectMessageMaxAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    readAt?: true
+    receiverId?: true
+    senderId?: true
+  }
+
+  export type DirectMessageCountAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    readAt?: true
+    receiverId?: true
+    senderId?: true
+    _all?: true
+  }
+
+  export type DirectMessageAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DirectMessage to aggregate.
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DirectMessages to fetch.
+     */
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DirectMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DirectMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DirectMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DirectMessages
+    **/
+    _count?: true | DirectMessageCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DirectMessageMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DirectMessageMaxAggregateInputType
+  }
+
+  export type GetDirectMessageAggregateType<T extends DirectMessageAggregateArgs> = {
+        [P in keyof T & keyof AggregateDirectMessage]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDirectMessage[P]>
+      : GetScalarType<T[P], AggregateDirectMessage[P]>
+  }
+
+
+
+
+  export type DirectMessageGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DirectMessageWhereInput
+    orderBy?: DirectMessageOrderByWithAggregationInput | DirectMessageOrderByWithAggregationInput[]
+    by: DirectMessageScalarFieldEnum[] | DirectMessageScalarFieldEnum
+    having?: DirectMessageScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DirectMessageCountAggregateInputType | true
+    _min?: DirectMessageMinAggregateInputType
+    _max?: DirectMessageMaxAggregateInputType
+  }
+
+  export type DirectMessageGroupByOutputType = {
+    id: string
+    content: string
+    createdAt: Date
+    readAt: Date | null
+    receiverId: string
+    senderId: string
+    _count: DirectMessageCountAggregateOutputType | null
+    _min: DirectMessageMinAggregateOutputType | null
+    _max: DirectMessageMaxAggregateOutputType | null
+  }
+
+  type GetDirectMessageGroupByPayload<T extends DirectMessageGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DirectMessageGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DirectMessageGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DirectMessageGroupByOutputType[P]>
+            : GetScalarType<T[P], DirectMessageGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DirectMessageSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    readAt?: boolean
+    receiverId?: boolean
+    senderId?: boolean
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["directMessage"]>
+
+  export type DirectMessageSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    readAt?: boolean
+    receiverId?: boolean
+    senderId?: boolean
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["directMessage"]>
+
+  export type DirectMessageSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    readAt?: boolean
+    receiverId?: boolean
+    senderId?: boolean
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["directMessage"]>
+
+  export type DirectMessageSelectScalar = {
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    readAt?: boolean
+    receiverId?: boolean
+    senderId?: boolean
+  }
+
+  export type DirectMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "createdAt" | "readAt" | "receiverId" | "senderId", ExtArgs["result"]["directMessage"]>
+  export type DirectMessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DirectMessageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DirectMessageIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $DirectMessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DirectMessage"
+    objects: {
+      receiver: Prisma.$UserPayload<ExtArgs>
+      sender: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      content: string
+      createdAt: Date
+      readAt: Date | null
+      receiverId: string
+      senderId: string
+    }, ExtArgs["result"]["directMessage"]>
+    composites: {}
+  }
+
+  type DirectMessageGetPayload<S extends boolean | null | undefined | DirectMessageDefaultArgs> = $Result.GetResult<Prisma.$DirectMessagePayload, S>
+
+  type DirectMessageCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DirectMessageFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DirectMessageCountAggregateInputType | true
+    }
+
+  export interface DirectMessageDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DirectMessage'], meta: { name: 'DirectMessage' } }
+    /**
+     * Find zero or one DirectMessage that matches the filter.
+     * @param {DirectMessageFindUniqueArgs} args - Arguments to find a DirectMessage
+     * @example
+     * // Get one DirectMessage
+     * const directMessage = await prisma.directMessage.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DirectMessageFindUniqueArgs>(args: SelectSubset<T, DirectMessageFindUniqueArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DirectMessage that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DirectMessageFindUniqueOrThrowArgs} args - Arguments to find a DirectMessage
+     * @example
+     * // Get one DirectMessage
+     * const directMessage = await prisma.directMessage.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DirectMessageFindUniqueOrThrowArgs>(args: SelectSubset<T, DirectMessageFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DirectMessage that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageFindFirstArgs} args - Arguments to find a DirectMessage
+     * @example
+     * // Get one DirectMessage
+     * const directMessage = await prisma.directMessage.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DirectMessageFindFirstArgs>(args?: SelectSubset<T, DirectMessageFindFirstArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DirectMessage that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageFindFirstOrThrowArgs} args - Arguments to find a DirectMessage
+     * @example
+     * // Get one DirectMessage
+     * const directMessage = await prisma.directMessage.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DirectMessageFindFirstOrThrowArgs>(args?: SelectSubset<T, DirectMessageFindFirstOrThrowArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DirectMessages that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DirectMessages
+     * const directMessages = await prisma.directMessage.findMany()
+     * 
+     * // Get first 10 DirectMessages
+     * const directMessages = await prisma.directMessage.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const directMessageWithIdOnly = await prisma.directMessage.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DirectMessageFindManyArgs>(args?: SelectSubset<T, DirectMessageFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DirectMessage.
+     * @param {DirectMessageCreateArgs} args - Arguments to create a DirectMessage.
+     * @example
+     * // Create one DirectMessage
+     * const DirectMessage = await prisma.directMessage.create({
+     *   data: {
+     *     // ... data to create a DirectMessage
+     *   }
+     * })
+     * 
+     */
+    create<T extends DirectMessageCreateArgs>(args: SelectSubset<T, DirectMessageCreateArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DirectMessages.
+     * @param {DirectMessageCreateManyArgs} args - Arguments to create many DirectMessages.
+     * @example
+     * // Create many DirectMessages
+     * const directMessage = await prisma.directMessage.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DirectMessageCreateManyArgs>(args?: SelectSubset<T, DirectMessageCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DirectMessages and returns the data saved in the database.
+     * @param {DirectMessageCreateManyAndReturnArgs} args - Arguments to create many DirectMessages.
+     * @example
+     * // Create many DirectMessages
+     * const directMessage = await prisma.directMessage.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DirectMessages and only return the `id`
+     * const directMessageWithIdOnly = await prisma.directMessage.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DirectMessageCreateManyAndReturnArgs>(args?: SelectSubset<T, DirectMessageCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DirectMessage.
+     * @param {DirectMessageDeleteArgs} args - Arguments to delete one DirectMessage.
+     * @example
+     * // Delete one DirectMessage
+     * const DirectMessage = await prisma.directMessage.delete({
+     *   where: {
+     *     // ... filter to delete one DirectMessage
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DirectMessageDeleteArgs>(args: SelectSubset<T, DirectMessageDeleteArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DirectMessage.
+     * @param {DirectMessageUpdateArgs} args - Arguments to update one DirectMessage.
+     * @example
+     * // Update one DirectMessage
+     * const directMessage = await prisma.directMessage.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DirectMessageUpdateArgs>(args: SelectSubset<T, DirectMessageUpdateArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DirectMessages.
+     * @param {DirectMessageDeleteManyArgs} args - Arguments to filter DirectMessages to delete.
+     * @example
+     * // Delete a few DirectMessages
+     * const { count } = await prisma.directMessage.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DirectMessageDeleteManyArgs>(args?: SelectSubset<T, DirectMessageDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DirectMessages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DirectMessages
+     * const directMessage = await prisma.directMessage.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DirectMessageUpdateManyArgs>(args: SelectSubset<T, DirectMessageUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DirectMessages and returns the data updated in the database.
+     * @param {DirectMessageUpdateManyAndReturnArgs} args - Arguments to update many DirectMessages.
+     * @example
+     * // Update many DirectMessages
+     * const directMessage = await prisma.directMessage.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DirectMessages and only return the `id`
+     * const directMessageWithIdOnly = await prisma.directMessage.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DirectMessageUpdateManyAndReturnArgs>(args: SelectSubset<T, DirectMessageUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DirectMessage.
+     * @param {DirectMessageUpsertArgs} args - Arguments to update or create a DirectMessage.
+     * @example
+     * // Update or create a DirectMessage
+     * const directMessage = await prisma.directMessage.upsert({
+     *   create: {
+     *     // ... data to create a DirectMessage
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DirectMessage we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DirectMessageUpsertArgs>(args: SelectSubset<T, DirectMessageUpsertArgs<ExtArgs>>): Prisma__DirectMessageClient<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DirectMessages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageCountArgs} args - Arguments to filter DirectMessages to count.
+     * @example
+     * // Count the number of DirectMessages
+     * const count = await prisma.directMessage.count({
+     *   where: {
+     *     // ... the filter for the DirectMessages we want to count
+     *   }
+     * })
+    **/
+    count<T extends DirectMessageCountArgs>(
+      args?: Subset<T, DirectMessageCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DirectMessageCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DirectMessage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DirectMessageAggregateArgs>(args: Subset<T, DirectMessageAggregateArgs>): Prisma.PrismaPromise<GetDirectMessageAggregateType<T>>
+
+    /**
+     * Group by DirectMessage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DirectMessageGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DirectMessageGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DirectMessageGroupByArgs['orderBy'] }
+        : { orderBy?: DirectMessageGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DirectMessageGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDirectMessageGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DirectMessage model
+   */
+  readonly fields: DirectMessageFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DirectMessage.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DirectMessageClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    receiver<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    sender<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DirectMessage model
+   */
+  interface DirectMessageFieldRefs {
+    readonly id: FieldRef<"DirectMessage", 'String'>
+    readonly content: FieldRef<"DirectMessage", 'String'>
+    readonly createdAt: FieldRef<"DirectMessage", 'DateTime'>
+    readonly readAt: FieldRef<"DirectMessage", 'DateTime'>
+    readonly receiverId: FieldRef<"DirectMessage", 'String'>
+    readonly senderId: FieldRef<"DirectMessage", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DirectMessage findUnique
+   */
+  export type DirectMessageFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which DirectMessage to fetch.
+     */
+    where: DirectMessageWhereUniqueInput
+  }
+
+  /**
+   * DirectMessage findUniqueOrThrow
+   */
+  export type DirectMessageFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which DirectMessage to fetch.
+     */
+    where: DirectMessageWhereUniqueInput
+  }
+
+  /**
+   * DirectMessage findFirst
+   */
+  export type DirectMessageFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which DirectMessage to fetch.
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DirectMessages to fetch.
+     */
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DirectMessages.
+     */
+    cursor?: DirectMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DirectMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DirectMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DirectMessages.
+     */
+    distinct?: DirectMessageScalarFieldEnum | DirectMessageScalarFieldEnum[]
+  }
+
+  /**
+   * DirectMessage findFirstOrThrow
+   */
+  export type DirectMessageFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which DirectMessage to fetch.
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DirectMessages to fetch.
+     */
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DirectMessages.
+     */
+    cursor?: DirectMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DirectMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DirectMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DirectMessages.
+     */
+    distinct?: DirectMessageScalarFieldEnum | DirectMessageScalarFieldEnum[]
+  }
+
+  /**
+   * DirectMessage findMany
+   */
+  export type DirectMessageFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which DirectMessages to fetch.
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DirectMessages to fetch.
+     */
+    orderBy?: DirectMessageOrderByWithRelationInput | DirectMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DirectMessages.
+     */
+    cursor?: DirectMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DirectMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DirectMessages.
+     */
+    skip?: number
+    distinct?: DirectMessageScalarFieldEnum | DirectMessageScalarFieldEnum[]
+  }
+
+  /**
+   * DirectMessage create
+   */
+  export type DirectMessageCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DirectMessage.
+     */
+    data: XOR<DirectMessageCreateInput, DirectMessageUncheckedCreateInput>
+  }
+
+  /**
+   * DirectMessage createMany
+   */
+  export type DirectMessageCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DirectMessages.
+     */
+    data: DirectMessageCreateManyInput | DirectMessageCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DirectMessage createManyAndReturn
+   */
+  export type DirectMessageCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * The data used to create many DirectMessages.
+     */
+    data: DirectMessageCreateManyInput | DirectMessageCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DirectMessage update
+   */
+  export type DirectMessageUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DirectMessage.
+     */
+    data: XOR<DirectMessageUpdateInput, DirectMessageUncheckedUpdateInput>
+    /**
+     * Choose, which DirectMessage to update.
+     */
+    where: DirectMessageWhereUniqueInput
+  }
+
+  /**
+   * DirectMessage updateMany
+   */
+  export type DirectMessageUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DirectMessages.
+     */
+    data: XOR<DirectMessageUpdateManyMutationInput, DirectMessageUncheckedUpdateManyInput>
+    /**
+     * Filter which DirectMessages to update
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * Limit how many DirectMessages to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DirectMessage updateManyAndReturn
+   */
+  export type DirectMessageUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * The data used to update DirectMessages.
+     */
+    data: XOR<DirectMessageUpdateManyMutationInput, DirectMessageUncheckedUpdateManyInput>
+    /**
+     * Filter which DirectMessages to update
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * Limit how many DirectMessages to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DirectMessage upsert
+   */
+  export type DirectMessageUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DirectMessage to update in case it exists.
+     */
+    where: DirectMessageWhereUniqueInput
+    /**
+     * In case the DirectMessage found by the `where` argument doesn't exist, create a new DirectMessage with this data.
+     */
+    create: XOR<DirectMessageCreateInput, DirectMessageUncheckedCreateInput>
+    /**
+     * In case the DirectMessage was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DirectMessageUpdateInput, DirectMessageUncheckedUpdateInput>
+  }
+
+  /**
+   * DirectMessage delete
+   */
+  export type DirectMessageDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+    /**
+     * Filter which DirectMessage to delete.
+     */
+    where: DirectMessageWhereUniqueInput
+  }
+
+  /**
+   * DirectMessage deleteMany
+   */
+  export type DirectMessageDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DirectMessages to delete
+     */
+    where?: DirectMessageWhereInput
+    /**
+     * Limit how many DirectMessages to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DirectMessage without action
+   */
+  export type DirectMessageDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DirectMessage
+     */
+    select?: DirectMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DirectMessage
+     */
+    omit?: DirectMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DirectMessageInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -10646,6 +11890,18 @@ export namespace Prisma {
   };
 
   export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+  export const DirectMessageScalarFieldEnum: {
+    id: 'id',
+    content: 'content',
+    createdAt: 'createdAt',
+    readAt: 'readAt',
+    receiverId: 'receiverId',
+    senderId: 'senderId'
+  };
+
+  export type DirectMessageScalarFieldEnum = (typeof DirectMessageScalarFieldEnum)[keyof typeof DirectMessageScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -10982,10 +12238,12 @@ export namespace Prisma {
     image?: StringNullableFilter<"User"> | string | null
     bio?: StringNullableFilter<"User"> | string | null
     accounts?: AccountListRelationFilter
+    receivedDirectMessages?: DirectMessageListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
+    sentDirectMessages?: DirectMessageListRelationFilter
     receivedFriendRequests?: FriendRequestListRelationFilter
     sentFriendRequests?: FriendRequestListRelationFilter
     sessions?: SessionListRelationFilter
@@ -11001,10 +12259,12 @@ export namespace Prisma {
     image?: SortOrderInput | SortOrder
     bio?: SortOrderInput | SortOrder
     accounts?: AccountOrderByRelationAggregateInput
+    receivedDirectMessages?: DirectMessageOrderByRelationAggregateInput
     friendships?: FriendshipOrderByRelationAggregateInput
     friendOf?: FriendshipOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     posts?: PostOrderByRelationAggregateInput
+    sentDirectMessages?: DirectMessageOrderByRelationAggregateInput
     receivedFriendRequests?: FriendRequestOrderByRelationAggregateInput
     sentFriendRequests?: FriendRequestOrderByRelationAggregateInput
     sessions?: SessionOrderByRelationAggregateInput
@@ -11023,10 +12283,12 @@ export namespace Prisma {
     image?: StringNullableFilter<"User"> | string | null
     bio?: StringNullableFilter<"User"> | string | null
     accounts?: AccountListRelationFilter
+    receivedDirectMessages?: DirectMessageListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
+    sentDirectMessages?: DirectMessageListRelationFilter
     receivedFriendRequests?: FriendRequestListRelationFilter
     sentFriendRequests?: FriendRequestListRelationFilter
     sessions?: SessionListRelationFilter
@@ -11292,6 +12554,69 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
   }
 
+  export type DirectMessageWhereInput = {
+    AND?: DirectMessageWhereInput | DirectMessageWhereInput[]
+    OR?: DirectMessageWhereInput[]
+    NOT?: DirectMessageWhereInput | DirectMessageWhereInput[]
+    id?: StringFilter<"DirectMessage"> | string
+    content?: StringFilter<"DirectMessage"> | string
+    createdAt?: DateTimeFilter<"DirectMessage"> | Date | string
+    readAt?: DateTimeNullableFilter<"DirectMessage"> | Date | string | null
+    receiverId?: StringFilter<"DirectMessage"> | string
+    senderId?: StringFilter<"DirectMessage"> | string
+    receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
+    sender?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type DirectMessageOrderByWithRelationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    readAt?: SortOrderInput | SortOrder
+    receiverId?: SortOrder
+    senderId?: SortOrder
+    receiver?: UserOrderByWithRelationInput
+    sender?: UserOrderByWithRelationInput
+  }
+
+  export type DirectMessageWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: DirectMessageWhereInput | DirectMessageWhereInput[]
+    OR?: DirectMessageWhereInput[]
+    NOT?: DirectMessageWhereInput | DirectMessageWhereInput[]
+    content?: StringFilter<"DirectMessage"> | string
+    createdAt?: DateTimeFilter<"DirectMessage"> | Date | string
+    readAt?: DateTimeNullableFilter<"DirectMessage"> | Date | string | null
+    receiverId?: StringFilter<"DirectMessage"> | string
+    senderId?: StringFilter<"DirectMessage"> | string
+    receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
+    sender?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type DirectMessageOrderByWithAggregationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    readAt?: SortOrderInput | SortOrder
+    receiverId?: SortOrder
+    senderId?: SortOrder
+    _count?: DirectMessageCountOrderByAggregateInput
+    _max?: DirectMessageMaxOrderByAggregateInput
+    _min?: DirectMessageMinOrderByAggregateInput
+  }
+
+  export type DirectMessageScalarWhereWithAggregatesInput = {
+    AND?: DirectMessageScalarWhereWithAggregatesInput | DirectMessageScalarWhereWithAggregatesInput[]
+    OR?: DirectMessageScalarWhereWithAggregatesInput[]
+    NOT?: DirectMessageScalarWhereWithAggregatesInput | DirectMessageScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DirectMessage"> | string
+    content?: StringWithAggregatesFilter<"DirectMessage"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"DirectMessage"> | Date | string
+    readAt?: DateTimeNullableWithAggregatesFilter<"DirectMessage"> | Date | string | null
+    receiverId?: StringWithAggregatesFilter<"DirectMessage"> | string
+    senderId?: StringWithAggregatesFilter<"DirectMessage"> | string
+  }
+
   export type PostCreateInput = {
     name: string
     createdAt?: Date | string
@@ -11513,10 +12838,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -11532,10 +12859,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -11551,10 +12880,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -11570,10 +12901,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -11832,6 +13165,67 @@ export namespace Prisma {
     friendRequestId?: NullableStringFieldUpdateOperationsInput | string | null
     readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DirectMessageCreateInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiver: UserCreateNestedOneWithoutReceivedDirectMessagesInput
+    sender: UserCreateNestedOneWithoutSentDirectMessagesInput
+  }
+
+  export type DirectMessageUncheckedCreateInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiverId: string
+    senderId: string
+  }
+
+  export type DirectMessageUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiver?: UserUpdateOneRequiredWithoutReceivedDirectMessagesNestedInput
+    sender?: UserUpdateOneRequiredWithoutSentDirectMessagesNestedInput
+  }
+
+  export type DirectMessageUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DirectMessageCreateManyInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiverId: string
+    senderId: string
+  }
+
+  export type DirectMessageUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type DirectMessageUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -12122,6 +13516,12 @@ export namespace Prisma {
     none?: AccountWhereInput
   }
 
+  export type DirectMessageListRelationFilter = {
+    every?: DirectMessageWhereInput
+    some?: DirectMessageWhereInput
+    none?: DirectMessageWhereInput
+  }
+
   export type FriendshipListRelationFilter = {
     every?: FriendshipWhereInput
     some?: FriendshipWhereInput
@@ -12153,6 +13553,10 @@ export namespace Prisma {
   }
 
   export type AccountOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DirectMessageOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -12373,6 +13777,33 @@ export namespace Prisma {
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
   }
 
+  export type DirectMessageCountOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    readAt?: SortOrder
+    receiverId?: SortOrder
+    senderId?: SortOrder
+  }
+
+  export type DirectMessageMaxOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    readAt?: SortOrder
+    receiverId?: SortOrder
+    senderId?: SortOrder
+  }
+
+  export type DirectMessageMinOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    readAt?: SortOrder
+    receiverId?: SortOrder
+    senderId?: SortOrder
+  }
+
   export type UserCreateNestedOneWithoutPostsInput = {
     create?: XOR<UserCreateWithoutPostsInput, UserUncheckedCreateWithoutPostsInput>
     connectOrCreate?: UserCreateOrConnectWithoutPostsInput
@@ -12450,6 +13881,13 @@ export namespace Prisma {
     connect?: AccountWhereUniqueInput | AccountWhereUniqueInput[]
   }
 
+  export type DirectMessageCreateNestedManyWithoutReceiverInput = {
+    create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
+    createMany?: DirectMessageCreateManyReceiverInputEnvelope
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+  }
+
   export type FriendshipCreateNestedManyWithoutUserInput = {
     create?: XOR<FriendshipCreateWithoutUserInput, FriendshipUncheckedCreateWithoutUserInput> | FriendshipCreateWithoutUserInput[] | FriendshipUncheckedCreateWithoutUserInput[]
     connectOrCreate?: FriendshipCreateOrConnectWithoutUserInput | FriendshipCreateOrConnectWithoutUserInput[]
@@ -12476,6 +13914,13 @@ export namespace Prisma {
     connectOrCreate?: PostCreateOrConnectWithoutCreatedByInput | PostCreateOrConnectWithoutCreatedByInput[]
     createMany?: PostCreateManyCreatedByInputEnvelope
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
+  }
+
+  export type DirectMessageCreateNestedManyWithoutSenderInput = {
+    create?: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput> | DirectMessageCreateWithoutSenderInput[] | DirectMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutSenderInput | DirectMessageCreateOrConnectWithoutSenderInput[]
+    createMany?: DirectMessageCreateManySenderInputEnvelope
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
   }
 
   export type FriendRequestCreateNestedManyWithoutReceiverInput = {
@@ -12506,6 +13951,13 @@ export namespace Prisma {
     connect?: AccountWhereUniqueInput | AccountWhereUniqueInput[]
   }
 
+  export type DirectMessageUncheckedCreateNestedManyWithoutReceiverInput = {
+    create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
+    createMany?: DirectMessageCreateManyReceiverInputEnvelope
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+  }
+
   export type FriendshipUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<FriendshipCreateWithoutUserInput, FriendshipUncheckedCreateWithoutUserInput> | FriendshipCreateWithoutUserInput[] | FriendshipUncheckedCreateWithoutUserInput[]
     connectOrCreate?: FriendshipCreateOrConnectWithoutUserInput | FriendshipCreateOrConnectWithoutUserInput[]
@@ -12532,6 +13984,13 @@ export namespace Prisma {
     connectOrCreate?: PostCreateOrConnectWithoutCreatedByInput | PostCreateOrConnectWithoutCreatedByInput[]
     createMany?: PostCreateManyCreatedByInputEnvelope
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
+  }
+
+  export type DirectMessageUncheckedCreateNestedManyWithoutSenderInput = {
+    create?: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput> | DirectMessageCreateWithoutSenderInput[] | DirectMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutSenderInput | DirectMessageCreateOrConnectWithoutSenderInput[]
+    createMany?: DirectMessageCreateManySenderInputEnvelope
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
   }
 
   export type FriendRequestUncheckedCreateNestedManyWithoutReceiverInput = {
@@ -12571,6 +14030,20 @@ export namespace Prisma {
     update?: AccountUpdateWithWhereUniqueWithoutUserInput | AccountUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: AccountUpdateManyWithWhereWithoutUserInput | AccountUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: AccountScalarWhereInput | AccountScalarWhereInput[]
+  }
+
+  export type DirectMessageUpdateManyWithoutReceiverNestedInput = {
+    create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
+    upsert?: DirectMessageUpsertWithWhereUniqueWithoutReceiverInput | DirectMessageUpsertWithWhereUniqueWithoutReceiverInput[]
+    createMany?: DirectMessageCreateManyReceiverInputEnvelope
+    set?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    disconnect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    delete?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    update?: DirectMessageUpdateWithWhereUniqueWithoutReceiverInput | DirectMessageUpdateWithWhereUniqueWithoutReceiverInput[]
+    updateMany?: DirectMessageUpdateManyWithWhereWithoutReceiverInput | DirectMessageUpdateManyWithWhereWithoutReceiverInput[]
+    deleteMany?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
   }
 
   export type FriendshipUpdateManyWithoutUserNestedInput = {
@@ -12629,6 +14102,20 @@ export namespace Prisma {
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
   }
 
+  export type DirectMessageUpdateManyWithoutSenderNestedInput = {
+    create?: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput> | DirectMessageCreateWithoutSenderInput[] | DirectMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutSenderInput | DirectMessageCreateOrConnectWithoutSenderInput[]
+    upsert?: DirectMessageUpsertWithWhereUniqueWithoutSenderInput | DirectMessageUpsertWithWhereUniqueWithoutSenderInput[]
+    createMany?: DirectMessageCreateManySenderInputEnvelope
+    set?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    disconnect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    delete?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    update?: DirectMessageUpdateWithWhereUniqueWithoutSenderInput | DirectMessageUpdateWithWhereUniqueWithoutSenderInput[]
+    updateMany?: DirectMessageUpdateManyWithWhereWithoutSenderInput | DirectMessageUpdateManyWithWhereWithoutSenderInput[]
+    deleteMany?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
+  }
+
   export type FriendRequestUpdateManyWithoutReceiverNestedInput = {
     create?: XOR<FriendRequestCreateWithoutReceiverInput, FriendRequestUncheckedCreateWithoutReceiverInput> | FriendRequestCreateWithoutReceiverInput[] | FriendRequestUncheckedCreateWithoutReceiverInput[]
     connectOrCreate?: FriendRequestCreateOrConnectWithoutReceiverInput | FriendRequestCreateOrConnectWithoutReceiverInput[]
@@ -12685,6 +14172,20 @@ export namespace Prisma {
     deleteMany?: AccountScalarWhereInput | AccountScalarWhereInput[]
   }
 
+  export type DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput = {
+    create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
+    upsert?: DirectMessageUpsertWithWhereUniqueWithoutReceiverInput | DirectMessageUpsertWithWhereUniqueWithoutReceiverInput[]
+    createMany?: DirectMessageCreateManyReceiverInputEnvelope
+    set?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    disconnect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    delete?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    update?: DirectMessageUpdateWithWhereUniqueWithoutReceiverInput | DirectMessageUpdateWithWhereUniqueWithoutReceiverInput[]
+    updateMany?: DirectMessageUpdateManyWithWhereWithoutReceiverInput | DirectMessageUpdateManyWithWhereWithoutReceiverInput[]
+    deleteMany?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
+  }
+
   export type FriendshipUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<FriendshipCreateWithoutUserInput, FriendshipUncheckedCreateWithoutUserInput> | FriendshipCreateWithoutUserInput[] | FriendshipUncheckedCreateWithoutUserInput[]
     connectOrCreate?: FriendshipCreateOrConnectWithoutUserInput | FriendshipCreateOrConnectWithoutUserInput[]
@@ -12739,6 +14240,20 @@ export namespace Prisma {
     update?: PostUpdateWithWhereUniqueWithoutCreatedByInput | PostUpdateWithWhereUniqueWithoutCreatedByInput[]
     updateMany?: PostUpdateManyWithWhereWithoutCreatedByInput | PostUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
+  }
+
+  export type DirectMessageUncheckedUpdateManyWithoutSenderNestedInput = {
+    create?: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput> | DirectMessageCreateWithoutSenderInput[] | DirectMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: DirectMessageCreateOrConnectWithoutSenderInput | DirectMessageCreateOrConnectWithoutSenderInput[]
+    upsert?: DirectMessageUpsertWithWhereUniqueWithoutSenderInput | DirectMessageUpsertWithWhereUniqueWithoutSenderInput[]
+    createMany?: DirectMessageCreateManySenderInputEnvelope
+    set?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    disconnect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    delete?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    connect?: DirectMessageWhereUniqueInput | DirectMessageWhereUniqueInput[]
+    update?: DirectMessageUpdateWithWhereUniqueWithoutSenderInput | DirectMessageUpdateWithWhereUniqueWithoutSenderInput[]
+    updateMany?: DirectMessageUpdateManyWithWhereWithoutSenderInput | DirectMessageUpdateManyWithWhereWithoutSenderInput[]
+    deleteMany?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
   }
 
   export type FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput = {
@@ -12917,6 +14432,34 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutNotificationsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutNotificationsInput, UserUpdateWithoutNotificationsInput>, UserUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type UserCreateNestedOneWithoutReceivedDirectMessagesInput = {
+    create?: XOR<UserCreateWithoutReceivedDirectMessagesInput, UserUncheckedCreateWithoutReceivedDirectMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReceivedDirectMessagesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutSentDirectMessagesInput = {
+    create?: XOR<UserCreateWithoutSentDirectMessagesInput, UserUncheckedCreateWithoutSentDirectMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentDirectMessagesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutReceivedDirectMessagesNestedInput = {
+    create?: XOR<UserCreateWithoutReceivedDirectMessagesInput, UserUncheckedCreateWithoutReceivedDirectMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReceivedDirectMessagesInput
+    upsert?: UserUpsertWithoutReceivedDirectMessagesInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReceivedDirectMessagesInput, UserUpdateWithoutReceivedDirectMessagesInput>, UserUncheckedUpdateWithoutReceivedDirectMessagesInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutSentDirectMessagesNestedInput = {
+    create?: XOR<UserCreateWithoutSentDirectMessagesInput, UserUncheckedCreateWithoutSentDirectMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentDirectMessagesInput
+    upsert?: UserUpsertWithoutSentDirectMessagesInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSentDirectMessagesInput, UserUpdateWithoutSentDirectMessagesInput>, UserUncheckedUpdateWithoutSentDirectMessagesInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -13151,9 +14694,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -13169,9 +14714,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -13203,9 +14750,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -13221,9 +14770,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -13238,10 +14789,12 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -13256,10 +14809,12 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -13290,10 +14845,12 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -13308,10 +14865,12 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -13327,10 +14886,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
   }
@@ -13345,10 +14906,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
   }
@@ -13379,10 +14942,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
   }
@@ -13397,10 +14962,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
   }
@@ -13442,6 +15009,32 @@ export namespace Prisma {
 
   export type AccountCreateManyUserInputEnvelope = {
     data: AccountCreateManyUserInput | AccountCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DirectMessageCreateWithoutReceiverInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    sender: UserCreateNestedOneWithoutSentDirectMessagesInput
+  }
+
+  export type DirectMessageUncheckedCreateWithoutReceiverInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    senderId: string
+  }
+
+  export type DirectMessageCreateOrConnectWithoutReceiverInput = {
+    where: DirectMessageWhereUniqueInput
+    create: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput>
+  }
+
+  export type DirectMessageCreateManyReceiverInputEnvelope = {
+    data: DirectMessageCreateManyReceiverInput | DirectMessageCreateManyReceiverInput[]
     skipDuplicates?: boolean
   }
 
@@ -13537,6 +15130,32 @@ export namespace Prisma {
 
   export type PostCreateManyCreatedByInputEnvelope = {
     data: PostCreateManyCreatedByInput | PostCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DirectMessageCreateWithoutSenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiver: UserCreateNestedOneWithoutReceivedDirectMessagesInput
+  }
+
+  export type DirectMessageUncheckedCreateWithoutSenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiverId: string
+  }
+
+  export type DirectMessageCreateOrConnectWithoutSenderInput = {
+    where: DirectMessageWhereUniqueInput
+    create: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput>
+  }
+
+  export type DirectMessageCreateManySenderInputEnvelope = {
+    data: DirectMessageCreateManySenderInput | DirectMessageCreateManySenderInput[]
     skipDuplicates?: boolean
   }
 
@@ -13653,6 +15272,34 @@ export namespace Prisma {
     refresh_token_expires_in?: IntNullableFilter<"Account"> | number | null
   }
 
+  export type DirectMessageUpsertWithWhereUniqueWithoutReceiverInput = {
+    where: DirectMessageWhereUniqueInput
+    update: XOR<DirectMessageUpdateWithoutReceiverInput, DirectMessageUncheckedUpdateWithoutReceiverInput>
+    create: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput>
+  }
+
+  export type DirectMessageUpdateWithWhereUniqueWithoutReceiverInput = {
+    where: DirectMessageWhereUniqueInput
+    data: XOR<DirectMessageUpdateWithoutReceiverInput, DirectMessageUncheckedUpdateWithoutReceiverInput>
+  }
+
+  export type DirectMessageUpdateManyWithWhereWithoutReceiverInput = {
+    where: DirectMessageScalarWhereInput
+    data: XOR<DirectMessageUpdateManyMutationInput, DirectMessageUncheckedUpdateManyWithoutReceiverInput>
+  }
+
+  export type DirectMessageScalarWhereInput = {
+    AND?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
+    OR?: DirectMessageScalarWhereInput[]
+    NOT?: DirectMessageScalarWhereInput | DirectMessageScalarWhereInput[]
+    id?: StringFilter<"DirectMessage"> | string
+    content?: StringFilter<"DirectMessage"> | string
+    createdAt?: DateTimeFilter<"DirectMessage"> | Date | string
+    readAt?: DateTimeNullableFilter<"DirectMessage"> | Date | string | null
+    receiverId?: StringFilter<"DirectMessage"> | string
+    senderId?: StringFilter<"DirectMessage"> | string
+  }
+
   export type FriendshipUpsertWithWhereUniqueWithoutUserInput = {
     where: FriendshipWhereUniqueInput
     update: XOR<FriendshipUpdateWithoutUserInput, FriendshipUncheckedUpdateWithoutUserInput>
@@ -13749,6 +15396,22 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Post"> | Date | string
     updatedAt?: DateTimeFilter<"Post"> | Date | string
     createdById?: StringFilter<"Post"> | string
+  }
+
+  export type DirectMessageUpsertWithWhereUniqueWithoutSenderInput = {
+    where: DirectMessageWhereUniqueInput
+    update: XOR<DirectMessageUpdateWithoutSenderInput, DirectMessageUncheckedUpdateWithoutSenderInput>
+    create: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput>
+  }
+
+  export type DirectMessageUpdateWithWhereUniqueWithoutSenderInput = {
+    where: DirectMessageWhereUniqueInput
+    data: XOR<DirectMessageUpdateWithoutSenderInput, DirectMessageUncheckedUpdateWithoutSenderInput>
+  }
+
+  export type DirectMessageUpdateManyWithWhereWithoutSenderInput = {
+    where: DirectMessageScalarWhereInput
+    data: XOR<DirectMessageUpdateManyMutationInput, DirectMessageUncheckedUpdateManyWithoutSenderInput>
   }
 
   export type FriendRequestUpsertWithWhereUniqueWithoutReceiverInput = {
@@ -13859,10 +15522,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
   }
@@ -13877,10 +15542,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
   }
@@ -13900,10 +15567,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sessions?: SessionCreateNestedManyWithoutUserInput
   }
@@ -13918,10 +15587,12 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
   }
@@ -13968,10 +15639,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
   }
@@ -13986,10 +15659,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -14015,10 +15690,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
   }
@@ -14033,10 +15710,12 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -14051,9 +15730,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -14069,9 +15750,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -14092,9 +15775,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -14110,9 +15795,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -14144,9 +15831,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -14162,9 +15851,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -14191,9 +15882,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -14209,9 +15902,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
@@ -14250,9 +15945,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
     sessions?: SessionCreateNestedManyWithoutUserInput
@@ -14268,9 +15965,11 @@ export namespace Prisma {
     image?: string | null
     bio?: string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
     sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
@@ -14331,9 +16030,11 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
     sessions?: SessionUpdateManyWithoutUserNestedInput
@@ -14349,8 +16050,202 @@ export namespace Prisma {
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutReceivedDirectMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutReceivedDirectMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutReceivedDirectMessagesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReceivedDirectMessagesInput, UserUncheckedCreateWithoutReceivedDirectMessagesInput>
+  }
+
+  export type UserCreateWithoutSentDirectMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutSentDirectMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutSentDirectMessagesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutSentDirectMessagesInput, UserUncheckedCreateWithoutSentDirectMessagesInput>
+  }
+
+  export type UserUpsertWithoutReceivedDirectMessagesInput = {
+    update: XOR<UserUpdateWithoutReceivedDirectMessagesInput, UserUncheckedUpdateWithoutReceivedDirectMessagesInput>
+    create: XOR<UserCreateWithoutReceivedDirectMessagesInput, UserUncheckedCreateWithoutReceivedDirectMessagesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReceivedDirectMessagesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReceivedDirectMessagesInput, UserUncheckedUpdateWithoutReceivedDirectMessagesInput>
+  }
+
+  export type UserUpdateWithoutReceivedDirectMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReceivedDirectMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUpsertWithoutSentDirectMessagesInput = {
+    update: XOR<UserUpdateWithoutSentDirectMessagesInput, UserUncheckedUpdateWithoutSentDirectMessagesInput>
+    create: XOR<UserCreateWithoutSentDirectMessagesInput, UserUncheckedCreateWithoutSentDirectMessagesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutSentDirectMessagesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutSentDirectMessagesInput, UserUncheckedUpdateWithoutSentDirectMessagesInput>
+  }
+
+  export type UserUpdateWithoutSentDirectMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutSentDirectMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
@@ -14370,6 +16265,14 @@ export namespace Prisma {
     id_token?: string | null
     session_state?: string | null
     refresh_token_expires_in?: number | null
+  }
+
+  export type DirectMessageCreateManyReceiverInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    senderId: string
   }
 
   export type FriendshipCreateManyUserInput = {
@@ -14398,6 +16301,14 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+  }
+
+  export type DirectMessageCreateManySenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    readAt?: Date | string | null
+    receiverId: string
   }
 
   export type FriendRequestCreateManyReceiverInput = {
@@ -14465,6 +16376,30 @@ export namespace Prisma {
     id_token?: NullableStringFieldUpdateOperationsInput | string | null
     session_state?: NullableStringFieldUpdateOperationsInput | string | null
     refresh_token_expires_in?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type DirectMessageUpdateWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sender?: UserUpdateOneRequiredWithoutSentDirectMessagesNestedInput
+  }
+
+  export type DirectMessageUncheckedUpdateWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DirectMessageUncheckedUpdateManyWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
   }
 
   export type FriendshipUpdateWithoutUserInput = {
@@ -14548,6 +16483,30 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DirectMessageUpdateWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiver?: UserUpdateOneRequiredWithoutReceivedDirectMessagesNestedInput
+  }
+
+  export type DirectMessageUncheckedUpdateWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiverId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type DirectMessageUncheckedUpdateManyWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    receiverId?: StringFieldUpdateOperationsInput | string
   }
 
   export type FriendRequestUpdateWithoutReceiverInput = {

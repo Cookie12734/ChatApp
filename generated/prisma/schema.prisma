@@ -56,10 +56,12 @@ model User {
   image                  String?
   bio                    String?
   accounts               Account[]
+  receivedDirectMessages DirectMessage[] @relation("ReceivedDirectMessages")
   friendships            Friendship[]    @relation("UserFriendships")
   friendOf               Friendship[]    @relation("FriendOf")
   notifications          Notification[]
   posts                  Post[]
+  sentDirectMessages     DirectMessage[] @relation("SentDirectMessages")
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
   sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
   sessions               Session[]
@@ -113,6 +115,21 @@ model Notification {
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
+}
+
+model DirectMessage {
+  id         String    @id @default(cuid())
+  content    String
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
+  receiverId String
+  senderId   String
+  receiver   User      @relation("ReceivedDirectMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User      @relation("SentDirectMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, readAt, createdAt])
+  @@index([receiverId, senderId, createdAt])
+  @@index([senderId, receiverId, createdAt])
 }
 
 enum FriendRequestStatus {
