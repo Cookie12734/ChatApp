@@ -57,12 +57,14 @@ model User {
   bio                    String?
   accounts               Account[]
   receivedDirectMessages DirectMessage[] @relation("ReceivedDirectMessages")
+  createdServers         ChatServer[]    @relation("CreatedServers")
   friendships            Friendship[]    @relation("UserFriendships")
   friendOf               Friendship[]    @relation("FriendOf")
   notifications          Notification[]
   posts                  Post[]
   sentDirectMessages     DirectMessage[] @relation("SentDirectMessages")
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  serverMemberships      ServerMember[]
   sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
   sessions               Session[]
 }
@@ -132,6 +134,33 @@ model DirectMessage {
   @@index([senderId, receiverId, createdAt])
 }
 
+model ChatServer {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  inviteCode  String         @unique @default(cuid())
+  createdById String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  createdBy   User           @relation("CreatedServers", fields: [createdById], references: [id], onDelete: Cascade)
+  members     ServerMember[]
+
+  @@index([createdById])
+}
+
+model ServerMember {
+  id        String           @id @default(cuid())
+  serverId  String
+  userId    String
+  role      ServerMemberRole @default(MEMBER)
+  createdAt DateTime         @default(now())
+  server    ChatServer       @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serverId, userId])
+  @@index([userId])
+}
+
 enum FriendRequestStatus {
   PENDING
   ACCEPTED
@@ -141,4 +170,9 @@ enum FriendRequestStatus {
 enum NotificationType {
   FRIEND_REQUEST
   FRIEND_REQUEST_ACCEPTED
+}
+
+enum ServerMemberRole {
+  OWNER
+  MEMBER
 }

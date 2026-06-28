@@ -204,6 +204,24 @@ exports.Prisma.DirectMessageScalarFieldEnum = {
   senderId: 'senderId'
 };
 
+exports.Prisma.ChatServerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  inviteCode: 'inviteCode',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ServerMemberScalarFieldEnum = {
+  id: 'id',
+  serverId: 'serverId',
+  userId: 'userId',
+  role: 'role',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -229,6 +247,11 @@ exports.NotificationType = exports.$Enums.NotificationType = {
   FRIEND_REQUEST_ACCEPTED: 'FRIEND_REQUEST_ACCEPTED'
 };
 
+exports.ServerMemberRole = exports.$Enums.ServerMemberRole = {
+  OWNER: 'OWNER',
+  MEMBER: 'MEMBER'
+};
+
 exports.Prisma.ModelName = {
   Post: 'Post',
   Account: 'Account',
@@ -238,7 +261,9 @@ exports.Prisma.ModelName = {
   FriendRequest: 'FriendRequest',
   Friendship: 'Friendship',
   Notification: 'Notification',
-  DirectMessage: 'DirectMessage'
+  DirectMessage: 'DirectMessage',
+  ChatServer: 'ChatServer',
+  ServerMember: 'ServerMember'
 };
 
 /**

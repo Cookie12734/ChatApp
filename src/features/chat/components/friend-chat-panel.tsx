@@ -427,13 +427,13 @@ export function FriendChatPanel() {
         >
           <Users className="h-5 w-5" aria-hidden="true" />
         </Link>
-        <button
-          type="button"
+        <Link
+          href="/servers"
           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
           aria-label="追加"
         >
           <Plus className="h-5 w-5" aria-hidden="true" />
-        </button>
+        </Link>
         <div className="mt-auto flex flex-col gap-3">
           <Link
             href="/profile"
