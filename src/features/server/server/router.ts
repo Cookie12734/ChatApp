@@ -99,7 +99,7 @@ export const serverRouter = createTRPCRouter({
       if (membership?.role !== "OWNER") {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "サーバー設定を変更できるのは鯖主だけです",
+          message: "サーバー設定を変更できるのは管理者だけです",
         });
       }
 
@@ -129,7 +129,7 @@ export const serverRouter = createTRPCRouter({
       if (membership?.role !== "OWNER") {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "招待リンクを再発行できるのは鯖主だけです",
+          message: "招待リンクを再発行できるのは管理者だけです",
         });
       }
 

@@ -134,7 +134,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
               <Server className="h-5 w-5" aria-hidden="true" />
             </span>
             <span>
-              <span className="block text-xl font-semibold">Yohaku</span>
+              <span className="block text-xl font-semibold">connect</span>
               <span className="block text-xs text-[#667163]">Server chat</span>
             </span>
           </Link>
@@ -246,7 +246,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
                           : "text-[#68716b]"
                       }`}
                     >
-                      {membership.role === "OWNER" ? "鯖主" : "メンバー"}
+                      {membership.role === "OWNER" ? "管理者" : "メンバー"}
                     </span>
                   </span>
                 </button>
@@ -260,7 +260,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#18221f]/15 bg-[#e4f2dc] px-5 py-5 sm:px-7">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-[#667163] uppercase">
-                      {selected.role === "OWNER" ? "Owner" : "Member"}
+                      {selected.role === "OWNER" ? "管理者" : "メンバー"}
                     </p>
                     <h1 className="mt-1 text-3xl font-semibold">
                       {selected.server.name}
@@ -273,7 +273,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
                   </div>
                   <span className="inline-flex h-10 items-center gap-2 rounded-md bg-[#fff8ed] px-3 text-sm font-semibold text-[#53615a]">
                     <Shield className="h-4 w-4" aria-hidden="true" />
-                    {selected.role === "OWNER" ? "鯖主" : "メンバー"}
+                    {selected.role === "OWNER" ? "管理者" : "メンバー"}
                   </span>
                 </div>
 
@@ -336,7 +336,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
                         </form>
                       ) : (
                         <p className="text-sm text-[#68716b]">
-                          設定を変更できるのは鯖主だけです。
+                          設定を変更できるのは管理者のみです。
                         </p>
                       )}
                     </section>
@@ -384,7 +384,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
 
                   <aside className="border-t border-[#18221f]/15 bg-[#f1e4d0] p-5 lg:border-t-0 lg:border-l">
                     <h3 className="mb-3 text-xs font-semibold text-[#7b6757] uppercase">
-                      Members
+                      メンバー
                     </h3>
                     <div className="space-y-2">
                       {selected.server.members.map((member) => (
@@ -402,7 +402,7 @@ export function ServerSelection({ userName }: ServerSelectionProps) {
                               {member.user.name ?? member.user.userId}
                             </p>
                             <p className="truncate text-xs text-[#68716b]">
-                              {member.role === "OWNER" ? "鯖主" : "メンバー"}
+                              {member.role === "OWNER" ? "管理者" : "メンバー"}
                             </p>
                           </div>
                         </div>

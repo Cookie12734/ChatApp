@@ -249,7 +249,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Yoush\\NextjsProjects\\chat-app\\generated\\prisma",
+      "value": "C:\\Users\\Y_Oishi\\NextjsProject\\ChatApp\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -263,7 +263,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Yoush\\NextjsProjects\\chat-app\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\Y_Oishi\\NextjsProject\\ChatApp\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -277,7 +277,6 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
