@@ -152,6 +152,7 @@ export function FriendChatPanel() {
   const [draft, setDraft] = useState("");
   const [serverDraft, setServerDraft] = useState("");
   const [newChannelName, setNewChannelName] = useState("");
+  const [isNewChannelFormOpen, setIsNewChannelFormOpen] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [editingChannelName, setEditingChannelName] = useState("");
   const [channelContextMenu, setChannelContextMenu] = useState<{
@@ -265,6 +266,7 @@ export function FriendChatPanel() {
       setEditingChannelId(null);
       setEditingChannelName("");
       setNewChannelName("");
+      setIsNewChannelFormOpen(false);
       setChannelContextMenu(null);
       return;
     }
@@ -522,6 +524,7 @@ export function FriendChatPanel() {
   const createChannel = api.server.createChannel.useMutation({
     onSuccess: async (channel) => {
       setNewChannelName("");
+      setIsNewChannelFormOpen(false);
       setServerMessage(null);
       setSelectedServerChannelId(channel.id);
       await utils.server.getOverview.invalidate();
@@ -571,6 +574,7 @@ export function FriendChatPanel() {
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
+    setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
     setSelectedFriendId(friendId);
     setServerMessage(null);
@@ -582,6 +586,7 @@ export function FriendChatPanel() {
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
+    setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
     setServerMessage(null);
     setMessage(null);
@@ -764,11 +769,24 @@ export function FriendChatPanel() {
                   テキストチャンネル
                 </p>
                 {isSelectedServerOwner && (
-                  <Plus className="h-4 w-4 text-[#68716b]" aria-hidden="true" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNewChannelFormOpen((isOpen) => !isOpen);
+                      setEditingChannelId(null);
+                      setEditingChannelName("");
+                      setChannelContextMenu(null);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#68716b] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    aria-label="チャンネル追加フォームを開く"
+                    title="チャンネルを追加"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                  </button>
                 )}
               </div>
 
-              {isSelectedServerOwner && (
+              {isSelectedServerOwner && isNewChannelFormOpen && (
                 <form
                   onSubmit={handleCreateChannel}
                   className="mb-3 flex gap-2"
@@ -780,6 +798,7 @@ export function FriendChatPanel() {
                     placeholder="new-channel"
                     maxLength={32}
                     aria-label="チャンネル名"
+                    autoFocus
                   />
                   <button
                     type="submit"
@@ -789,6 +808,18 @@ export function FriendChatPanel() {
                     title="チャンネルを追加"
                   >
                     <Plus className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNewChannelFormOpen(false);
+                      setNewChannelName("");
+                    }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    aria-label="キャンセル"
+                    title="キャンセル"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </form>
               )}

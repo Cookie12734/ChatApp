@@ -71,6 +71,7 @@ export function ServerSelection({
   const [settingsName, setSettingsName] = useState("");
   const [settingsDescription, setSettingsDescription] = useState("");
   const [newChannelName, setNewChannelName] = useState("");
+  const [isNewChannelFormOpen, setIsNewChannelFormOpen] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [editingChannelName, setEditingChannelName] = useState("");
   const [draft, setDraft] = useState("");
@@ -171,6 +172,7 @@ export function ServerSelection({
       setEditingChannelId(null);
       setEditingChannelName("");
       setNewChannelName("");
+      setIsNewChannelFormOpen(false);
       setChannelContextMenu(null);
       return;
     }
@@ -229,6 +231,7 @@ export function ServerSelection({
   const createChannel = api.server.createChannel.useMutation({
     onSuccess: async (channel) => {
       setNewChannelName("");
+      setIsNewChannelFormOpen(false);
       setMessage(null);
       setSelectedChannelId(channel.id);
       await invalidateOverview();
@@ -278,6 +281,7 @@ export function ServerSelection({
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
+    setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
     setMessage(null);
   };
@@ -698,14 +702,24 @@ export function ServerSelection({
                           テキストチャンネル
                         </h3>
                         {selected.role === "OWNER" && (
-                          <Plus
-                            className="h-4 w-4 text-[#7b6757]"
-                            aria-hidden="true"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsNewChannelFormOpen((isOpen) => !isOpen);
+                              setEditingChannelId(null);
+                              setEditingChannelName("");
+                              setChannelContextMenu(null);
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-[#7b6757] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                            aria-label="チャンネル追加フォームを開く"
+                            title="チャンネルを追加"
+                          >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                          </button>
                         )}
                       </div>
 
-                      {selected.role === "OWNER" && (
+                      {selected.role === "OWNER" && isNewChannelFormOpen && (
                         <form
                           onSubmit={handleCreateChannel}
                           className="mb-3 flex gap-2"
@@ -719,6 +733,7 @@ export function ServerSelection({
                             placeholder="new-channel"
                             maxLength={32}
                             aria-label="チャンネル名"
+                            autoFocus
                           />
                           <button
                             type="submit"
@@ -730,6 +745,18 @@ export function ServerSelection({
                             title="チャンネルを追加"
                           >
                             <Plus className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsNewChannelFormOpen(false);
+                              setNewChannelName("");
+                            }}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                            aria-label="キャンセル"
+                            title="キャンセル"
+                          >
+                            <X className="h-4 w-4" aria-hidden="true" />
                           </button>
                         </form>
                       )}
