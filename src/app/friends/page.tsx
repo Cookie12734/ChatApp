@@ -1,4 +1,6 @@
 import { Users } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { BackButton } from "~/components/back-button";
@@ -17,6 +19,21 @@ export default async function FriendsPage() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#18221f]/15 pb-5">
           <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] shadow-[5px_5px_0_#d8efee] transition hover:rounded-xl"
+              aria-label="ホームへ戻る"
+              title="ホームへ戻る"
+            >
+              <Image
+                src="/connect-icon.png"
+                alt=""
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-xl object-cover"
+                priority
+              />
+            </Link>
             <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4]">
               <Users className="h-5 w-5" aria-hidden="true" />
             </span>

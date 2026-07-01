@@ -222,6 +222,23 @@ exports.Prisma.ServerMemberScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ServerChannelScalarFieldEnum = {
+  id: 'id',
+  serverId: 'serverId',
+  name: 'name',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ServerMessageScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  createdAt: 'createdAt',
+  channelId: 'channelId',
+  serverId: 'serverId',
+  senderId: 'senderId'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -263,7 +280,9 @@ exports.Prisma.ModelName = {
   Notification: 'Notification',
   DirectMessage: 'DirectMessage',
   ChatServer: 'ChatServer',
-  ServerMember: 'ServerMember'
+  ServerMember: 'ServerMember',
+  ServerChannel: 'ServerChannel',
+  ServerMessage: 'ServerMessage'
 };
 
 /**

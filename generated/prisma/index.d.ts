@@ -68,6 +68,16 @@ export type ChatServer = $Result.DefaultSelection<Prisma.$ChatServerPayload>
  * 
  */
 export type ServerMember = $Result.DefaultSelection<Prisma.$ServerMemberPayload>
+/**
+ * Model ServerChannel
+ * 
+ */
+export type ServerChannel = $Result.DefaultSelection<Prisma.$ServerChannelPayload>
+/**
+ * Model ServerMessage
+ * 
+ */
+export type ServerMessage = $Result.DefaultSelection<Prisma.$ServerMessagePayload>
 
 /**
  * Enums
@@ -338,6 +348,26 @@ export class PrismaClient<
     * ```
     */
   get serverMember(): Prisma.ServerMemberDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.serverChannel`: Exposes CRUD operations for the **ServerChannel** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ServerChannels
+    * const serverChannels = await prisma.serverChannel.findMany()
+    * ```
+    */
+  get serverChannel(): Prisma.ServerChannelDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.serverMessage`: Exposes CRUD operations for the **ServerMessage** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ServerMessages
+    * const serverMessages = await prisma.serverMessage.findMany()
+    * ```
+    */
+  get serverMessage(): Prisma.ServerMessageDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -789,7 +819,9 @@ export namespace Prisma {
     Notification: 'Notification',
     DirectMessage: 'DirectMessage',
     ChatServer: 'ChatServer',
-    ServerMember: 'ServerMember'
+    ServerMember: 'ServerMember',
+    ServerChannel: 'ServerChannel',
+    ServerMessage: 'ServerMessage'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -808,7 +840,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification" | "directMessage" | "chatServer" | "serverMember"
+      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification" | "directMessage" | "chatServer" | "serverMember" | "serverChannel" | "serverMessage"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1626,6 +1658,154 @@ export namespace Prisma {
           }
         }
       }
+      ServerChannel: {
+        payload: Prisma.$ServerChannelPayload<ExtArgs>
+        fields: Prisma.ServerChannelFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ServerChannelFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ServerChannelFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          findFirst: {
+            args: Prisma.ServerChannelFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ServerChannelFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          findMany: {
+            args: Prisma.ServerChannelFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>[]
+          }
+          create: {
+            args: Prisma.ServerChannelCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          createMany: {
+            args: Prisma.ServerChannelCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ServerChannelCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>[]
+          }
+          delete: {
+            args: Prisma.ServerChannelDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          update: {
+            args: Prisma.ServerChannelUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          deleteMany: {
+            args: Prisma.ServerChannelDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ServerChannelUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ServerChannelUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>[]
+          }
+          upsert: {
+            args: Prisma.ServerChannelUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelPayload>
+          }
+          aggregate: {
+            args: Prisma.ServerChannelAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateServerChannel>
+          }
+          groupBy: {
+            args: Prisma.ServerChannelGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ServerChannelGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ServerChannelCountArgs<ExtArgs>
+            result: $Utils.Optional<ServerChannelCountAggregateOutputType> | number
+          }
+        }
+      }
+      ServerMessage: {
+        payload: Prisma.$ServerMessagePayload<ExtArgs>
+        fields: Prisma.ServerMessageFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ServerMessageFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ServerMessageFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          findFirst: {
+            args: Prisma.ServerMessageFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ServerMessageFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          findMany: {
+            args: Prisma.ServerMessageFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>[]
+          }
+          create: {
+            args: Prisma.ServerMessageCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          createMany: {
+            args: Prisma.ServerMessageCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ServerMessageCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>[]
+          }
+          delete: {
+            args: Prisma.ServerMessageDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          update: {
+            args: Prisma.ServerMessageUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          deleteMany: {
+            args: Prisma.ServerMessageDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ServerMessageUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ServerMessageUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>[]
+          }
+          upsert: {
+            args: Prisma.ServerMessageUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerMessagePayload>
+          }
+          aggregate: {
+            args: Prisma.ServerMessageAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateServerMessage>
+          }
+          groupBy: {
+            args: Prisma.ServerMessageGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ServerMessageGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ServerMessageCountArgs<ExtArgs>
+            result: $Utils.Optional<ServerMessageCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1733,6 +1913,8 @@ export namespace Prisma {
     directMessage?: DirectMessageOmit
     chatServer?: ChatServerOmit
     serverMember?: ServerMemberOmit
+    serverChannel?: ServerChannelOmit
+    serverMessage?: ServerMessageOmit
   }
 
   /* Types for Logging */
@@ -1820,6 +2002,7 @@ export namespace Prisma {
     friendOf: number
     notifications: number
     posts: number
+    sentServerMessages: number
     sentDirectMessages: number
     receivedFriendRequests: number
     serverMemberships: number
@@ -1835,6 +2018,7 @@ export namespace Prisma {
     friendOf?: boolean | UserCountOutputTypeCountFriendOfArgs
     notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
     posts?: boolean | UserCountOutputTypeCountPostsArgs
+    sentServerMessages?: boolean | UserCountOutputTypeCountSentServerMessagesArgs
     sentDirectMessages?: boolean | UserCountOutputTypeCountSentDirectMessagesArgs
     receivedFriendRequests?: boolean | UserCountOutputTypeCountReceivedFriendRequestsArgs
     serverMemberships?: boolean | UserCountOutputTypeCountServerMembershipsArgs
@@ -1900,6 +2084,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountPostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PostWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountSentServerMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerMessageWhereInput
   }
 
   /**
@@ -1974,11 +2165,15 @@ export namespace Prisma {
    */
 
   export type ChatServerCountOutputType = {
+    channels: number
     members: number
+    messages: number
   }
 
   export type ChatServerCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channels?: boolean | ChatServerCountOutputTypeCountChannelsArgs
     members?: boolean | ChatServerCountOutputTypeCountMembersArgs
+    messages?: boolean | ChatServerCountOutputTypeCountMessagesArgs
   }
 
   // Custom InputTypes
@@ -1995,8 +2190,53 @@ export namespace Prisma {
   /**
    * ChatServerCountOutputType without action
    */
+  export type ChatServerCountOutputTypeCountChannelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerChannelWhereInput
+  }
+
+  /**
+   * ChatServerCountOutputType without action
+   */
   export type ChatServerCountOutputTypeCountMembersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ServerMemberWhereInput
+  }
+
+  /**
+   * ChatServerCountOutputType without action
+   */
+  export type ChatServerCountOutputTypeCountMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerMessageWhereInput
+  }
+
+
+  /**
+   * Count Type ServerChannelCountOutputType
+   */
+
+  export type ServerChannelCountOutputType = {
+    messages: number
+  }
+
+  export type ServerChannelCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    messages?: boolean | ServerChannelCountOutputTypeCountMessagesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * ServerChannelCountOutputType without action
+   */
+  export type ServerChannelCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelCountOutputType
+     */
+    select?: ServerChannelCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannelCountOutputType without action
+   */
+  export type ServerChannelCountOutputTypeCountMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerMessageWhereInput
   }
 
 
@@ -5536,6 +5776,7 @@ export namespace Prisma {
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
+    sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>
     sentDirectMessages?: boolean | User$sentDirectMessagesArgs<ExtArgs>
     receivedFriendRequests?: boolean | User$receivedFriendRequestsArgs<ExtArgs>
     serverMemberships?: boolean | User$serverMembershipsArgs<ExtArgs>
@@ -5586,6 +5827,7 @@ export namespace Prisma {
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
+    sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>
     sentDirectMessages?: boolean | User$sentDirectMessagesArgs<ExtArgs>
     receivedFriendRequests?: boolean | User$receivedFriendRequestsArgs<ExtArgs>
     serverMemberships?: boolean | User$serverMembershipsArgs<ExtArgs>
@@ -5606,6 +5848,7 @@ export namespace Prisma {
       friendOf: Prisma.$FriendshipPayload<ExtArgs>[]
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       posts: Prisma.$PostPayload<ExtArgs>[]
+      sentServerMessages: Prisma.$ServerMessagePayload<ExtArgs>[]
       sentDirectMessages: Prisma.$DirectMessagePayload<ExtArgs>[]
       receivedFriendRequests: Prisma.$FriendRequestPayload<ExtArgs>[]
       serverMemberships: Prisma.$ServerMemberPayload<ExtArgs>[]
@@ -6022,6 +6265,7 @@ export namespace Prisma {
     friendOf<T extends User$friendOfArgs<ExtArgs> = {}>(args?: Subset<T, User$friendOfArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     posts<T extends User$postsArgs<ExtArgs> = {}>(args?: Subset<T, User$postsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    sentServerMessages<T extends User$sentServerMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$sentServerMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sentDirectMessages<T extends User$sentDirectMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$sentDirectMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     receivedFriendRequests<T extends User$receivedFriendRequestsArgs<ExtArgs> = {}>(args?: Subset<T, User$receivedFriendRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     serverMemberships<T extends User$serverMembershipsArgs<ExtArgs> = {}>(args?: Subset<T, User$serverMembershipsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -6617,6 +6861,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PostScalarFieldEnum | PostScalarFieldEnum[]
+  }
+
+  /**
+   * User.sentServerMessages
+   */
+  export type User$sentServerMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    where?: ServerMessageWhereInput
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    cursor?: ServerMessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
   }
 
   /**
@@ -12260,7 +12528,9 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     createdBy?: boolean | UserDefaultArgs<ExtArgs>
+    channels?: boolean | ChatServer$channelsArgs<ExtArgs>
     members?: boolean | ChatServer$membersArgs<ExtArgs>
+    messages?: boolean | ChatServer$messagesArgs<ExtArgs>
     _count?: boolean | ChatServerCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["chatServer"]>
 
@@ -12299,7 +12569,9 @@ export namespace Prisma {
   export type ChatServerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "description" | "inviteCode" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["chatServer"]>
   export type ChatServerInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     createdBy?: boolean | UserDefaultArgs<ExtArgs>
+    channels?: boolean | ChatServer$channelsArgs<ExtArgs>
     members?: boolean | ChatServer$membersArgs<ExtArgs>
+    messages?: boolean | ChatServer$messagesArgs<ExtArgs>
     _count?: boolean | ChatServerCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ChatServerIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -12313,7 +12585,9 @@ export namespace Prisma {
     name: "ChatServer"
     objects: {
       createdBy: Prisma.$UserPayload<ExtArgs>
+      channels: Prisma.$ServerChannelPayload<ExtArgs>[]
       members: Prisma.$ServerMemberPayload<ExtArgs>[]
+      messages: Prisma.$ServerMessagePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -12718,7 +12992,9 @@ export namespace Prisma {
   export interface Prisma__ChatServerClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    channels<T extends ChatServer$channelsArgs<ExtArgs> = {}>(args?: Subset<T, ChatServer$channelsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     members<T extends ChatServer$membersArgs<ExtArgs> = {}>(args?: Subset<T, ChatServer$membersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    messages<T extends ChatServer$messagesArgs<ExtArgs> = {}>(args?: Subset<T, ChatServer$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -13151,6 +13427,30 @@ export namespace Prisma {
   }
 
   /**
+   * ChatServer.channels
+   */
+  export type ChatServer$channelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    where?: ServerChannelWhereInput
+    orderBy?: ServerChannelOrderByWithRelationInput | ServerChannelOrderByWithRelationInput[]
+    cursor?: ServerChannelWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerChannelScalarFieldEnum | ServerChannelScalarFieldEnum[]
+  }
+
+  /**
    * ChatServer.members
    */
   export type ChatServer$membersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -13172,6 +13472,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ServerMemberScalarFieldEnum | ServerMemberScalarFieldEnum[]
+  }
+
+  /**
+   * ChatServer.messages
+   */
+  export type ChatServer$messagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    where?: ServerMessageWhereInput
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    cursor?: ServerMessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
   }
 
   /**
@@ -14260,6 +14584,2200 @@ export namespace Prisma {
 
 
   /**
+   * Model ServerChannel
+   */
+
+  export type AggregateServerChannel = {
+    _count: ServerChannelCountAggregateOutputType | null
+    _min: ServerChannelMinAggregateOutputType | null
+    _max: ServerChannelMaxAggregateOutputType | null
+  }
+
+  export type ServerChannelMinAggregateOutputType = {
+    id: string | null
+    serverId: string | null
+    name: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ServerChannelMaxAggregateOutputType = {
+    id: string | null
+    serverId: string | null
+    name: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ServerChannelCountAggregateOutputType = {
+    id: number
+    serverId: number
+    name: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ServerChannelMinAggregateInputType = {
+    id?: true
+    serverId?: true
+    name?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ServerChannelMaxAggregateInputType = {
+    id?: true
+    serverId?: true
+    name?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ServerChannelCountAggregateInputType = {
+    id?: true
+    serverId?: true
+    name?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ServerChannelAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerChannel to aggregate.
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannels to fetch.
+     */
+    orderBy?: ServerChannelOrderByWithRelationInput | ServerChannelOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ServerChannelWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ServerChannels
+    **/
+    _count?: true | ServerChannelCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ServerChannelMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ServerChannelMaxAggregateInputType
+  }
+
+  export type GetServerChannelAggregateType<T extends ServerChannelAggregateArgs> = {
+        [P in keyof T & keyof AggregateServerChannel]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateServerChannel[P]>
+      : GetScalarType<T[P], AggregateServerChannel[P]>
+  }
+
+
+
+
+  export type ServerChannelGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerChannelWhereInput
+    orderBy?: ServerChannelOrderByWithAggregationInput | ServerChannelOrderByWithAggregationInput[]
+    by: ServerChannelScalarFieldEnum[] | ServerChannelScalarFieldEnum
+    having?: ServerChannelScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ServerChannelCountAggregateInputType | true
+    _min?: ServerChannelMinAggregateInputType
+    _max?: ServerChannelMaxAggregateInputType
+  }
+
+  export type ServerChannelGroupByOutputType = {
+    id: string
+    serverId: string
+    name: string
+    createdAt: Date
+    updatedAt: Date
+    _count: ServerChannelCountAggregateOutputType | null
+    _min: ServerChannelMinAggregateOutputType | null
+    _max: ServerChannelMaxAggregateOutputType | null
+  }
+
+  type GetServerChannelGroupByPayload<T extends ServerChannelGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ServerChannelGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ServerChannelGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ServerChannelGroupByOutputType[P]>
+            : GetScalarType<T[P], ServerChannelGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ServerChannelSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    serverId?: boolean
+    name?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+    messages?: boolean | ServerChannel$messagesArgs<ExtArgs>
+    _count?: boolean | ServerChannelCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannel"]>
+
+  export type ServerChannelSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    serverId?: boolean
+    name?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannel"]>
+
+  export type ServerChannelSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    serverId?: boolean
+    name?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannel"]>
+
+  export type ServerChannelSelectScalar = {
+    id?: boolean
+    serverId?: boolean
+    name?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type ServerChannelOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "serverId" | "name" | "createdAt" | "updatedAt", ExtArgs["result"]["serverChannel"]>
+  export type ServerChannelInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+    messages?: boolean | ServerChannel$messagesArgs<ExtArgs>
+    _count?: boolean | ServerChannelCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type ServerChannelIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }
+  export type ServerChannelIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }
+
+  export type $ServerChannelPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ServerChannel"
+    objects: {
+      server: Prisma.$ChatServerPayload<ExtArgs>
+      messages: Prisma.$ServerMessagePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      serverId: string
+      name: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["serverChannel"]>
+    composites: {}
+  }
+
+  type ServerChannelGetPayload<S extends boolean | null | undefined | ServerChannelDefaultArgs> = $Result.GetResult<Prisma.$ServerChannelPayload, S>
+
+  type ServerChannelCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ServerChannelFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ServerChannelCountAggregateInputType | true
+    }
+
+  export interface ServerChannelDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ServerChannel'], meta: { name: 'ServerChannel' } }
+    /**
+     * Find zero or one ServerChannel that matches the filter.
+     * @param {ServerChannelFindUniqueArgs} args - Arguments to find a ServerChannel
+     * @example
+     * // Get one ServerChannel
+     * const serverChannel = await prisma.serverChannel.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ServerChannelFindUniqueArgs>(args: SelectSubset<T, ServerChannelFindUniqueArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ServerChannel that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ServerChannelFindUniqueOrThrowArgs} args - Arguments to find a ServerChannel
+     * @example
+     * // Get one ServerChannel
+     * const serverChannel = await prisma.serverChannel.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ServerChannelFindUniqueOrThrowArgs>(args: SelectSubset<T, ServerChannelFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerChannel that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelFindFirstArgs} args - Arguments to find a ServerChannel
+     * @example
+     * // Get one ServerChannel
+     * const serverChannel = await prisma.serverChannel.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ServerChannelFindFirstArgs>(args?: SelectSubset<T, ServerChannelFindFirstArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerChannel that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelFindFirstOrThrowArgs} args - Arguments to find a ServerChannel
+     * @example
+     * // Get one ServerChannel
+     * const serverChannel = await prisma.serverChannel.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ServerChannelFindFirstOrThrowArgs>(args?: SelectSubset<T, ServerChannelFindFirstOrThrowArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ServerChannels that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ServerChannels
+     * const serverChannels = await prisma.serverChannel.findMany()
+     * 
+     * // Get first 10 ServerChannels
+     * const serverChannels = await prisma.serverChannel.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const serverChannelWithIdOnly = await prisma.serverChannel.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ServerChannelFindManyArgs>(args?: SelectSubset<T, ServerChannelFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ServerChannel.
+     * @param {ServerChannelCreateArgs} args - Arguments to create a ServerChannel.
+     * @example
+     * // Create one ServerChannel
+     * const ServerChannel = await prisma.serverChannel.create({
+     *   data: {
+     *     // ... data to create a ServerChannel
+     *   }
+     * })
+     * 
+     */
+    create<T extends ServerChannelCreateArgs>(args: SelectSubset<T, ServerChannelCreateArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ServerChannels.
+     * @param {ServerChannelCreateManyArgs} args - Arguments to create many ServerChannels.
+     * @example
+     * // Create many ServerChannels
+     * const serverChannel = await prisma.serverChannel.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ServerChannelCreateManyArgs>(args?: SelectSubset<T, ServerChannelCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ServerChannels and returns the data saved in the database.
+     * @param {ServerChannelCreateManyAndReturnArgs} args - Arguments to create many ServerChannels.
+     * @example
+     * // Create many ServerChannels
+     * const serverChannel = await prisma.serverChannel.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ServerChannels and only return the `id`
+     * const serverChannelWithIdOnly = await prisma.serverChannel.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ServerChannelCreateManyAndReturnArgs>(args?: SelectSubset<T, ServerChannelCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ServerChannel.
+     * @param {ServerChannelDeleteArgs} args - Arguments to delete one ServerChannel.
+     * @example
+     * // Delete one ServerChannel
+     * const ServerChannel = await prisma.serverChannel.delete({
+     *   where: {
+     *     // ... filter to delete one ServerChannel
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ServerChannelDeleteArgs>(args: SelectSubset<T, ServerChannelDeleteArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ServerChannel.
+     * @param {ServerChannelUpdateArgs} args - Arguments to update one ServerChannel.
+     * @example
+     * // Update one ServerChannel
+     * const serverChannel = await prisma.serverChannel.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ServerChannelUpdateArgs>(args: SelectSubset<T, ServerChannelUpdateArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ServerChannels.
+     * @param {ServerChannelDeleteManyArgs} args - Arguments to filter ServerChannels to delete.
+     * @example
+     * // Delete a few ServerChannels
+     * const { count } = await prisma.serverChannel.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ServerChannelDeleteManyArgs>(args?: SelectSubset<T, ServerChannelDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerChannels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ServerChannels
+     * const serverChannel = await prisma.serverChannel.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ServerChannelUpdateManyArgs>(args: SelectSubset<T, ServerChannelUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerChannels and returns the data updated in the database.
+     * @param {ServerChannelUpdateManyAndReturnArgs} args - Arguments to update many ServerChannels.
+     * @example
+     * // Update many ServerChannels
+     * const serverChannel = await prisma.serverChannel.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ServerChannels and only return the `id`
+     * const serverChannelWithIdOnly = await prisma.serverChannel.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ServerChannelUpdateManyAndReturnArgs>(args: SelectSubset<T, ServerChannelUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ServerChannel.
+     * @param {ServerChannelUpsertArgs} args - Arguments to update or create a ServerChannel.
+     * @example
+     * // Update or create a ServerChannel
+     * const serverChannel = await prisma.serverChannel.upsert({
+     *   create: {
+     *     // ... data to create a ServerChannel
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ServerChannel we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ServerChannelUpsertArgs>(args: SelectSubset<T, ServerChannelUpsertArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ServerChannels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelCountArgs} args - Arguments to filter ServerChannels to count.
+     * @example
+     * // Count the number of ServerChannels
+     * const count = await prisma.serverChannel.count({
+     *   where: {
+     *     // ... the filter for the ServerChannels we want to count
+     *   }
+     * })
+    **/
+    count<T extends ServerChannelCountArgs>(
+      args?: Subset<T, ServerChannelCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ServerChannelCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ServerChannel.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ServerChannelAggregateArgs>(args: Subset<T, ServerChannelAggregateArgs>): Prisma.PrismaPromise<GetServerChannelAggregateType<T>>
+
+    /**
+     * Group by ServerChannel.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ServerChannelGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ServerChannelGroupByArgs['orderBy'] }
+        : { orderBy?: ServerChannelGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ServerChannelGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetServerChannelGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ServerChannel model
+   */
+  readonly fields: ServerChannelFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ServerChannel.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ServerChannelClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    server<T extends ChatServerDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ChatServerDefaultArgs<ExtArgs>>): Prisma__ChatServerClient<$Result.GetResult<Prisma.$ChatServerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    messages<T extends ServerChannel$messagesArgs<ExtArgs> = {}>(args?: Subset<T, ServerChannel$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ServerChannel model
+   */
+  interface ServerChannelFieldRefs {
+    readonly id: FieldRef<"ServerChannel", 'String'>
+    readonly serverId: FieldRef<"ServerChannel", 'String'>
+    readonly name: FieldRef<"ServerChannel", 'String'>
+    readonly createdAt: FieldRef<"ServerChannel", 'DateTime'>
+    readonly updatedAt: FieldRef<"ServerChannel", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ServerChannel findUnique
+   */
+  export type ServerChannelFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannel to fetch.
+     */
+    where: ServerChannelWhereUniqueInput
+  }
+
+  /**
+   * ServerChannel findUniqueOrThrow
+   */
+  export type ServerChannelFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannel to fetch.
+     */
+    where: ServerChannelWhereUniqueInput
+  }
+
+  /**
+   * ServerChannel findFirst
+   */
+  export type ServerChannelFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannel to fetch.
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannels to fetch.
+     */
+    orderBy?: ServerChannelOrderByWithRelationInput | ServerChannelOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerChannels.
+     */
+    cursor?: ServerChannelWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerChannels.
+     */
+    distinct?: ServerChannelScalarFieldEnum | ServerChannelScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannel findFirstOrThrow
+   */
+  export type ServerChannelFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannel to fetch.
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannels to fetch.
+     */
+    orderBy?: ServerChannelOrderByWithRelationInput | ServerChannelOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerChannels.
+     */
+    cursor?: ServerChannelWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerChannels.
+     */
+    distinct?: ServerChannelScalarFieldEnum | ServerChannelScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannel findMany
+   */
+  export type ServerChannelFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannels to fetch.
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannels to fetch.
+     */
+    orderBy?: ServerChannelOrderByWithRelationInput | ServerChannelOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ServerChannels.
+     */
+    cursor?: ServerChannelWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannels.
+     */
+    skip?: number
+    distinct?: ServerChannelScalarFieldEnum | ServerChannelScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannel create
+   */
+  export type ServerChannelCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ServerChannel.
+     */
+    data: XOR<ServerChannelCreateInput, ServerChannelUncheckedCreateInput>
+  }
+
+  /**
+   * ServerChannel createMany
+   */
+  export type ServerChannelCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ServerChannels.
+     */
+    data: ServerChannelCreateManyInput | ServerChannelCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ServerChannel createManyAndReturn
+   */
+  export type ServerChannelCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * The data used to create many ServerChannels.
+     */
+    data: ServerChannelCreateManyInput | ServerChannelCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannel update
+   */
+  export type ServerChannelUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ServerChannel.
+     */
+    data: XOR<ServerChannelUpdateInput, ServerChannelUncheckedUpdateInput>
+    /**
+     * Choose, which ServerChannel to update.
+     */
+    where: ServerChannelWhereUniqueInput
+  }
+
+  /**
+   * ServerChannel updateMany
+   */
+  export type ServerChannelUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ServerChannels.
+     */
+    data: XOR<ServerChannelUpdateManyMutationInput, ServerChannelUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerChannels to update
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * Limit how many ServerChannels to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerChannel updateManyAndReturn
+   */
+  export type ServerChannelUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * The data used to update ServerChannels.
+     */
+    data: XOR<ServerChannelUpdateManyMutationInput, ServerChannelUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerChannels to update
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * Limit how many ServerChannels to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannel upsert
+   */
+  export type ServerChannelUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ServerChannel to update in case it exists.
+     */
+    where: ServerChannelWhereUniqueInput
+    /**
+     * In case the ServerChannel found by the `where` argument doesn't exist, create a new ServerChannel with this data.
+     */
+    create: XOR<ServerChannelCreateInput, ServerChannelUncheckedCreateInput>
+    /**
+     * In case the ServerChannel was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ServerChannelUpdateInput, ServerChannelUncheckedUpdateInput>
+  }
+
+  /**
+   * ServerChannel delete
+   */
+  export type ServerChannelDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    /**
+     * Filter which ServerChannel to delete.
+     */
+    where: ServerChannelWhereUniqueInput
+  }
+
+  /**
+   * ServerChannel deleteMany
+   */
+  export type ServerChannelDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerChannels to delete
+     */
+    where?: ServerChannelWhereInput
+    /**
+     * Limit how many ServerChannels to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerChannel.messages
+   */
+  export type ServerChannel$messagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    where?: ServerMessageWhereInput
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    cursor?: ServerMessageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannel without action
+   */
+  export type ServerChannelDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ServerMessage
+   */
+
+  export type AggregateServerMessage = {
+    _count: ServerMessageCountAggregateOutputType | null
+    _min: ServerMessageMinAggregateOutputType | null
+    _max: ServerMessageMaxAggregateOutputType | null
+  }
+
+  export type ServerMessageMinAggregateOutputType = {
+    id: string | null
+    content: string | null
+    createdAt: Date | null
+    channelId: string | null
+    serverId: string | null
+    senderId: string | null
+  }
+
+  export type ServerMessageMaxAggregateOutputType = {
+    id: string | null
+    content: string | null
+    createdAt: Date | null
+    channelId: string | null
+    serverId: string | null
+    senderId: string | null
+  }
+
+  export type ServerMessageCountAggregateOutputType = {
+    id: number
+    content: number
+    createdAt: number
+    channelId: number
+    serverId: number
+    senderId: number
+    _all: number
+  }
+
+
+  export type ServerMessageMinAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    channelId?: true
+    serverId?: true
+    senderId?: true
+  }
+
+  export type ServerMessageMaxAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    channelId?: true
+    serverId?: true
+    senderId?: true
+  }
+
+  export type ServerMessageCountAggregateInputType = {
+    id?: true
+    content?: true
+    createdAt?: true
+    channelId?: true
+    serverId?: true
+    senderId?: true
+    _all?: true
+  }
+
+  export type ServerMessageAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerMessage to aggregate.
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerMessages to fetch.
+     */
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ServerMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ServerMessages
+    **/
+    _count?: true | ServerMessageCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ServerMessageMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ServerMessageMaxAggregateInputType
+  }
+
+  export type GetServerMessageAggregateType<T extends ServerMessageAggregateArgs> = {
+        [P in keyof T & keyof AggregateServerMessage]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateServerMessage[P]>
+      : GetScalarType<T[P], AggregateServerMessage[P]>
+  }
+
+
+
+
+  export type ServerMessageGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerMessageWhereInput
+    orderBy?: ServerMessageOrderByWithAggregationInput | ServerMessageOrderByWithAggregationInput[]
+    by: ServerMessageScalarFieldEnum[] | ServerMessageScalarFieldEnum
+    having?: ServerMessageScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ServerMessageCountAggregateInputType | true
+    _min?: ServerMessageMinAggregateInputType
+    _max?: ServerMessageMaxAggregateInputType
+  }
+
+  export type ServerMessageGroupByOutputType = {
+    id: string
+    content: string
+    createdAt: Date
+    channelId: string | null
+    serverId: string
+    senderId: string
+    _count: ServerMessageCountAggregateOutputType | null
+    _min: ServerMessageMinAggregateOutputType | null
+    _max: ServerMessageMaxAggregateOutputType | null
+  }
+
+  type GetServerMessageGroupByPayload<T extends ServerMessageGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ServerMessageGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ServerMessageGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ServerMessageGroupByOutputType[P]>
+            : GetScalarType<T[P], ServerMessageGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ServerMessageSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    channelId?: boolean
+    serverId?: boolean
+    senderId?: boolean
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverMessage"]>
+
+  export type ServerMessageSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    channelId?: boolean
+    serverId?: boolean
+    senderId?: boolean
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverMessage"]>
+
+  export type ServerMessageSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    channelId?: boolean
+    serverId?: boolean
+    senderId?: boolean
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverMessage"]>
+
+  export type ServerMessageSelectScalar = {
+    id?: boolean
+    content?: boolean
+    createdAt?: boolean
+    channelId?: boolean
+    serverId?: boolean
+    senderId?: boolean
+  }
+
+  export type ServerMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "createdAt" | "channelId" | "serverId" | "senderId", ExtArgs["result"]["serverMessage"]>
+  export type ServerMessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }
+  export type ServerMessageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }
+  export type ServerMessageIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerMessage$channelArgs<ExtArgs>
+    sender?: boolean | UserDefaultArgs<ExtArgs>
+    server?: boolean | ChatServerDefaultArgs<ExtArgs>
+  }
+
+  export type $ServerMessagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ServerMessage"
+    objects: {
+      channel: Prisma.$ServerChannelPayload<ExtArgs> | null
+      sender: Prisma.$UserPayload<ExtArgs>
+      server: Prisma.$ChatServerPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      content: string
+      createdAt: Date
+      channelId: string | null
+      serverId: string
+      senderId: string
+    }, ExtArgs["result"]["serverMessage"]>
+    composites: {}
+  }
+
+  type ServerMessageGetPayload<S extends boolean | null | undefined | ServerMessageDefaultArgs> = $Result.GetResult<Prisma.$ServerMessagePayload, S>
+
+  type ServerMessageCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ServerMessageFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ServerMessageCountAggregateInputType | true
+    }
+
+  export interface ServerMessageDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ServerMessage'], meta: { name: 'ServerMessage' } }
+    /**
+     * Find zero or one ServerMessage that matches the filter.
+     * @param {ServerMessageFindUniqueArgs} args - Arguments to find a ServerMessage
+     * @example
+     * // Get one ServerMessage
+     * const serverMessage = await prisma.serverMessage.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ServerMessageFindUniqueArgs>(args: SelectSubset<T, ServerMessageFindUniqueArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ServerMessage that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ServerMessageFindUniqueOrThrowArgs} args - Arguments to find a ServerMessage
+     * @example
+     * // Get one ServerMessage
+     * const serverMessage = await prisma.serverMessage.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ServerMessageFindUniqueOrThrowArgs>(args: SelectSubset<T, ServerMessageFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerMessage that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageFindFirstArgs} args - Arguments to find a ServerMessage
+     * @example
+     * // Get one ServerMessage
+     * const serverMessage = await prisma.serverMessage.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ServerMessageFindFirstArgs>(args?: SelectSubset<T, ServerMessageFindFirstArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerMessage that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageFindFirstOrThrowArgs} args - Arguments to find a ServerMessage
+     * @example
+     * // Get one ServerMessage
+     * const serverMessage = await prisma.serverMessage.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ServerMessageFindFirstOrThrowArgs>(args?: SelectSubset<T, ServerMessageFindFirstOrThrowArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ServerMessages that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ServerMessages
+     * const serverMessages = await prisma.serverMessage.findMany()
+     * 
+     * // Get first 10 ServerMessages
+     * const serverMessages = await prisma.serverMessage.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const serverMessageWithIdOnly = await prisma.serverMessage.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ServerMessageFindManyArgs>(args?: SelectSubset<T, ServerMessageFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ServerMessage.
+     * @param {ServerMessageCreateArgs} args - Arguments to create a ServerMessage.
+     * @example
+     * // Create one ServerMessage
+     * const ServerMessage = await prisma.serverMessage.create({
+     *   data: {
+     *     // ... data to create a ServerMessage
+     *   }
+     * })
+     * 
+     */
+    create<T extends ServerMessageCreateArgs>(args: SelectSubset<T, ServerMessageCreateArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ServerMessages.
+     * @param {ServerMessageCreateManyArgs} args - Arguments to create many ServerMessages.
+     * @example
+     * // Create many ServerMessages
+     * const serverMessage = await prisma.serverMessage.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ServerMessageCreateManyArgs>(args?: SelectSubset<T, ServerMessageCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ServerMessages and returns the data saved in the database.
+     * @param {ServerMessageCreateManyAndReturnArgs} args - Arguments to create many ServerMessages.
+     * @example
+     * // Create many ServerMessages
+     * const serverMessage = await prisma.serverMessage.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ServerMessages and only return the `id`
+     * const serverMessageWithIdOnly = await prisma.serverMessage.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ServerMessageCreateManyAndReturnArgs>(args?: SelectSubset<T, ServerMessageCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ServerMessage.
+     * @param {ServerMessageDeleteArgs} args - Arguments to delete one ServerMessage.
+     * @example
+     * // Delete one ServerMessage
+     * const ServerMessage = await prisma.serverMessage.delete({
+     *   where: {
+     *     // ... filter to delete one ServerMessage
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ServerMessageDeleteArgs>(args: SelectSubset<T, ServerMessageDeleteArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ServerMessage.
+     * @param {ServerMessageUpdateArgs} args - Arguments to update one ServerMessage.
+     * @example
+     * // Update one ServerMessage
+     * const serverMessage = await prisma.serverMessage.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ServerMessageUpdateArgs>(args: SelectSubset<T, ServerMessageUpdateArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ServerMessages.
+     * @param {ServerMessageDeleteManyArgs} args - Arguments to filter ServerMessages to delete.
+     * @example
+     * // Delete a few ServerMessages
+     * const { count } = await prisma.serverMessage.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ServerMessageDeleteManyArgs>(args?: SelectSubset<T, ServerMessageDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerMessages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ServerMessages
+     * const serverMessage = await prisma.serverMessage.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ServerMessageUpdateManyArgs>(args: SelectSubset<T, ServerMessageUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerMessages and returns the data updated in the database.
+     * @param {ServerMessageUpdateManyAndReturnArgs} args - Arguments to update many ServerMessages.
+     * @example
+     * // Update many ServerMessages
+     * const serverMessage = await prisma.serverMessage.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ServerMessages and only return the `id`
+     * const serverMessageWithIdOnly = await prisma.serverMessage.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ServerMessageUpdateManyAndReturnArgs>(args: SelectSubset<T, ServerMessageUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ServerMessage.
+     * @param {ServerMessageUpsertArgs} args - Arguments to update or create a ServerMessage.
+     * @example
+     * // Update or create a ServerMessage
+     * const serverMessage = await prisma.serverMessage.upsert({
+     *   create: {
+     *     // ... data to create a ServerMessage
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ServerMessage we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ServerMessageUpsertArgs>(args: SelectSubset<T, ServerMessageUpsertArgs<ExtArgs>>): Prisma__ServerMessageClient<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ServerMessages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageCountArgs} args - Arguments to filter ServerMessages to count.
+     * @example
+     * // Count the number of ServerMessages
+     * const count = await prisma.serverMessage.count({
+     *   where: {
+     *     // ... the filter for the ServerMessages we want to count
+     *   }
+     * })
+    **/
+    count<T extends ServerMessageCountArgs>(
+      args?: Subset<T, ServerMessageCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ServerMessageCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ServerMessage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ServerMessageAggregateArgs>(args: Subset<T, ServerMessageAggregateArgs>): Prisma.PrismaPromise<GetServerMessageAggregateType<T>>
+
+    /**
+     * Group by ServerMessage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerMessageGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ServerMessageGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ServerMessageGroupByArgs['orderBy'] }
+        : { orderBy?: ServerMessageGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ServerMessageGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetServerMessageGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ServerMessage model
+   */
+  readonly fields: ServerMessageFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ServerMessage.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ServerMessageClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    channel<T extends ServerMessage$channelArgs<ExtArgs> = {}>(args?: Subset<T, ServerMessage$channelArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    sender<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    server<T extends ChatServerDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ChatServerDefaultArgs<ExtArgs>>): Prisma__ChatServerClient<$Result.GetResult<Prisma.$ChatServerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ServerMessage model
+   */
+  interface ServerMessageFieldRefs {
+    readonly id: FieldRef<"ServerMessage", 'String'>
+    readonly content: FieldRef<"ServerMessage", 'String'>
+    readonly createdAt: FieldRef<"ServerMessage", 'DateTime'>
+    readonly channelId: FieldRef<"ServerMessage", 'String'>
+    readonly serverId: FieldRef<"ServerMessage", 'String'>
+    readonly senderId: FieldRef<"ServerMessage", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ServerMessage findUnique
+   */
+  export type ServerMessageFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerMessage to fetch.
+     */
+    where: ServerMessageWhereUniqueInput
+  }
+
+  /**
+   * ServerMessage findUniqueOrThrow
+   */
+  export type ServerMessageFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerMessage to fetch.
+     */
+    where: ServerMessageWhereUniqueInput
+  }
+
+  /**
+   * ServerMessage findFirst
+   */
+  export type ServerMessageFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerMessage to fetch.
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerMessages to fetch.
+     */
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerMessages.
+     */
+    cursor?: ServerMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerMessages.
+     */
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
+  }
+
+  /**
+   * ServerMessage findFirstOrThrow
+   */
+  export type ServerMessageFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerMessage to fetch.
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerMessages to fetch.
+     */
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerMessages.
+     */
+    cursor?: ServerMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerMessages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerMessages.
+     */
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
+  }
+
+  /**
+   * ServerMessage findMany
+   */
+  export type ServerMessageFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerMessages to fetch.
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerMessages to fetch.
+     */
+    orderBy?: ServerMessageOrderByWithRelationInput | ServerMessageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ServerMessages.
+     */
+    cursor?: ServerMessageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerMessages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerMessages.
+     */
+    skip?: number
+    distinct?: ServerMessageScalarFieldEnum | ServerMessageScalarFieldEnum[]
+  }
+
+  /**
+   * ServerMessage create
+   */
+  export type ServerMessageCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ServerMessage.
+     */
+    data: XOR<ServerMessageCreateInput, ServerMessageUncheckedCreateInput>
+  }
+
+  /**
+   * ServerMessage createMany
+   */
+  export type ServerMessageCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ServerMessages.
+     */
+    data: ServerMessageCreateManyInput | ServerMessageCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ServerMessage createManyAndReturn
+   */
+  export type ServerMessageCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * The data used to create many ServerMessages.
+     */
+    data: ServerMessageCreateManyInput | ServerMessageCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerMessage update
+   */
+  export type ServerMessageUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ServerMessage.
+     */
+    data: XOR<ServerMessageUpdateInput, ServerMessageUncheckedUpdateInput>
+    /**
+     * Choose, which ServerMessage to update.
+     */
+    where: ServerMessageWhereUniqueInput
+  }
+
+  /**
+   * ServerMessage updateMany
+   */
+  export type ServerMessageUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ServerMessages.
+     */
+    data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerMessages to update
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * Limit how many ServerMessages to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerMessage updateManyAndReturn
+   */
+  export type ServerMessageUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * The data used to update ServerMessages.
+     */
+    data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerMessages to update
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * Limit how many ServerMessages to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerMessage upsert
+   */
+  export type ServerMessageUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ServerMessage to update in case it exists.
+     */
+    where: ServerMessageWhereUniqueInput
+    /**
+     * In case the ServerMessage found by the `where` argument doesn't exist, create a new ServerMessage with this data.
+     */
+    create: XOR<ServerMessageCreateInput, ServerMessageUncheckedCreateInput>
+    /**
+     * In case the ServerMessage was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ServerMessageUpdateInput, ServerMessageUncheckedUpdateInput>
+  }
+
+  /**
+   * ServerMessage delete
+   */
+  export type ServerMessageDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+    /**
+     * Filter which ServerMessage to delete.
+     */
+    where: ServerMessageWhereUniqueInput
+  }
+
+  /**
+   * ServerMessage deleteMany
+   */
+  export type ServerMessageDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerMessages to delete
+     */
+    where?: ServerMessageWhereInput
+    /**
+     * Limit how many ServerMessages to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerMessage.channel
+   */
+  export type ServerMessage$channelArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannel
+     */
+    select?: ServerChannelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannel
+     */
+    omit?: ServerChannelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelInclude<ExtArgs> | null
+    where?: ServerChannelWhereInput
+  }
+
+  /**
+   * ServerMessage without action
+   */
+  export type ServerMessageDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerMessage
+     */
+    select?: ServerMessageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerMessage
+     */
+    omit?: ServerMessageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerMessageInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -14405,6 +16923,29 @@ export namespace Prisma {
   };
 
   export type ServerMemberScalarFieldEnum = (typeof ServerMemberScalarFieldEnum)[keyof typeof ServerMemberScalarFieldEnum]
+
+
+  export const ServerChannelScalarFieldEnum: {
+    id: 'id',
+    serverId: 'serverId',
+    name: 'name',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ServerChannelScalarFieldEnum = (typeof ServerChannelScalarFieldEnum)[keyof typeof ServerChannelScalarFieldEnum]
+
+
+  export const ServerMessageScalarFieldEnum: {
+    id: 'id',
+    content: 'content',
+    createdAt: 'createdAt',
+    channelId: 'channelId',
+    serverId: 'serverId',
+    senderId: 'senderId'
+  };
+
+  export type ServerMessageScalarFieldEnum = (typeof ServerMessageScalarFieldEnum)[keyof typeof ServerMessageScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -14761,6 +17302,7 @@ export namespace Prisma {
     friendOf?: FriendshipListRelationFilter
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
+    sentServerMessages?: ServerMessageListRelationFilter
     sentDirectMessages?: DirectMessageListRelationFilter
     receivedFriendRequests?: FriendRequestListRelationFilter
     serverMemberships?: ServerMemberListRelationFilter
@@ -14784,6 +17326,7 @@ export namespace Prisma {
     friendOf?: FriendshipOrderByRelationAggregateInput
     notifications?: NotificationOrderByRelationAggregateInput
     posts?: PostOrderByRelationAggregateInput
+    sentServerMessages?: ServerMessageOrderByRelationAggregateInput
     sentDirectMessages?: DirectMessageOrderByRelationAggregateInput
     receivedFriendRequests?: FriendRequestOrderByRelationAggregateInput
     serverMemberships?: ServerMemberOrderByRelationAggregateInput
@@ -14810,6 +17353,7 @@ export namespace Prisma {
     friendOf?: FriendshipListRelationFilter
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
+    sentServerMessages?: ServerMessageListRelationFilter
     sentDirectMessages?: DirectMessageListRelationFilter
     receivedFriendRequests?: FriendRequestListRelationFilter
     serverMemberships?: ServerMemberListRelationFilter
@@ -15152,7 +17696,9 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string
     updatedAt?: DateTimeFilter<"ChatServer"> | Date | string
     createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    channels?: ServerChannelListRelationFilter
     members?: ServerMemberListRelationFilter
+    messages?: ServerMessageListRelationFilter
   }
 
   export type ChatServerOrderByWithRelationInput = {
@@ -15164,7 +17710,9 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     createdBy?: UserOrderByWithRelationInput
+    channels?: ServerChannelOrderByRelationAggregateInput
     members?: ServerMemberOrderByRelationAggregateInput
+    messages?: ServerMessageOrderByRelationAggregateInput
   }
 
   export type ChatServerWhereUniqueInput = Prisma.AtLeast<{
@@ -15179,7 +17727,9 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string
     updatedAt?: DateTimeFilter<"ChatServer"> | Date | string
     createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    channels?: ServerChannelListRelationFilter
     members?: ServerMemberListRelationFilter
+    messages?: ServerMessageListRelationFilter
   }, "id" | "inviteCode">
 
   export type ChatServerOrderByWithAggregationInput = {
@@ -15265,6 +17815,131 @@ export namespace Prisma {
     userId?: StringWithAggregatesFilter<"ServerMember"> | string
     role?: EnumServerMemberRoleWithAggregatesFilter<"ServerMember"> | $Enums.ServerMemberRole
     createdAt?: DateTimeWithAggregatesFilter<"ServerMember"> | Date | string
+  }
+
+  export type ServerChannelWhereInput = {
+    AND?: ServerChannelWhereInput | ServerChannelWhereInput[]
+    OR?: ServerChannelWhereInput[]
+    NOT?: ServerChannelWhereInput | ServerChannelWhereInput[]
+    id?: StringFilter<"ServerChannel"> | string
+    serverId?: StringFilter<"ServerChannel"> | string
+    name?: StringFilter<"ServerChannel"> | string
+    createdAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    updatedAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
+    messages?: ServerMessageListRelationFilter
+  }
+
+  export type ServerChannelOrderByWithRelationInput = {
+    id?: SortOrder
+    serverId?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    server?: ChatServerOrderByWithRelationInput
+    messages?: ServerMessageOrderByRelationAggregateInput
+  }
+
+  export type ServerChannelWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    serverId_name?: ServerChannelServerIdNameCompoundUniqueInput
+    AND?: ServerChannelWhereInput | ServerChannelWhereInput[]
+    OR?: ServerChannelWhereInput[]
+    NOT?: ServerChannelWhereInput | ServerChannelWhereInput[]
+    serverId?: StringFilter<"ServerChannel"> | string
+    name?: StringFilter<"ServerChannel"> | string
+    createdAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    updatedAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
+    messages?: ServerMessageListRelationFilter
+  }, "id" | "serverId_name">
+
+  export type ServerChannelOrderByWithAggregationInput = {
+    id?: SortOrder
+    serverId?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ServerChannelCountOrderByAggregateInput
+    _max?: ServerChannelMaxOrderByAggregateInput
+    _min?: ServerChannelMinOrderByAggregateInput
+  }
+
+  export type ServerChannelScalarWhereWithAggregatesInput = {
+    AND?: ServerChannelScalarWhereWithAggregatesInput | ServerChannelScalarWhereWithAggregatesInput[]
+    OR?: ServerChannelScalarWhereWithAggregatesInput[]
+    NOT?: ServerChannelScalarWhereWithAggregatesInput | ServerChannelScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ServerChannel"> | string
+    serverId?: StringWithAggregatesFilter<"ServerChannel"> | string
+    name?: StringWithAggregatesFilter<"ServerChannel"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"ServerChannel"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"ServerChannel"> | Date | string
+  }
+
+  export type ServerMessageWhereInput = {
+    AND?: ServerMessageWhereInput | ServerMessageWhereInput[]
+    OR?: ServerMessageWhereInput[]
+    NOT?: ServerMessageWhereInput | ServerMessageWhereInput[]
+    id?: StringFilter<"ServerMessage"> | string
+    content?: StringFilter<"ServerMessage"> | string
+    createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    channelId?: StringNullableFilter<"ServerMessage"> | string | null
+    serverId?: StringFilter<"ServerMessage"> | string
+    senderId?: StringFilter<"ServerMessage"> | string
+    channel?: XOR<ServerChannelNullableScalarRelationFilter, ServerChannelWhereInput> | null
+    sender?: XOR<UserScalarRelationFilter, UserWhereInput>
+    server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
+  }
+
+  export type ServerMessageOrderByWithRelationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    channelId?: SortOrderInput | SortOrder
+    serverId?: SortOrder
+    senderId?: SortOrder
+    channel?: ServerChannelOrderByWithRelationInput
+    sender?: UserOrderByWithRelationInput
+    server?: ChatServerOrderByWithRelationInput
+  }
+
+  export type ServerMessageWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ServerMessageWhereInput | ServerMessageWhereInput[]
+    OR?: ServerMessageWhereInput[]
+    NOT?: ServerMessageWhereInput | ServerMessageWhereInput[]
+    content?: StringFilter<"ServerMessage"> | string
+    createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    channelId?: StringNullableFilter<"ServerMessage"> | string | null
+    serverId?: StringFilter<"ServerMessage"> | string
+    senderId?: StringFilter<"ServerMessage"> | string
+    channel?: XOR<ServerChannelNullableScalarRelationFilter, ServerChannelWhereInput> | null
+    sender?: XOR<UserScalarRelationFilter, UserWhereInput>
+    server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
+  }, "id">
+
+  export type ServerMessageOrderByWithAggregationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    channelId?: SortOrderInput | SortOrder
+    serverId?: SortOrder
+    senderId?: SortOrder
+    _count?: ServerMessageCountOrderByAggregateInput
+    _max?: ServerMessageMaxOrderByAggregateInput
+    _min?: ServerMessageMinOrderByAggregateInput
+  }
+
+  export type ServerMessageScalarWhereWithAggregatesInput = {
+    AND?: ServerMessageScalarWhereWithAggregatesInput | ServerMessageScalarWhereWithAggregatesInput[]
+    OR?: ServerMessageScalarWhereWithAggregatesInput[]
+    NOT?: ServerMessageScalarWhereWithAggregatesInput | ServerMessageScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ServerMessage"> | string
+    content?: StringWithAggregatesFilter<"ServerMessage"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"ServerMessage"> | Date | string
+    channelId?: StringNullableWithAggregatesFilter<"ServerMessage"> | string | null
+    serverId?: StringWithAggregatesFilter<"ServerMessage"> | string
+    senderId?: StringWithAggregatesFilter<"ServerMessage"> | string
   }
 
   export type PostCreateInput = {
@@ -15494,6 +18169,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -15517,6 +18193,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -15540,6 +18217,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -15563,6 +18241,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -15894,7 +18573,9 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     createdBy: UserCreateNestedOneWithoutCreatedServersInput
+    channels?: ServerChannelCreateNestedManyWithoutServerInput
     members?: ServerMemberCreateNestedManyWithoutServerInput
+    messages?: ServerMessageCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerUncheckedCreateInput = {
@@ -15905,7 +18586,9 @@ export namespace Prisma {
     createdById: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    channels?: ServerChannelUncheckedCreateNestedManyWithoutServerInput
     members?: ServerMemberUncheckedCreateNestedManyWithoutServerInput
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerUpdateInput = {
@@ -15916,7 +18599,9 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdBy?: UserUpdateOneRequiredWithoutCreatedServersNestedInput
+    channels?: ServerChannelUpdateManyWithoutServerNestedInput
     members?: ServerMemberUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUpdateManyWithoutServerNestedInput
   }
 
   export type ChatServerUncheckedUpdateInput = {
@@ -15927,7 +18612,9 @@ export namespace Prisma {
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channels?: ServerChannelUncheckedUpdateManyWithoutServerNestedInput
     members?: ServerMemberUncheckedUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUncheckedUpdateManyWithoutServerNestedInput
   }
 
   export type ChatServerCreateManyInput = {
@@ -16011,6 +18698,125 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelCreateInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    server: ChatServerCreateNestedOneWithoutChannelsInput
+    messages?: ServerMessageCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelUncheckedCreateInput = {
+    id?: string
+    serverId: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    server?: ChatServerUpdateOneRequiredWithoutChannelsNestedInput
+    messages?: ServerMessageUpdateManyWithoutChannelNestedInput
+  }
+
+  export type ServerChannelUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: ServerMessageUncheckedUpdateManyWithoutChannelNestedInput
+  }
+
+  export type ServerChannelCreateManyInput = {
+    id?: string
+    serverId: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ServerChannelUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerMessageCreateInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channel?: ServerChannelCreateNestedOneWithoutMessagesInput
+    sender: UserCreateNestedOneWithoutSentServerMessagesInput
+    server: ChatServerCreateNestedOneWithoutMessagesInput
+  }
+
+  export type ServerMessageUncheckedCreateInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    serverId: string
+    senderId: string
+  }
+
+  export type ServerMessageUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
+    sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
+    server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
+  }
+
+  export type ServerMessageUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    serverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerMessageCreateManyInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    serverId: string
+    senderId: string
+  }
+
+  export type ServerMessageUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerMessageUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    serverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -16331,6 +19137,12 @@ export namespace Prisma {
     none?: PostWhereInput
   }
 
+  export type ServerMessageListRelationFilter = {
+    every?: ServerMessageWhereInput
+    some?: ServerMessageWhereInput
+    none?: ServerMessageWhereInput
+  }
+
   export type FriendRequestListRelationFilter = {
     every?: FriendRequestWhereInput
     some?: FriendRequestWhereInput
@@ -16370,6 +19182,10 @@ export namespace Prisma {
   }
 
   export type PostOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ServerMessageOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -16609,6 +19425,16 @@ export namespace Prisma {
     senderId?: SortOrder
   }
 
+  export type ServerChannelListRelationFilter = {
+    every?: ServerChannelWhereInput
+    some?: ServerChannelWhereInput
+    none?: ServerChannelWhereInput
+  }
+
+  export type ServerChannelOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type ChatServerCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -16688,6 +19514,67 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumServerMemberRoleFilter<$PrismaModel>
     _max?: NestedEnumServerMemberRoleFilter<$PrismaModel>
+  }
+
+  export type ServerChannelServerIdNameCompoundUniqueInput = {
+    serverId: string
+    name: string
+  }
+
+  export type ServerChannelCountOrderByAggregateInput = {
+    id?: SortOrder
+    serverId?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ServerChannelMaxOrderByAggregateInput = {
+    id?: SortOrder
+    serverId?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ServerChannelMinOrderByAggregateInput = {
+    id?: SortOrder
+    serverId?: SortOrder
+    name?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ServerChannelNullableScalarRelationFilter = {
+    is?: ServerChannelWhereInput | null
+    isNot?: ServerChannelWhereInput | null
+  }
+
+  export type ServerMessageCountOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    channelId?: SortOrder
+    serverId?: SortOrder
+    senderId?: SortOrder
+  }
+
+  export type ServerMessageMaxOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    channelId?: SortOrder
+    serverId?: SortOrder
+    senderId?: SortOrder
+  }
+
+  export type ServerMessageMinOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    createdAt?: SortOrder
+    channelId?: SortOrder
+    serverId?: SortOrder
+    senderId?: SortOrder
   }
 
   export type UserCreateNestedOneWithoutPostsInput = {
@@ -16809,6 +19696,13 @@ export namespace Prisma {
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
   }
 
+  export type ServerMessageCreateNestedManyWithoutSenderInput = {
+    create?: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput> | ServerMessageCreateWithoutSenderInput[] | ServerMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutSenderInput | ServerMessageCreateOrConnectWithoutSenderInput[]
+    createMany?: ServerMessageCreateManySenderInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
   export type DirectMessageCreateNestedManyWithoutSenderInput = {
     create?: XOR<DirectMessageCreateWithoutSenderInput, DirectMessageUncheckedCreateWithoutSenderInput> | DirectMessageCreateWithoutSenderInput[] | DirectMessageUncheckedCreateWithoutSenderInput[]
     connectOrCreate?: DirectMessageCreateOrConnectWithoutSenderInput | DirectMessageCreateOrConnectWithoutSenderInput[]
@@ -16891,6 +19785,13 @@ export namespace Prisma {
     connectOrCreate?: PostCreateOrConnectWithoutCreatedByInput | PostCreateOrConnectWithoutCreatedByInput[]
     createMany?: PostCreateManyCreatedByInputEnvelope
     connect?: PostWhereUniqueInput | PostWhereUniqueInput[]
+  }
+
+  export type ServerMessageUncheckedCreateNestedManyWithoutSenderInput = {
+    create?: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput> | ServerMessageCreateWithoutSenderInput[] | ServerMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutSenderInput | ServerMessageCreateOrConnectWithoutSenderInput[]
+    createMany?: ServerMessageCreateManySenderInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
   }
 
   export type DirectMessageUncheckedCreateNestedManyWithoutSenderInput = {
@@ -17028,6 +19929,20 @@ export namespace Prisma {
     update?: PostUpdateWithWhereUniqueWithoutCreatedByInput | PostUpdateWithWhereUniqueWithoutCreatedByInput[]
     updateMany?: PostUpdateManyWithWhereWithoutCreatedByInput | PostUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
+  }
+
+  export type ServerMessageUpdateManyWithoutSenderNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput> | ServerMessageCreateWithoutSenderInput[] | ServerMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutSenderInput | ServerMessageCreateOrConnectWithoutSenderInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutSenderInput | ServerMessageUpsertWithWhereUniqueWithoutSenderInput[]
+    createMany?: ServerMessageCreateManySenderInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutSenderInput | ServerMessageUpdateWithWhereUniqueWithoutSenderInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutSenderInput | ServerMessageUpdateManyWithWhereWithoutSenderInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
   }
 
   export type DirectMessageUpdateManyWithoutSenderNestedInput = {
@@ -17196,6 +20111,20 @@ export namespace Prisma {
     update?: PostUpdateWithWhereUniqueWithoutCreatedByInput | PostUpdateWithWhereUniqueWithoutCreatedByInput[]
     updateMany?: PostUpdateManyWithWhereWithoutCreatedByInput | PostUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: PostScalarWhereInput | PostScalarWhereInput[]
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutSenderNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput> | ServerMessageCreateWithoutSenderInput[] | ServerMessageUncheckedCreateWithoutSenderInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutSenderInput | ServerMessageCreateOrConnectWithoutSenderInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutSenderInput | ServerMessageUpsertWithWhereUniqueWithoutSenderInput[]
+    createMany?: ServerMessageCreateManySenderInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutSenderInput | ServerMessageUpdateWithWhereUniqueWithoutSenderInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutSenderInput | ServerMessageUpdateManyWithWhereWithoutSenderInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
   }
 
   export type DirectMessageUncheckedUpdateManyWithoutSenderNestedInput = {
@@ -17438,11 +20367,32 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type ServerChannelCreateNestedManyWithoutServerInput = {
+    create?: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput> | ServerChannelCreateWithoutServerInput[] | ServerChannelUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutServerInput | ServerChannelCreateOrConnectWithoutServerInput[]
+    createMany?: ServerChannelCreateManyServerInputEnvelope
+    connect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+  }
+
   export type ServerMemberCreateNestedManyWithoutServerInput = {
     create?: XOR<ServerMemberCreateWithoutServerInput, ServerMemberUncheckedCreateWithoutServerInput> | ServerMemberCreateWithoutServerInput[] | ServerMemberUncheckedCreateWithoutServerInput[]
     connectOrCreate?: ServerMemberCreateOrConnectWithoutServerInput | ServerMemberCreateOrConnectWithoutServerInput[]
     createMany?: ServerMemberCreateManyServerInputEnvelope
     connect?: ServerMemberWhereUniqueInput | ServerMemberWhereUniqueInput[]
+  }
+
+  export type ServerMessageCreateNestedManyWithoutServerInput = {
+    create?: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput> | ServerMessageCreateWithoutServerInput[] | ServerMessageUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutServerInput | ServerMessageCreateOrConnectWithoutServerInput[]
+    createMany?: ServerMessageCreateManyServerInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
+  export type ServerChannelUncheckedCreateNestedManyWithoutServerInput = {
+    create?: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput> | ServerChannelCreateWithoutServerInput[] | ServerChannelUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutServerInput | ServerChannelCreateOrConnectWithoutServerInput[]
+    createMany?: ServerChannelCreateManyServerInputEnvelope
+    connect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
   }
 
   export type ServerMemberUncheckedCreateNestedManyWithoutServerInput = {
@@ -17452,12 +20402,33 @@ export namespace Prisma {
     connect?: ServerMemberWhereUniqueInput | ServerMemberWhereUniqueInput[]
   }
 
+  export type ServerMessageUncheckedCreateNestedManyWithoutServerInput = {
+    create?: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput> | ServerMessageCreateWithoutServerInput[] | ServerMessageUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutServerInput | ServerMessageCreateOrConnectWithoutServerInput[]
+    createMany?: ServerMessageCreateManyServerInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
   export type UserUpdateOneRequiredWithoutCreatedServersNestedInput = {
     create?: XOR<UserCreateWithoutCreatedServersInput, UserUncheckedCreateWithoutCreatedServersInput>
     connectOrCreate?: UserCreateOrConnectWithoutCreatedServersInput
     upsert?: UserUpsertWithoutCreatedServersInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCreatedServersInput, UserUpdateWithoutCreatedServersInput>, UserUncheckedUpdateWithoutCreatedServersInput>
+  }
+
+  export type ServerChannelUpdateManyWithoutServerNestedInput = {
+    create?: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput> | ServerChannelCreateWithoutServerInput[] | ServerChannelUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutServerInput | ServerChannelCreateOrConnectWithoutServerInput[]
+    upsert?: ServerChannelUpsertWithWhereUniqueWithoutServerInput | ServerChannelUpsertWithWhereUniqueWithoutServerInput[]
+    createMany?: ServerChannelCreateManyServerInputEnvelope
+    set?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    disconnect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    delete?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    connect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    update?: ServerChannelUpdateWithWhereUniqueWithoutServerInput | ServerChannelUpdateWithWhereUniqueWithoutServerInput[]
+    updateMany?: ServerChannelUpdateManyWithWhereWithoutServerInput | ServerChannelUpdateManyWithWhereWithoutServerInput[]
+    deleteMany?: ServerChannelScalarWhereInput | ServerChannelScalarWhereInput[]
   }
 
   export type ServerMemberUpdateManyWithoutServerNestedInput = {
@@ -17474,6 +20445,34 @@ export namespace Prisma {
     deleteMany?: ServerMemberScalarWhereInput | ServerMemberScalarWhereInput[]
   }
 
+  export type ServerMessageUpdateManyWithoutServerNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput> | ServerMessageCreateWithoutServerInput[] | ServerMessageUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutServerInput | ServerMessageCreateOrConnectWithoutServerInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutServerInput | ServerMessageUpsertWithWhereUniqueWithoutServerInput[]
+    createMany?: ServerMessageCreateManyServerInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutServerInput | ServerMessageUpdateWithWhereUniqueWithoutServerInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutServerInput | ServerMessageUpdateManyWithWhereWithoutServerInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+  }
+
+  export type ServerChannelUncheckedUpdateManyWithoutServerNestedInput = {
+    create?: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput> | ServerChannelCreateWithoutServerInput[] | ServerChannelUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutServerInput | ServerChannelCreateOrConnectWithoutServerInput[]
+    upsert?: ServerChannelUpsertWithWhereUniqueWithoutServerInput | ServerChannelUpsertWithWhereUniqueWithoutServerInput[]
+    createMany?: ServerChannelCreateManyServerInputEnvelope
+    set?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    disconnect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    delete?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    connect?: ServerChannelWhereUniqueInput | ServerChannelWhereUniqueInput[]
+    update?: ServerChannelUpdateWithWhereUniqueWithoutServerInput | ServerChannelUpdateWithWhereUniqueWithoutServerInput[]
+    updateMany?: ServerChannelUpdateManyWithWhereWithoutServerInput | ServerChannelUpdateManyWithWhereWithoutServerInput[]
+    deleteMany?: ServerChannelScalarWhereInput | ServerChannelScalarWhereInput[]
+  }
+
   export type ServerMemberUncheckedUpdateManyWithoutServerNestedInput = {
     create?: XOR<ServerMemberCreateWithoutServerInput, ServerMemberUncheckedCreateWithoutServerInput> | ServerMemberCreateWithoutServerInput[] | ServerMemberUncheckedCreateWithoutServerInput[]
     connectOrCreate?: ServerMemberCreateOrConnectWithoutServerInput | ServerMemberCreateOrConnectWithoutServerInput[]
@@ -17486,6 +20485,20 @@ export namespace Prisma {
     update?: ServerMemberUpdateWithWhereUniqueWithoutServerInput | ServerMemberUpdateWithWhereUniqueWithoutServerInput[]
     updateMany?: ServerMemberUpdateManyWithWhereWithoutServerInput | ServerMemberUpdateManyWithWhereWithoutServerInput[]
     deleteMany?: ServerMemberScalarWhereInput | ServerMemberScalarWhereInput[]
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutServerNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput> | ServerMessageCreateWithoutServerInput[] | ServerMessageUncheckedCreateWithoutServerInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutServerInput | ServerMessageCreateOrConnectWithoutServerInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutServerInput | ServerMessageUpsertWithWhereUniqueWithoutServerInput[]
+    createMany?: ServerMessageCreateManyServerInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutServerInput | ServerMessageUpdateWithWhereUniqueWithoutServerInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutServerInput | ServerMessageUpdateManyWithWhereWithoutServerInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
   }
 
   export type ChatServerCreateNestedOneWithoutMembersInput = {
@@ -17518,6 +20531,106 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutServerMembershipsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutServerMembershipsInput, UserUpdateWithoutServerMembershipsInput>, UserUncheckedUpdateWithoutServerMembershipsInput>
+  }
+
+  export type ChatServerCreateNestedOneWithoutChannelsInput = {
+    create?: XOR<ChatServerCreateWithoutChannelsInput, ChatServerUncheckedCreateWithoutChannelsInput>
+    connectOrCreate?: ChatServerCreateOrConnectWithoutChannelsInput
+    connect?: ChatServerWhereUniqueInput
+  }
+
+  export type ServerMessageCreateNestedManyWithoutChannelInput = {
+    create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
+    createMany?: ServerMessageCreateManyChannelInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
+  export type ServerMessageUncheckedCreateNestedManyWithoutChannelInput = {
+    create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
+    createMany?: ServerMessageCreateManyChannelInputEnvelope
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
+  export type ChatServerUpdateOneRequiredWithoutChannelsNestedInput = {
+    create?: XOR<ChatServerCreateWithoutChannelsInput, ChatServerUncheckedCreateWithoutChannelsInput>
+    connectOrCreate?: ChatServerCreateOrConnectWithoutChannelsInput
+    upsert?: ChatServerUpsertWithoutChannelsInput
+    connect?: ChatServerWhereUniqueInput
+    update?: XOR<XOR<ChatServerUpdateToOneWithWhereWithoutChannelsInput, ChatServerUpdateWithoutChannelsInput>, ChatServerUncheckedUpdateWithoutChannelsInput>
+  }
+
+  export type ServerMessageUpdateManyWithoutChannelNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutChannelInput | ServerMessageUpsertWithWhereUniqueWithoutChannelInput[]
+    createMany?: ServerMessageCreateManyChannelInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutChannelInput | ServerMessageUpdateWithWhereUniqueWithoutChannelInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutChannelInput | ServerMessageUpdateManyWithWhereWithoutChannelInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutChannelNestedInput = {
+    create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
+    upsert?: ServerMessageUpsertWithWhereUniqueWithoutChannelInput | ServerMessageUpsertWithWhereUniqueWithoutChannelInput[]
+    createMany?: ServerMessageCreateManyChannelInputEnvelope
+    set?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    disconnect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    delete?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+    update?: ServerMessageUpdateWithWhereUniqueWithoutChannelInput | ServerMessageUpdateWithWhereUniqueWithoutChannelInput[]
+    updateMany?: ServerMessageUpdateManyWithWhereWithoutChannelInput | ServerMessageUpdateManyWithWhereWithoutChannelInput[]
+    deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+  }
+
+  export type ServerChannelCreateNestedOneWithoutMessagesInput = {
+    create?: XOR<ServerChannelCreateWithoutMessagesInput, ServerChannelUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutMessagesInput
+    connect?: ServerChannelWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutSentServerMessagesInput = {
+    create?: XOR<UserCreateWithoutSentServerMessagesInput, UserUncheckedCreateWithoutSentServerMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentServerMessagesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ChatServerCreateNestedOneWithoutMessagesInput = {
+    create?: XOR<ChatServerCreateWithoutMessagesInput, ChatServerUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: ChatServerCreateOrConnectWithoutMessagesInput
+    connect?: ChatServerWhereUniqueInput
+  }
+
+  export type ServerChannelUpdateOneWithoutMessagesNestedInput = {
+    create?: XOR<ServerChannelCreateWithoutMessagesInput, ServerChannelUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutMessagesInput
+    upsert?: ServerChannelUpsertWithoutMessagesInput
+    disconnect?: ServerChannelWhereInput | boolean
+    delete?: ServerChannelWhereInput | boolean
+    connect?: ServerChannelWhereUniqueInput
+    update?: XOR<XOR<ServerChannelUpdateToOneWithWhereWithoutMessagesInput, ServerChannelUpdateWithoutMessagesInput>, ServerChannelUncheckedUpdateWithoutMessagesInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutSentServerMessagesNestedInput = {
+    create?: XOR<UserCreateWithoutSentServerMessagesInput, UserUncheckedCreateWithoutSentServerMessagesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSentServerMessagesInput
+    upsert?: UserUpsertWithoutSentServerMessagesInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSentServerMessagesInput, UserUpdateWithoutSentServerMessagesInput>, UserUncheckedUpdateWithoutSentServerMessagesInput>
+  }
+
+  export type ChatServerUpdateOneRequiredWithoutMessagesNestedInput = {
+    create?: XOR<ChatServerCreateWithoutMessagesInput, ChatServerUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: ChatServerCreateOrConnectWithoutMessagesInput
+    upsert?: ChatServerUpsertWithoutMessagesInput
+    connect?: ChatServerWhereUniqueInput
+    update?: XOR<XOR<ChatServerUpdateToOneWithWhereWithoutMessagesInput, ChatServerUpdateWithoutMessagesInput>, ChatServerUncheckedUpdateWithoutMessagesInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -17774,6 +20887,7 @@ export namespace Prisma {
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -17796,6 +20910,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -17834,6 +20949,7 @@ export namespace Prisma {
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -17856,6 +20972,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -17878,6 +20995,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -17900,6 +21018,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -17938,6 +21057,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -17960,6 +21080,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -17983,6 +21104,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -18005,6 +21127,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -18043,6 +21166,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -18065,6 +21189,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -18144,7 +21269,9 @@ export namespace Prisma {
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    channels?: ServerChannelCreateNestedManyWithoutServerInput
     members?: ServerMemberCreateNestedManyWithoutServerInput
+    messages?: ServerMessageCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerUncheckedCreateWithoutCreatedByInput = {
@@ -18154,7 +21281,9 @@ export namespace Prisma {
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    channels?: ServerChannelUncheckedCreateNestedManyWithoutServerInput
     members?: ServerMemberUncheckedCreateNestedManyWithoutServerInput
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerCreateOrConnectWithoutCreatedByInput = {
@@ -18259,6 +21388,32 @@ export namespace Prisma {
 
   export type PostCreateManyCreatedByInputEnvelope = {
     data: PostCreateManyCreatedByInput | PostCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ServerMessageCreateWithoutSenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channel?: ServerChannelCreateNestedOneWithoutMessagesInput
+    server: ChatServerCreateNestedOneWithoutMessagesInput
+  }
+
+  export type ServerMessageUncheckedCreateWithoutSenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    serverId: string
+  }
+
+  export type ServerMessageCreateOrConnectWithoutSenderInput = {
+    where: ServerMessageWhereUniqueInput
+    create: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput>
+  }
+
+  export type ServerMessageCreateManySenderInputEnvelope = {
+    data: ServerMessageCreateManySenderInput | ServerMessageCreateManySenderInput[]
     skipDuplicates?: boolean
   }
 
@@ -18580,6 +21735,34 @@ export namespace Prisma {
     createdById?: StringFilter<"Post"> | string
   }
 
+  export type ServerMessageUpsertWithWhereUniqueWithoutSenderInput = {
+    where: ServerMessageWhereUniqueInput
+    update: XOR<ServerMessageUpdateWithoutSenderInput, ServerMessageUncheckedUpdateWithoutSenderInput>
+    create: XOR<ServerMessageCreateWithoutSenderInput, ServerMessageUncheckedCreateWithoutSenderInput>
+  }
+
+  export type ServerMessageUpdateWithWhereUniqueWithoutSenderInput = {
+    where: ServerMessageWhereUniqueInput
+    data: XOR<ServerMessageUpdateWithoutSenderInput, ServerMessageUncheckedUpdateWithoutSenderInput>
+  }
+
+  export type ServerMessageUpdateManyWithWhereWithoutSenderInput = {
+    where: ServerMessageScalarWhereInput
+    data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyWithoutSenderInput>
+  }
+
+  export type ServerMessageScalarWhereInput = {
+    AND?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+    OR?: ServerMessageScalarWhereInput[]
+    NOT?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+    id?: StringFilter<"ServerMessage"> | string
+    content?: StringFilter<"ServerMessage"> | string
+    createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    channelId?: StringNullableFilter<"ServerMessage"> | string | null
+    serverId?: StringFilter<"ServerMessage"> | string
+    senderId?: StringFilter<"ServerMessage"> | string
+  }
+
   export type DirectMessageUpsertWithWhereUniqueWithoutSenderInput = {
     where: DirectMessageWhereUniqueInput
     update: XOR<DirectMessageUpdateWithoutSenderInput, DirectMessageUncheckedUpdateWithoutSenderInput>
@@ -18737,6 +21920,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
@@ -18759,6 +21943,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
@@ -18786,6 +21971,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -18808,6 +21994,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -18862,6 +22049,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
@@ -18884,6 +22072,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
@@ -18917,6 +22106,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -18939,6 +22129,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -18960,6 +22151,7 @@ export namespace Prisma {
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -18982,6 +22174,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -19009,6 +22202,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -19031,6 +22225,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -19069,6 +22264,7 @@ export namespace Prisma {
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -19091,6 +22287,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -19124,6 +22321,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -19146,6 +22344,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -19191,6 +22390,7 @@ export namespace Prisma {
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -19213,6 +22413,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -19280,6 +22481,7 @@ export namespace Prisma {
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -19302,6 +22504,7 @@ export namespace Prisma {
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -19324,6 +22527,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -19346,6 +22550,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -19374,6 +22579,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
@@ -19396,6 +22602,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
@@ -19433,6 +22640,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -19455,6 +22663,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -19489,6 +22698,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
@@ -19511,6 +22721,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
@@ -19532,6 +22743,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
@@ -19554,6 +22766,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
@@ -19564,6 +22777,32 @@ export namespace Prisma {
   export type UserCreateOrConnectWithoutCreatedServersInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutCreatedServersInput, UserUncheckedCreateWithoutCreatedServersInput>
+  }
+
+  export type ServerChannelCreateWithoutServerInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    messages?: ServerMessageCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelUncheckedCreateWithoutServerInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelCreateOrConnectWithoutServerInput = {
+    where: ServerChannelWhereUniqueInput
+    create: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput>
+  }
+
+  export type ServerChannelCreateManyServerInputEnvelope = {
+    data: ServerChannelCreateManyServerInput | ServerChannelCreateManyServerInput[]
+    skipDuplicates?: boolean
   }
 
   export type ServerMemberCreateWithoutServerInput = {
@@ -19587,6 +22826,32 @@ export namespace Prisma {
 
   export type ServerMemberCreateManyServerInputEnvelope = {
     data: ServerMemberCreateManyServerInput | ServerMemberCreateManyServerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ServerMessageCreateWithoutServerInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channel?: ServerChannelCreateNestedOneWithoutMessagesInput
+    sender: UserCreateNestedOneWithoutSentServerMessagesInput
+  }
+
+  export type ServerMessageUncheckedCreateWithoutServerInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    senderId: string
+  }
+
+  export type ServerMessageCreateOrConnectWithoutServerInput = {
+    where: ServerMessageWhereUniqueInput
+    create: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput>
+  }
+
+  export type ServerMessageCreateManyServerInputEnvelope = {
+    data: ServerMessageCreateManyServerInput | ServerMessageCreateManyServerInput[]
     skipDuplicates?: boolean
   }
 
@@ -19616,6 +22881,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
@@ -19638,11 +22904,39 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ServerChannelUpsertWithWhereUniqueWithoutServerInput = {
+    where: ServerChannelWhereUniqueInput
+    update: XOR<ServerChannelUpdateWithoutServerInput, ServerChannelUncheckedUpdateWithoutServerInput>
+    create: XOR<ServerChannelCreateWithoutServerInput, ServerChannelUncheckedCreateWithoutServerInput>
+  }
+
+  export type ServerChannelUpdateWithWhereUniqueWithoutServerInput = {
+    where: ServerChannelWhereUniqueInput
+    data: XOR<ServerChannelUpdateWithoutServerInput, ServerChannelUncheckedUpdateWithoutServerInput>
+  }
+
+  export type ServerChannelUpdateManyWithWhereWithoutServerInput = {
+    where: ServerChannelScalarWhereInput
+    data: XOR<ServerChannelUpdateManyMutationInput, ServerChannelUncheckedUpdateManyWithoutServerInput>
+  }
+
+  export type ServerChannelScalarWhereInput = {
+    AND?: ServerChannelScalarWhereInput | ServerChannelScalarWhereInput[]
+    OR?: ServerChannelScalarWhereInput[]
+    NOT?: ServerChannelScalarWhereInput | ServerChannelScalarWhereInput[]
+    id?: StringFilter<"ServerChannel"> | string
+    serverId?: StringFilter<"ServerChannel"> | string
+    name?: StringFilter<"ServerChannel"> | string
+    createdAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    updatedAt?: DateTimeFilter<"ServerChannel"> | Date | string
   }
 
   export type ServerMemberUpsertWithWhereUniqueWithoutServerInput = {
@@ -19661,6 +22955,22 @@ export namespace Prisma {
     data: XOR<ServerMemberUpdateManyMutationInput, ServerMemberUncheckedUpdateManyWithoutServerInput>
   }
 
+  export type ServerMessageUpsertWithWhereUniqueWithoutServerInput = {
+    where: ServerMessageWhereUniqueInput
+    update: XOR<ServerMessageUpdateWithoutServerInput, ServerMessageUncheckedUpdateWithoutServerInput>
+    create: XOR<ServerMessageCreateWithoutServerInput, ServerMessageUncheckedCreateWithoutServerInput>
+  }
+
+  export type ServerMessageUpdateWithWhereUniqueWithoutServerInput = {
+    where: ServerMessageWhereUniqueInput
+    data: XOR<ServerMessageUpdateWithoutServerInput, ServerMessageUncheckedUpdateWithoutServerInput>
+  }
+
+  export type ServerMessageUpdateManyWithWhereWithoutServerInput = {
+    where: ServerMessageScalarWhereInput
+    data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyWithoutServerInput>
+  }
+
   export type ChatServerCreateWithoutMembersInput = {
     id?: string
     name: string
@@ -19669,6 +22979,8 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     createdBy: UserCreateNestedOneWithoutCreatedServersInput
+    channels?: ServerChannelCreateNestedManyWithoutServerInput
+    messages?: ServerMessageCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerUncheckedCreateWithoutMembersInput = {
@@ -19679,6 +22991,8 @@ export namespace Prisma {
     createdById: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    channels?: ServerChannelUncheckedCreateNestedManyWithoutServerInput
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutServerInput
   }
 
   export type ChatServerCreateOrConnectWithoutMembersInput = {
@@ -19702,6 +23016,7 @@ export namespace Prisma {
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
@@ -19724,6 +23039,7 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
     receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
     sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
@@ -19754,6 +23070,8 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdBy?: UserUpdateOneRequiredWithoutCreatedServersNestedInput
+    channels?: ServerChannelUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUpdateManyWithoutServerNestedInput
   }
 
   export type ChatServerUncheckedUpdateWithoutMembersInput = {
@@ -19764,6 +23082,8 @@ export namespace Prisma {
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channels?: ServerChannelUncheckedUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUncheckedUpdateManyWithoutServerNestedInput
   }
 
   export type UserUpsertWithoutServerMembershipsInput = {
@@ -19793,6 +23113,7 @@ export namespace Prisma {
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
@@ -19815,10 +23136,337 @@ export namespace Prisma {
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ChatServerCreateWithoutChannelsInput = {
+    id?: string
+    name: string
+    description?: string | null
+    inviteCode?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutCreatedServersInput
+    members?: ServerMemberCreateNestedManyWithoutServerInput
+    messages?: ServerMessageCreateNestedManyWithoutServerInput
+  }
+
+  export type ChatServerUncheckedCreateWithoutChannelsInput = {
+    id?: string
+    name: string
+    description?: string | null
+    inviteCode?: string
+    createdById: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    members?: ServerMemberUncheckedCreateNestedManyWithoutServerInput
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutServerInput
+  }
+
+  export type ChatServerCreateOrConnectWithoutChannelsInput = {
+    where: ChatServerWhereUniqueInput
+    create: XOR<ChatServerCreateWithoutChannelsInput, ChatServerUncheckedCreateWithoutChannelsInput>
+  }
+
+  export type ServerMessageCreateWithoutChannelInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    sender: UserCreateNestedOneWithoutSentServerMessagesInput
+    server: ChatServerCreateNestedOneWithoutMessagesInput
+  }
+
+  export type ServerMessageUncheckedCreateWithoutChannelInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    serverId: string
+    senderId: string
+  }
+
+  export type ServerMessageCreateOrConnectWithoutChannelInput = {
+    where: ServerMessageWhereUniqueInput
+    create: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput>
+  }
+
+  export type ServerMessageCreateManyChannelInputEnvelope = {
+    data: ServerMessageCreateManyChannelInput | ServerMessageCreateManyChannelInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChatServerUpsertWithoutChannelsInput = {
+    update: XOR<ChatServerUpdateWithoutChannelsInput, ChatServerUncheckedUpdateWithoutChannelsInput>
+    create: XOR<ChatServerCreateWithoutChannelsInput, ChatServerUncheckedCreateWithoutChannelsInput>
+    where?: ChatServerWhereInput
+  }
+
+  export type ChatServerUpdateToOneWithWhereWithoutChannelsInput = {
+    where?: ChatServerWhereInput
+    data: XOR<ChatServerUpdateWithoutChannelsInput, ChatServerUncheckedUpdateWithoutChannelsInput>
+  }
+
+  export type ChatServerUpdateWithoutChannelsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    inviteCode?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutCreatedServersNestedInput
+    members?: ServerMemberUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUpdateManyWithoutServerNestedInput
+  }
+
+  export type ChatServerUncheckedUpdateWithoutChannelsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    inviteCode?: StringFieldUpdateOperationsInput | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    members?: ServerMemberUncheckedUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUncheckedUpdateManyWithoutServerNestedInput
+  }
+
+  export type ServerMessageUpsertWithWhereUniqueWithoutChannelInput = {
+    where: ServerMessageWhereUniqueInput
+    update: XOR<ServerMessageUpdateWithoutChannelInput, ServerMessageUncheckedUpdateWithoutChannelInput>
+    create: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput>
+  }
+
+  export type ServerMessageUpdateWithWhereUniqueWithoutChannelInput = {
+    where: ServerMessageWhereUniqueInput
+    data: XOR<ServerMessageUpdateWithoutChannelInput, ServerMessageUncheckedUpdateWithoutChannelInput>
+  }
+
+  export type ServerMessageUpdateManyWithWhereWithoutChannelInput = {
+    where: ServerMessageScalarWhereInput
+    data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyWithoutChannelInput>
+  }
+
+  export type ServerChannelCreateWithoutMessagesInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    server: ChatServerCreateNestedOneWithoutChannelsInput
+  }
+
+  export type ServerChannelUncheckedCreateWithoutMessagesInput = {
+    id?: string
+    serverId: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ServerChannelCreateOrConnectWithoutMessagesInput = {
+    where: ServerChannelWhereUniqueInput
+    create: XOR<ServerChannelCreateWithoutMessagesInput, ServerChannelUncheckedCreateWithoutMessagesInput>
+  }
+
+  export type UserCreateWithoutSentServerMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutSentServerMessagesInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutSentServerMessagesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutSentServerMessagesInput, UserUncheckedCreateWithoutSentServerMessagesInput>
+  }
+
+  export type ChatServerCreateWithoutMessagesInput = {
+    id?: string
+    name: string
+    description?: string | null
+    inviteCode?: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutCreatedServersInput
+    channels?: ServerChannelCreateNestedManyWithoutServerInput
+    members?: ServerMemberCreateNestedManyWithoutServerInput
+  }
+
+  export type ChatServerUncheckedCreateWithoutMessagesInput = {
+    id?: string
+    name: string
+    description?: string | null
+    inviteCode?: string
+    createdById: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    channels?: ServerChannelUncheckedCreateNestedManyWithoutServerInput
+    members?: ServerMemberUncheckedCreateNestedManyWithoutServerInput
+  }
+
+  export type ChatServerCreateOrConnectWithoutMessagesInput = {
+    where: ChatServerWhereUniqueInput
+    create: XOR<ChatServerCreateWithoutMessagesInput, ChatServerUncheckedCreateWithoutMessagesInput>
+  }
+
+  export type ServerChannelUpsertWithoutMessagesInput = {
+    update: XOR<ServerChannelUpdateWithoutMessagesInput, ServerChannelUncheckedUpdateWithoutMessagesInput>
+    create: XOR<ServerChannelCreateWithoutMessagesInput, ServerChannelUncheckedCreateWithoutMessagesInput>
+    where?: ServerChannelWhereInput
+  }
+
+  export type ServerChannelUpdateToOneWithWhereWithoutMessagesInput = {
+    where?: ServerChannelWhereInput
+    data: XOR<ServerChannelUpdateWithoutMessagesInput, ServerChannelUncheckedUpdateWithoutMessagesInput>
+  }
+
+  export type ServerChannelUpdateWithoutMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    server?: ChatServerUpdateOneRequiredWithoutChannelsNestedInput
+  }
+
+  export type ServerChannelUncheckedUpdateWithoutMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserUpsertWithoutSentServerMessagesInput = {
+    update: XOR<UserUpdateWithoutSentServerMessagesInput, UserUncheckedUpdateWithoutSentServerMessagesInput>
+    create: XOR<UserCreateWithoutSentServerMessagesInput, UserUncheckedCreateWithoutSentServerMessagesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutSentServerMessagesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutSentServerMessagesInput, UserUncheckedUpdateWithoutSentServerMessagesInput>
+  }
+
+  export type UserUpdateWithoutSentServerMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutSentServerMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ChatServerUpsertWithoutMessagesInput = {
+    update: XOR<ChatServerUpdateWithoutMessagesInput, ChatServerUncheckedUpdateWithoutMessagesInput>
+    create: XOR<ChatServerCreateWithoutMessagesInput, ChatServerUncheckedCreateWithoutMessagesInput>
+    where?: ChatServerWhereInput
+  }
+
+  export type ChatServerUpdateToOneWithWhereWithoutMessagesInput = {
+    where?: ChatServerWhereInput
+    data: XOR<ChatServerUpdateWithoutMessagesInput, ChatServerUncheckedUpdateWithoutMessagesInput>
+  }
+
+  export type ChatServerUpdateWithoutMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    inviteCode?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutCreatedServersNestedInput
+    channels?: ServerChannelUpdateManyWithoutServerNestedInput
+    members?: ServerMemberUpdateManyWithoutServerNestedInput
+  }
+
+  export type ChatServerUncheckedUpdateWithoutMessagesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    inviteCode?: StringFieldUpdateOperationsInput | string
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channels?: ServerChannelUncheckedUpdateManyWithoutServerNestedInput
+    members?: ServerMemberUncheckedUpdateManyWithoutServerNestedInput
   }
 
   export type AccountCreateManyUserInput = {
@@ -19879,6 +23527,14 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+  }
+
+  export type ServerMessageCreateManySenderInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    serverId: string
   }
 
   export type DirectMessageCreateManySenderInput = {
@@ -19994,7 +23650,9 @@ export namespace Prisma {
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channels?: ServerChannelUpdateManyWithoutServerNestedInput
     members?: ServerMemberUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUpdateManyWithoutServerNestedInput
   }
 
   export type ChatServerUncheckedUpdateWithoutCreatedByInput = {
@@ -20004,7 +23662,9 @@ export namespace Prisma {
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channels?: ServerChannelUncheckedUpdateManyWithoutServerNestedInput
     members?: ServerMemberUncheckedUpdateManyWithoutServerNestedInput
+    messages?: ServerMessageUncheckedUpdateManyWithoutServerNestedInput
   }
 
   export type ChatServerUncheckedUpdateManyWithoutCreatedByInput = {
@@ -20097,6 +23757,30 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerMessageUpdateWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
+    server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
+  }
+
+  export type ServerMessageUncheckedUpdateWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    serverId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutSenderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    serverId?: StringFieldUpdateOperationsInput | string
   }
 
   export type DirectMessageUpdateWithoutSenderInput = {
@@ -20250,11 +23934,49 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ServerChannelCreateManyServerInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type ServerMemberCreateManyServerInput = {
     id?: string
     userId: string
     role?: $Enums.ServerMemberRole
     createdAt?: Date | string
+  }
+
+  export type ServerMessageCreateManyServerInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    channelId?: string | null
+    senderId: string
+  }
+
+  export type ServerChannelUpdateWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: ServerMessageUpdateManyWithoutChannelNestedInput
+  }
+
+  export type ServerChannelUncheckedUpdateWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: ServerMessageUncheckedUpdateManyWithoutChannelNestedInput
+  }
+
+  export type ServerChannelUncheckedUpdateManyWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ServerMemberUpdateWithoutServerInput = {
@@ -20276,6 +23998,62 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerMessageUpdateWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
+    sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
+  }
+
+  export type ServerMessageUncheckedUpdateWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutServerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channelId?: NullableStringFieldUpdateOperationsInput | string | null
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerMessageCreateManyChannelInput = {
+    id?: string
+    content: string
+    createdAt?: Date | string
+    serverId: string
+    senderId: string
+  }
+
+  export type ServerMessageUpdateWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
+    server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
+  }
+
+  export type ServerMessageUncheckedUpdateWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerMessageUncheckedUpdateManyWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    content?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    senderId?: StringFieldUpdateOperationsInput | string
   }
 
 

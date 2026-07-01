@@ -16,6 +16,16 @@ const profileInput = z.object({
     .optional(),
 });
 
+function normalizeOptionalText(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (trimmed === undefined || trimmed.length === 0) {
+    return null;
+  }
+
+  return trimmed;
+}
+
 export const profileRouter = createTRPCRouter({
   getMine: protectedProcedure.query(async ({ ctx }) => {
     return ctx.db.user.findUniqueOrThrow({
@@ -37,8 +47,8 @@ export const profileRouter = createTRPCRouter({
         where: { id: ctx.session.user.id },
         data: {
           name: input.name.trim(),
-          image: input.image ? input.image.trim() : null,
-          bio: input.bio?.trim() || null,
+          image: normalizeOptionalText(input.image),
+          bio: normalizeOptionalText(input.bio),
         },
         select: {
           id: true,

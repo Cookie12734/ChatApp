@@ -62,6 +62,7 @@ model User {
   friendOf               Friendship[]    @relation("FriendOf")
   notifications          Notification[]
   posts                  Post[]
+  sentServerMessages     ServerMessage[] @relation("SentServerMessages")
   sentDirectMessages     DirectMessage[] @relation("SentDirectMessages")
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
   serverMemberships      ServerMember[]
@@ -135,15 +136,17 @@ model DirectMessage {
 }
 
 model ChatServer {
-  id          String         @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   description String?
-  inviteCode  String         @unique @default(cuid())
+  inviteCode  String          @unique @default(cuid())
   createdById String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  createdBy   User           @relation("CreatedServers", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   User            @relation("CreatedServers", fields: [createdById], references: [id], onDelete: Cascade)
+  channels    ServerChannel[]
   members     ServerMember[]
+  messages    ServerMessage[]
 
   @@index([createdById])
 }
@@ -159,6 +162,35 @@ model ServerMember {
 
   @@unique([serverId, userId])
   @@index([userId])
+}
+
+model ServerChannel {
+  id        String          @id @default(cuid())
+  serverId  String
+  name      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  server    ChatServer      @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages  ServerMessage[]
+
+  @@unique([serverId, name])
+  @@index([serverId, createdAt])
+}
+
+model ServerMessage {
+  id        String         @id @default(cuid())
+  content   String
+  createdAt DateTime       @default(now())
+  channelId String?
+  serverId  String
+  senderId  String
+  channel   ServerChannel? @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender    User           @relation("SentServerMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  server    ChatServer     @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([serverId, createdAt])
+  @@index([senderId, createdAt])
 }
 
 enum FriendRequestStatus {

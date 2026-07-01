@@ -33,9 +33,11 @@ export function ProfileForm() {
   }, [profile.data]);
 
   const initial = useMemo(() => {
-    return (name.trim() || profile.data?.userId || "Y")
-      .slice(0, 1)
-      .toUpperCase();
+    const trimmedName = name.trim();
+    const initialSource =
+      trimmedName.length > 0 ? trimmedName : (profile.data?.userId ?? "Y");
+
+    return initialSource.slice(0, 1).toUpperCase();
   }, [name, profile.data?.userId]);
 
   const updateProfile = api.profile.updateMine.useMutation({
