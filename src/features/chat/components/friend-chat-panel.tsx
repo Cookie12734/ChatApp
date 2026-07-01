@@ -19,7 +19,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type FormEvent } from "react";
+import { type FormEvent, type MouseEvent } from "react";
 import { type RealtimeChannel } from "@supabase/supabase-js";
 
 import {
@@ -154,6 +154,11 @@ export function FriendChatPanel() {
   const [newChannelName, setNewChannelName] = useState("");
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
   const [editingChannelName, setEditingChannelName] = useState("");
+  const [channelContextMenu, setChannelContextMenu] = useState<{
+    channelId: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
@@ -194,6 +199,11 @@ export function FriendChatPanel() {
     );
   }, [selectedServer, selectedServerChannelId]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
+  const channelContextTarget = channelContextMenu
+    ? selectedServer?.server.channels.find(
+        (channel) => channel.id === channelContextMenu.channelId,
+      )
+    : undefined;
   const serverConversation = api.server.getConversation.useQuery(
     {
       channelId: selectedServerChannel?.id,
@@ -255,6 +265,7 @@ export function FriendChatPanel() {
       setEditingChannelId(null);
       setEditingChannelName("");
       setNewChannelName("");
+      setChannelContextMenu(null);
       return;
     }
 
@@ -267,6 +278,29 @@ export function FriendChatPanel() {
       setSelectedServerChannelId(selectedServer.server.channels[0]?.id ?? null);
     }
   }, [selectedServer, selectedServerChannelId]);
+
+  useEffect(() => {
+    if (!channelContextMenu) return;
+
+    const closeMenu = () => setChannelContextMenu(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    };
+
+    window.addEventListener("click", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("click", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [channelContextMenu]);
 
   useEffect(() => {
     if (conversation.data) {
@@ -499,6 +533,7 @@ export function FriendChatPanel() {
     onSuccess: async (channel) => {
       setEditingChannelId(null);
       setEditingChannelName("");
+      setChannelContextMenu(null);
       setServerMessage(null);
       setSelectedServerChannelId(channel.id);
       await utils.server.getOverview.invalidate();
@@ -514,6 +549,7 @@ export function FriendChatPanel() {
 
       setEditingChannelId(null);
       setEditingChannelName("");
+      setChannelContextMenu(null);
       setServerMessage(null);
       setSelectedServerChannelId(nextChannel?.id ?? null);
       await Promise.all([
@@ -535,6 +571,7 @@ export function FriendChatPanel() {
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
+    setChannelContextMenu(null);
     setSelectedFriendId(friendId);
     setServerMessage(null);
   };
@@ -545,8 +582,32 @@ export function FriendChatPanel() {
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
+    setChannelContextMenu(null);
     setServerMessage(null);
     setMessage(null);
+  };
+
+  const openChannelMenu = (
+    event: MouseEvent<HTMLDivElement>,
+    channel: ChatServerMembership["server"]["channels"][number],
+  ) => {
+    if (!isSelectedServerOwner) return;
+
+    event.preventDefault();
+    setSelectedServerChannelId(channel.id);
+    setChannelContextMenu({
+      channelId: channel.id,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 104)),
+    });
+  };
+
+  const openChannelEditor = (
+    channel: ChatServerMembership["server"]["channels"][number],
+  ) => {
+    setChannelContextMenu(null);
+    setEditingChannelId(channel.id);
+    setEditingChannelName(channel.name);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -604,6 +665,7 @@ export function FriendChatPanel() {
   const handleDeleteChannel = (channelId: string) => {
     if (!selectedServer?.server.id) return;
 
+    setChannelContextMenu(null);
     deleteChannel.mutate({
       channelId,
       serverId: selectedServer.server.id,
@@ -735,7 +797,6 @@ export function FriendChatPanel() {
                 {selectedServer.server.channels.map((channel) => {
                   const isSelected = channel.id === selectedServerChannel?.id;
                   const isEditing = editingChannelId === channel.id;
-                  const canDelete = selectedServer.server.channels.length > 1;
 
                   if (isEditing) {
                     return (
@@ -777,6 +838,7 @@ export function FriendChatPanel() {
                           onClick={() => {
                             setEditingChannelId(null);
                             setEditingChannelName("");
+                            setChannelContextMenu(null);
                           }}
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#f1e4d0]"
                           aria-label="キャンセル"
@@ -791,6 +853,7 @@ export function FriendChatPanel() {
                   return (
                     <div
                       key={channel.id}
+                      onContextMenu={(event) => openChannelMenu(event, channel)}
                       className={`group flex min-h-10 items-center gap-1 rounded-md px-2 transition ${
                         isSelected
                           ? "bg-[#18221f] text-[#f6f0e4]"
@@ -810,50 +873,6 @@ export function FriendChatPanel() {
                           {channel.name}
                         </span>
                       </button>
-                      {isSelectedServerOwner && (
-                        <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingChannelId(channel.id);
-                              setEditingChannelName(channel.name);
-                            }}
-                            className={`flex h-7 w-7 items-center justify-center rounded-md transition ${
-                              isSelected
-                                ? "text-[#d8efee] hover:bg-[#2f3c37]"
-                                : "text-[#68716b] hover:bg-[#f1e4d0] hover:text-[#18221f]"
-                            }`}
-                            aria-label={`${channel.name} を編集`}
-                            title="編集"
-                          >
-                            <Pencil
-                              className="h-3.5 w-3.5"
-                              aria-hidden="true"
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteChannel(channel.id)}
-                            disabled={!canDelete || deleteChannel.isPending}
-                            className={`flex h-7 w-7 items-center justify-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-35 ${
-                              isSelected
-                                ? "text-[#d8efee] hover:bg-[#2f3c37]"
-                                : "text-[#9f4122] hover:bg-[#fff1e8]"
-                            }`}
-                            aria-label={`${channel.name} を削除`}
-                            title={
-                              canDelete
-                                ? "削除"
-                                : "最後のチャンネルは削除できません"
-                            }
-                          >
-                            <Trash2
-                              className="h-3.5 w-3.5"
-                              aria-hidden="true"
-                            />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -1260,6 +1279,38 @@ export function FriendChatPanel() {
           )}
         </div>
       </section>
+
+      {channelContextMenu && channelContextTarget && selectedServer && (
+        <div
+          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          style={{ left: channelContextMenu.x, top: channelContextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+          role="menu"
+        >
+          <button
+            type="button"
+            onClick={() => openChannelEditor(channelContextTarget)}
+            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+            role="menuitem"
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+            編集
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDeleteChannel(channelContextTarget.id)}
+            disabled={
+              selectedServer.server.channels.length <= 1 ||
+              deleteChannel.isPending
+            }
+            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-not-allowed disabled:opacity-45"
+            role="menuitem"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            削除
+          </button>
+        </div>
+      )}
     </main>
   );
 }
