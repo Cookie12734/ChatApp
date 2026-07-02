@@ -199,6 +199,16 @@ export function FriendChatPanel() {
       null
     );
   }, [selectedServer, selectedServerChannelId]);
+  const selectedServerMembers = useMemo(() => {
+    if (!selectedServer) return [];
+
+    return [...selectedServer.server.members].sort((memberA, memberB) =>
+      getDisplayName(memberA.user).localeCompare(
+        getDisplayName(memberB.user),
+        "ja",
+      ),
+    );
+  }, [selectedServer]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
@@ -1028,285 +1038,325 @@ export function FriendChatPanel() {
           </Link>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
-          {selectedServer ? (
-            <>
-              {serverConversation.isLoading && (
-                <div className="space-y-4">
-                  {[0, 1, 2].map((item) => (
-                    <div key={item} className="flex gap-3">
-                      <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
-                      <div className="space-y-2">
-                        <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
-                        <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {serverConversationData && serverMessages.length === 0 && (
-                <div className="flex min-h-full items-end pb-8">
-                  <div>
-                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#18221f] text-2xl font-semibold text-[#f6f0e4]">
-                      {selectedServer.server.name.slice(0, 2).toUpperCase()}
-                    </div>
-                    <h2 className="text-3xl font-semibold">
-                      {selectedServer.server.name}へようこそ
-                    </h2>
-                    <p className="mt-2 max-w-xl leading-7 text-[#53615a]">
-                      #{selectedServerChannel?.name ?? "general"}
-                      の最初のメッセージを送って、会話を始めましょう。
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {serverConversationData && serverMessages.length > 0 && (
-                <div className="space-y-1">
-                  {serverMessages.map((chatMessage) => {
-                    const isMine =
-                      chatMessage.senderId ===
-                      serverConversationData.currentUser.id;
-                    const author = isMine
-                      ? { userId: "me", name: "あなた", image: null }
-                      : chatMessage.sender;
-
-                    return (
-                      <article
-                        key={chatMessage.id}
-                        className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
-                          isMine ? "flex-row-reverse" : ""
-                        }`}
-                      >
-                        <Avatar
-                          user={author}
-                          className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
-                        />
-                        <div
-                          className={`max-w-[min(760px,82%)] min-w-0 ${
-                            isMine ? "text-right" : ""
-                          }`}
-                        >
-                          <div
-                            className={`mb-1 flex items-baseline gap-2 ${
-                              isMine ? "justify-end" : ""
-                            }`}
-                          >
-                            <span className="text-sm font-semibold text-[#18221f]">
-                              {getDisplayName(author)}
-                            </span>
-                            <time className="text-xs text-[#68716b]">
-                              {formatTime(chatMessage.createdAt)}
-                            </time>
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
+              {selectedServer ? (
+                <>
+                  {serverConversation.isLoading && (
+                    <div className="space-y-4">
+                      {[0, 1, 2].map((item) => (
+                        <div key={item} className="flex gap-3">
+                          <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
+                          <div className="space-y-2">
+                            <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
+                            <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
                           </div>
-                          <p
-                            className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                              isMine
-                                ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                            }`}
-                          >
-                            {chatMessage.content}
-                          </p>
                         </div>
-                      </article>
-                    );
-                  })}
-                  <div ref={serverMessagesEndRef} />
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {!selectedFriendId && !friends.isLoading && (
-                <div className="flex h-full items-center justify-center">
-                  <div className="max-w-sm text-center">
-                    <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
-                    <h2 className="text-xl font-semibold">
-                      DMを選択してください
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-[#53615a]">
-                      フレンド一覧から相手を選ぶと、会話を始められます。
-                    </p>
-                  </div>
-                </div>
-              )}
+                      ))}
+                    </div>
+                  )}
 
-              {conversation.isLoading && selectedFriendId && (
-                <div className="space-y-4">
-                  {[0, 1, 2].map((item) => (
-                    <div key={item} className="flex gap-3">
-                      <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
-                      <div className="space-y-2">
-                        <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
-                        <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
+                  {serverConversationData && serverMessages.length === 0 && (
+                    <div className="flex min-h-full items-end pb-8">
+                      <div>
+                        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#18221f] text-2xl font-semibold text-[#f6f0e4]">
+                          {selectedServer.server.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <h2 className="text-3xl font-semibold">
+                          {selectedServer.server.name}へようこそ
+                        </h2>
+                        <p className="mt-2 max-w-xl leading-7 text-[#53615a]">
+                          #{selectedServerChannel?.name ?? "general"}
+                          の最初のメッセージを送って、会話を始めましょう。
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {directConversation && directMessages.length === 0 && (
-                <div className="flex min-h-full items-end pb-8">
-                  <div>
-                    <Avatar
-                      user={directConversation.friend}
-                      className="mb-4 h-20 w-20 rounded-full border border-black/10"
+                  {serverConversationData && serverMessages.length > 0 && (
+                    <div className="space-y-1">
+                      {serverMessages.map((chatMessage) => {
+                        const isMine =
+                          chatMessage.senderId ===
+                          serverConversationData.currentUser.id;
+                        const author = isMine
+                          ? { userId: "me", name: "あなた", image: null }
+                          : chatMessage.sender;
+
+                        return (
+                          <article
+                            key={chatMessage.id}
+                            className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
+                              isMine ? "flex-row-reverse" : ""
+                            }`}
+                          >
+                            <Avatar
+                              user={author}
+                              className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
+                            />
+                            <div
+                              className={`max-w-[min(760px,82%)] min-w-0 ${
+                                isMine ? "text-right" : ""
+                              }`}
+                            >
+                              <div
+                                className={`mb-1 flex items-baseline gap-2 ${
+                                  isMine ? "justify-end" : ""
+                                }`}
+                              >
+                                <span className="text-sm font-semibold text-[#18221f]">
+                                  {getDisplayName(author)}
+                                </span>
+                                <time className="text-xs text-[#68716b]">
+                                  {formatTime(chatMessage.createdAt)}
+                                </time>
+                              </div>
+                              <p
+                                className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                  isMine
+                                    ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                    : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                }`}
+                              >
+                                {chatMessage.content}
+                              </p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                      <div ref={serverMessagesEndRef} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {!selectedFriendId && !friends.isLoading && (
+                    <div className="flex h-full items-center justify-center">
+                      <div className="max-w-sm text-center">
+                        <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
+                        <h2 className="text-xl font-semibold">
+                          DMを選択してください
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-[#53615a]">
+                          フレンド一覧から相手を選ぶと、会話を始められます。
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {conversation.isLoading && selectedFriendId && (
+                    <div className="space-y-4">
+                      {[0, 1, 2].map((item) => (
+                        <div key={item} className="flex gap-3">
+                          <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
+                          <div className="space-y-2">
+                            <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
+                            <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {directConversation && directMessages.length === 0 && (
+                    <div className="flex min-h-full items-end pb-8">
+                      <div>
+                        <Avatar
+                          user={directConversation.friend}
+                          className="mb-4 h-20 w-20 rounded-full border border-black/10"
+                        />
+                        <h2 className="text-3xl font-semibold">
+                          {getDisplayName(directConversation.friend)}
+                        </h2>
+                        <p className="mt-2 text-[#53615a]">
+                          @{directConversation.friend.userId}{" "}
+                          とのDMの始まりです。
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {directConversation && directMessages.length > 0 && (
+                    <div className="space-y-1">
+                      {directMessages.map((chatMessage) => {
+                        const isMine =
+                          chatMessage.senderId ===
+                          directConversation.currentUserId;
+                        const author = isMine
+                          ? { userId: "me", name: "あなた", image: null }
+                          : directConversation.friend;
+
+                        return (
+                          <article
+                            key={chatMessage.id}
+                            className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
+                              isMine ? "flex-row-reverse" : ""
+                            }`}
+                          >
+                            <Avatar
+                              user={author}
+                              className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
+                            />
+                            <div
+                              className={`max-w-[min(760px,82%)] min-w-0 ${
+                                isMine ? "text-right" : ""
+                              }`}
+                            >
+                              <div
+                                className={`mb-1 flex items-baseline gap-2 ${
+                                  isMine ? "justify-end" : ""
+                                }`}
+                              >
+                                <span className="text-sm font-semibold text-[#18221f]">
+                                  {getDisplayName(author)}
+                                </span>
+                                <time className="text-xs text-[#68716b]">
+                                  {formatTime(chatMessage.createdAt)}
+                                </time>
+                              </div>
+                              <p
+                                className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                  isMine
+                                    ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                    : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                }`}
+                              >
+                                {chatMessage.content}
+                              </p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="shrink-0 px-4 pb-5">
+              {selectedServer ? (
+                <>
+                  {serverMessage && (
+                    <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+                      {serverMessage}
+                    </p>
+                  )}
+                  <form
+                    onSubmit={handleServerSubmit}
+                    className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
+                  >
+                    <textarea
+                      value={serverDraft}
+                      onChange={(event) => setServerDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          event.currentTarget.form?.requestSubmit();
+                        }
+                      }}
+                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                      placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
+                      disabled={
+                        !selectedServerChannel?.id ||
+                        sendServerMessage.isPending
+                      }
+                      maxLength={1000}
                     />
-                    <h2 className="text-3xl font-semibold">
-                      {getDisplayName(directConversation.friend)}
-                    </h2>
-                    <p className="mt-2 text-[#53615a]">
-                      @{directConversation.friend.userId} とのDMの始まりです。
+                    <button
+                      type="submit"
+                      disabled={
+                        !selectedServerChannel?.id ||
+                        !serverDraft.trim() ||
+                        sendServerMessage.isPending
+                      }
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="送信"
+                    >
+                      <Send className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  {message && (
+                    <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+                      {message}
                     </p>
+                  )}
+                  <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
+                    {typingUserName ? `${typingUserName} が入力中...` : null}
                   </div>
-                </div>
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
+                  >
+                    <textarea
+                      value={draft}
+                      onChange={(event) =>
+                        handleDraftChange(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          event.currentTarget.form?.requestSubmit();
+                        }
+                      }}
+                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                      placeholder={
+                        selectedFriend
+                          ? `${getDisplayName(selectedFriend)} へメッセージを送信`
+                          : "フレンドを選択してください"
+                      }
+                      disabled={!selectedFriendId || sendMessage.isPending}
+                      maxLength={1000}
+                    />
+                    <button
+                      type="submit"
+                      disabled={
+                        !selectedFriendId ||
+                        !draft.trim() ||
+                        sendMessage.isPending
+                      }
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="送信"
+                    >
+                      <Send className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </form>
+                </>
               )}
+            </div>
+          </div>
 
-              {directConversation && directMessages.length > 0 && (
-                <div className="space-y-1">
-                  {directMessages.map((chatMessage) => {
-                    const isMine =
-                      chatMessage.senderId === directConversation.currentUserId;
-                    const author = isMine
-                      ? { userId: "me", name: "あなた", image: null }
-                      : directConversation.friend;
-
-                    return (
-                      <article
-                        key={chatMessage.id}
-                        className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
-                          isMine ? "flex-row-reverse" : ""
-                        }`}
-                      >
-                        <Avatar
-                          user={author}
-                          className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
-                        />
-                        <div
-                          className={`max-w-[min(760px,82%)] min-w-0 ${
-                            isMine ? "text-right" : ""
-                          }`}
-                        >
-                          <div
-                            className={`mb-1 flex items-baseline gap-2 ${
-                              isMine ? "justify-end" : ""
-                            }`}
-                          >
-                            <span className="text-sm font-semibold text-[#18221f]">
-                              {getDisplayName(author)}
-                            </span>
-                            <time className="text-xs text-[#68716b]">
-                              {formatTime(chatMessage.createdAt)}
-                            </time>
-                          </div>
-                          <p
-                            className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                              isMine
-                                ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                            }`}
-                          >
-                            {chatMessage.content}
-                          </p>
-                        </div>
-                      </article>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="shrink-0 px-4 pb-5">
-          {selectedServer ? (
-            <>
-              {serverMessage && (
-                <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
-                  {serverMessage}
-                </p>
-              )}
-              <form
-                onSubmit={handleServerSubmit}
-                className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
-              >
-                <textarea
-                  value={serverDraft}
-                  onChange={(event) => setServerDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      event.currentTarget.form?.requestSubmit();
-                    }
-                  }}
-                  className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
-                  placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
-                  disabled={
-                    !selectedServerChannel?.id || sendServerMessage.isPending
-                  }
-                  maxLength={1000}
-                />
-                <button
-                  type="submit"
-                  disabled={
-                    !selectedServerChannel?.id ||
-                    !serverDraft.trim() ||
-                    sendServerMessage.isPending
-                  }
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="送信"
-                >
-                  <Send className="h-5 w-5" aria-hidden="true" />
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              {message && (
-                <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
-                  {message}
-                </p>
-              )}
-              <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
-                {typingUserName ? `${typingUserName} が入力中...` : null}
+          {selectedServer && (
+            <aside className="hidden w-64 shrink-0 border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:block">
+              <h2 className="mb-3 text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
+                メンバー
+              </h2>
+              <div className="space-y-2">
+                {selectedServerMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
+                  >
+                    <Avatar
+                      user={member.user}
+                      className="h-9 w-9 shrink-0 rounded-full border border-black/10"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        {getDisplayName(member.user)}
+                      </p>
+                      <p className="truncate text-xs text-[#68716b]">
+                        {member.role === "OWNER" ? "管理者" : "メンバー"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <form
-                onSubmit={handleSubmit}
-                className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
-              >
-                <textarea
-                  value={draft}
-                  onChange={(event) => handleDraftChange(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      event.currentTarget.form?.requestSubmit();
-                    }
-                  }}
-                  className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
-                  placeholder={
-                    selectedFriend
-                      ? `${getDisplayName(selectedFriend)} へメッセージを送信`
-                      : "フレンドを選択してください"
-                  }
-                  disabled={!selectedFriendId || sendMessage.isPending}
-                  maxLength={1000}
-                />
-                <button
-                  type="submit"
-                  disabled={
-                    !selectedFriendId || !draft.trim() || sendMessage.isPending
-                  }
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="送信"
-                >
-                  <Send className="h-5 w-5" aria-hidden="true" />
-                </button>
-              </form>
-            </>
+            </aside>
           )}
         </div>
       </section>

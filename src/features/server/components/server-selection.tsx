@@ -53,6 +53,16 @@ function getInvitePath(inviteCode?: string | null) {
   return inviteCode ? `/servers/invite/${inviteCode}` : "";
 }
 
+function getMemberDisplayName(user: { name?: string | null; userId: string }) {
+  const name = user.name?.trim();
+
+  if (name === undefined || name.length === 0) {
+    return user.userId;
+  }
+
+  return name;
+}
+
 export function ServerSelection({
   initialServerId,
   userName,
@@ -93,6 +103,16 @@ export function ServerSelection({
     memberships.find(
       (membership) => membership.server.id === selectedServerId,
     ) ?? memberships[0];
+  const selectedMembers = useMemo(() => {
+    if (!selected) return [];
+
+    return [...selected.server.members].sort((memberA, memberB) =>
+      getMemberDisplayName(memberA.user).localeCompare(
+        getMemberDisplayName(memberB.user),
+        "ja",
+      ),
+    );
+  }, [selected]);
   const contextMembership = contextMenu
     ? memberships.find(
         (membership) => membership.id === contextMenu.membershipId,
@@ -859,19 +879,19 @@ export function ServerSelection({
                       メンバー
                     </h3>
                     <div className="space-y-2">
-                      {selected.server.members.map((member) => (
+                      {selectedMembers.map((member) => (
                         <div
                           key={member.id}
                           className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-3"
                         >
                           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#d8efee] text-sm font-semibold text-[#114744]">
-                            {(member.user.name ?? member.user.userId)
+                            {getMemberDisplayName(member.user)
                               .slice(0, 1)
                               .toUpperCase()}
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium">
-                              {member.user.name ?? member.user.userId}
+                              {getMemberDisplayName(member.user)}
                             </p>
                             <p className="truncate text-xs text-[#68716b]">
                               {member.role === "OWNER" ? "管理者" : "メンバー"}
