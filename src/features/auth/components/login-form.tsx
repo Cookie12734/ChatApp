@@ -2,7 +2,7 @@
 
 import { ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   signInWithCredentials,
@@ -14,6 +14,10 @@ export function LoginForm() {
     AuthFormState,
     FormData
   >(signInWithCredentials, {});
+  const [formValues, setFormValues] = useState({
+    email: "",
+    password: "",
+  });
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
@@ -34,6 +38,13 @@ export function LoginForm() {
             type="email"
             required
             autoComplete="email"
+            value={formValues.email}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                email: event.target.value,
+              }))
+            }
             placeholder="you@example.com"
             className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
@@ -52,6 +63,13 @@ export function LoginForm() {
             type="password"
             required
             autoComplete="current-password"
+            value={formValues.password}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                password: event.target.value,
+              }))
+            }
             placeholder="8文字以上"
             className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
