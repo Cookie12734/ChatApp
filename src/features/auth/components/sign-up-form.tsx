@@ -2,7 +2,7 @@
 
 import { ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { signUp, type AuthFormState } from "~/features/auth/actions";
 
@@ -11,6 +11,13 @@ export function SignUpForm() {
     AuthFormState,
     FormData
   >(signUp, {});
+  const [formValues, setFormValues] = useState({
+    userId: "",
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const inputClass =
     "rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none";
@@ -37,6 +44,13 @@ export function SignUpForm() {
             minLength={3}
             maxLength={32}
             pattern="[A-Za-z0-9_]+"
+            value={formValues.userId}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                userId: event.target.value,
+              }))
+            }
             placeholder="yamada_taro"
             className={inputClass}
           />
@@ -52,6 +66,13 @@ export function SignUpForm() {
             type="text"
             required
             autoComplete="name"
+            value={formValues.name}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                name: event.target.value,
+              }))
+            }
             placeholder="山田 太郎"
             className={inputClass}
           />
@@ -67,6 +88,13 @@ export function SignUpForm() {
             type="email"
             required
             autoComplete="email"
+            value={formValues.email}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                email: event.target.value,
+              }))
+            }
             placeholder="you@example.com"
             className={inputClass}
           />
@@ -86,6 +114,13 @@ export function SignUpForm() {
             required
             autoComplete="new-password"
             minLength={8}
+            value={formValues.password}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                password: event.target.value,
+              }))
+            }
             placeholder="8文字以上"
             className={inputClass}
           />
@@ -105,6 +140,13 @@ export function SignUpForm() {
             required
             autoComplete="new-password"
             minLength={8}
+            value={formValues.confirmPassword}
+            onChange={(event) =>
+              setFormValues((current) => ({
+                ...current,
+                confirmPassword: event.target.value,
+              }))
+            }
             placeholder="もう一度入力"
             className={inputClass}
           />
