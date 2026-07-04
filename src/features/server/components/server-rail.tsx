@@ -4,6 +4,7 @@ import { LogOut, Plus, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ServerMembership =
@@ -106,14 +107,16 @@ export function ServerRail({
         </Link>
       </div>
       <div className="mt-auto flex flex-col gap-3">
-        <Link
-          href="/profile"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-          aria-label="Profile"
-          title="Profile"
-        >
-          <UserRound className="h-5 w-5" aria-hidden="true" />
-        </Link>
+        <ProfileSettingsDialog>
+          <button
+            type="button"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="Profile"
+            title="Profile"
+          >
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </ProfileSettingsDialog>
         <Link
           href="/api/auth/signout"
           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"

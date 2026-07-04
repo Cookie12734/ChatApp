@@ -24,6 +24,7 @@ import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
 } from "~/lib/supabase/realtime";
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
@@ -1082,13 +1083,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <h1 className="font-semibold">ダイレクトメッセージ</h1>
             )}
           </div>
-          <Link
-            href="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="設定"
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </Link>
+          <ProfileSettingsDialog>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+              aria-label="設定"
+            >
+              <Settings className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </ProfileSettingsDialog>
         </header>
 
         <div className="flex min-h-0 flex-1">
