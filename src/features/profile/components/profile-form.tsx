@@ -20,6 +20,7 @@ export function ProfileForm() {
   const [image, setImage] = useState("");
   const [imageFailed, setImageFailed] = useState(false);
   const [bio, setBio] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -30,6 +31,7 @@ export function ProfileForm() {
     setImage(profile.data.image ?? "");
     setImageFailed(false);
     setBio(profile.data.bio ?? "");
+    setStatusMessage(profile.data.statusMessage ?? "");
   }, [profile.data]);
 
   const initial = useMemo(() => {
@@ -109,7 +111,7 @@ export function ProfileForm() {
         onSubmit={(event) => {
           event.preventDefault();
           setMessage(null);
-          updateProfile.mutate({ name, image, bio });
+          updateProfile.mutate({ name, image, bio, statusMessage });
         }}
       >
         <div className="space-y-5">
@@ -146,6 +148,22 @@ export function ProfileForm() {
               placeholder="表示名"
               required
               maxLength={50}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+              <span>ステータス</span>
+              <span className="font-normal text-[#68716b]">
+                {statusMessage.length}/80
+              </span>
+            </span>
+            <input
+              value={statusMessage}
+              onChange={(event) => setStatusMessage(event.target.value)}
+              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              placeholder="いまの気分や作業状況"
+              maxLength={80}
             />
           </label>
 
@@ -210,6 +228,11 @@ export function ProfileForm() {
               </p>
             </div>
           </div>
+          {statusMessage.trim() && (
+            <p className="mt-3 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+              {statusMessage.trim()}
+            </p>
+          )}
           <div className="mt-4 rounded-md border border-[#18221f]/10 bg-white p-3 text-sm leading-6 text-[#53615a]">
             {bio.trim() || (
               <span className="inline-flex items-center gap-2 text-[#68716b]">
