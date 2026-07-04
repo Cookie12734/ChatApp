@@ -47,26 +47,30 @@ model Session {
 }
 
 model User {
-  id                     String          @id @default(cuid())
-  userId                 String          @unique
+  id                     String              @id @default(cuid())
+  userId                 String              @unique
   name                   String?
-  email                  String?         @unique
+  email                  String?             @unique
   emailVerified          DateTime?
   passwordHash           String?
   image                  String?
   bio                    String?
+  statusMessage          String?
   accounts               Account[]
-  receivedDirectMessages DirectMessage[] @relation("ReceivedDirectMessages")
-  createdServers         ChatServer[]    @relation("CreatedServers")
-  friendships            Friendship[]    @relation("UserFriendships")
-  friendOf               Friendship[]    @relation("FriendOf")
+  blockedBy              UserBlock[]         @relation("BlockedUsers")
+  blockedUsers           UserBlock[]         @relation("UserBlocks")
+  channelReads           ServerChannelRead[]
+  receivedDirectMessages DirectMessage[]     @relation("ReceivedDirectMessages")
+  createdServers         ChatServer[]        @relation("CreatedServers")
+  friendships            Friendship[]        @relation("UserFriendships")
+  friendOf               Friendship[]        @relation("FriendOf")
   notifications          Notification[]
   posts                  Post[]
-  sentServerMessages     ServerMessage[] @relation("SentServerMessages")
-  sentDirectMessages     DirectMessage[] @relation("SentDirectMessages")
-  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  sentServerMessages     ServerMessage[]     @relation("SentServerMessages")
+  sentDirectMessages     DirectMessage[]     @relation("SentDirectMessages")
+  receivedFriendRequests FriendRequest[]     @relation("ReceivedFriendRequests")
   serverMemberships      ServerMember[]
-  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  sentFriendRequests     FriendRequest[]     @relation("SentFriendRequests")
   sessions               Session[]
 }
 
@@ -135,6 +139,18 @@ model DirectMessage {
   @@index([senderId, receiverId, createdAt])
 }
 
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocked   User     @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+  blocker   User     @relation("UserBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
 model ChatServer {
   id          String          @id @default(cuid())
   name        String
@@ -165,16 +181,29 @@ model ServerMember {
 }
 
 model ServerChannel {
-  id        String          @id @default(cuid())
+  id        String              @id @default(cuid())
   serverId  String
   name      String
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  server    ChatServer      @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  reads     ServerChannelRead[]
+  server    ChatServer          @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages  ServerMessage[]
 
   @@unique([serverId, name])
   @@index([serverId, createdAt])
+}
+
+model ServerChannelRead {
+  id        String        @id @default(cuid())
+  channelId String
+  userId    String
+  readAt    DateTime      @default(now())
+  channel   ServerChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
 }
 
 model ServerMessage {
