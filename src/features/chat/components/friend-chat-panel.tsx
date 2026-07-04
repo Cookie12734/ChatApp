@@ -4,7 +4,6 @@ import {
   Check,
   Hash,
   Inbox,
-  LogOut,
   MessageCircle,
   Pencil,
   Plus,
@@ -12,11 +11,9 @@ import {
   Send,
   Settings,
   Trash2,
-  UserRound,
   Users,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
@@ -26,6 +23,7 @@ import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
 } from "~/lib/supabase/realtime";
+import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
@@ -42,6 +40,9 @@ type TypingBroadcastPayload = {
   isTyping: boolean;
   userId: string;
   userName: string;
+};
+type FriendChatPanelProps = {
+  initialServerId?: string;
 };
 
 function getErrorMessage(error: unknown) {
@@ -142,9 +143,11 @@ function FriendListItem({
   );
 }
 
-export function FriendChatPanel() {
+export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const utils = api.useUtils();
-  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const [selectedServerId, setSelectedServerId] = useState<string | null>(
+    initialServerId ?? null,
+  );
   const [selectedServerChannelId, setSelectedServerChannelId] = useState<
     string | null
   >(null);
@@ -226,6 +229,13 @@ export function FriendChatPanel() {
         selectedServerId && selectedServerChannel?.id ? 3000 : false,
     },
   );
+
+  useEffect(() => {
+    if (!initialServerId) return;
+
+    setSelectedServerId(initialServerId);
+    setSelectedFriendId(null);
+  }, [initialServerId]);
 
   useEffect(() => {
     const data = friends.data;
@@ -593,6 +603,7 @@ export function FriendChatPanel() {
   const selectServer = (membership: ChatServerMembership) => {
     setSelectedServerId(membership.server.id);
     setSelectedServerChannelId(membership.server.channels[0]?.id ?? null);
+    setSelectedFriendId(null);
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
@@ -694,73 +705,11 @@ export function FriendChatPanel() {
 
   return (
     <main className="flex min-h-screen overflow-hidden bg-[#f6f0e4] text-[#18221f]">
-      <aside className="flex w-[72px] shrink-0 flex-col items-center gap-3 bg-[#18221f] px-3 py-4">
-        <Link
-          href="/"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] transition hover:rounded-xl"
-          aria-label="connect"
-        >
-          <Image
-            src="/connect-icon.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-xl object-cover"
-            priority
-          />
-        </Link>
-        <div className="h-px w-8 bg-[#f6f0e4]/25" />
-        <Link
-          href="/friends"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
-          aria-label="フレンド"
-        >
-          <Users className="h-5 w-5" aria-hidden="true" />
-        </Link>
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
-          {serverOverview.data?.memberships.map((membership) => (
-            <button
-              key={membership.id}
-              type="button"
-              onClick={() => selectServer(membership)}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition hover:rounded-xl ${
-                membership.server.id === selectedServerId
-                  ? "bg-[#d8efee] text-[#114744]"
-                  : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
-              }`}
-              aria-label={`${membership.server.name}を開く`}
-              title={membership.server.name}
-            >
-              {membership.server.name.slice(0, 2).toUpperCase()}
-            </button>
-          ))}
-          <Link
-            href="/servers/new"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
-            aria-label="サーバーを作成"
-            title="サーバーを作成"
-          >
-            <Plus className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        </div>
-        <div className="mt-auto flex flex-col gap-3">
-          <Link
-            href="/profile"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="プロフィール"
-          >
-            <UserRound className="h-5 w-5" aria-hidden="true" />
-          </Link>
-          <Link
-            href="/api/auth/signout"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="ログアウト"
-          >
-            <LogOut className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        </div>
-      </aside>
-
+      <ServerRail
+        memberships={serverOverview.data?.memberships}
+        onSelectServer={selectServer}
+        selectedServerId={selectedServerId}
+      />
       <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0]">
         {selectedServer ? (
           <>
