@@ -1,10 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import {
+  assertNotBlocked,
+  getBlockedPeerIds,
+} from "~/features/friend/server/blocking";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const friendIdInput = z.object({
   friendId: z.string().min(1),
+});
+
+const messageIdInput = z.object({
+  messageId: z.string().min(1),
 });
 
 const sendMessageInput = friendIdInput.extend({
@@ -18,9 +26,21 @@ const sendMessageInput = friendIdInput.extend({
 export const chatRouter = createTRPCRouter({
   getFriends: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
+    const blocks = await ctx.db.userBlock.findMany({
+      where: {
+        OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+      },
+      select: { blockedId: true, blockerId: true },
+    });
+    const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
 
     const friendships = await ctx.db.friendship.findMany({
-      where: { userId: currentUserId },
+      where: {
+        userId: currentUserId,
+        ...(blockedPeerIds.length > 0
+          ? { friendId: { notIn: blockedPeerIds } }
+          : {}),
+      },
       orderBy: { createdAt: "desc" },
       include: {
         friend: {
@@ -105,6 +125,7 @@ export const chatRouter = createTRPCRouter({
           message: "フレンドとのチャットだけ開けます",
         });
       }
+      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
 
       const [currentUser, messages] = await Promise.all([
         ctx.db.user.findUniqueOrThrow({
@@ -175,6 +196,7 @@ export const chatRouter = createTRPCRouter({
           message: "フレンドにだけメッセージを送れます",
         });
       }
+      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
 
       return ctx.db.directMessage.create({
         data: {
@@ -183,5 +205,24 @@ export const chatRouter = createTRPCRouter({
           senderId: currentUserId,
         },
       });
+    }),
+
+  deleteMessage: protectedProcedure
+    .input(messageIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const message = await ctx.db.directMessage.findUnique({
+        where: { id: input.messageId },
+        select: { id: true, senderId: true },
+      });
+
+      if (message?.senderId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "削除できるメッセージが見つかりません",
+        });
+      }
+
+      await ctx.db.directMessage.delete({ where: { id: message.id } });
+      return { id: message.id };
     }),
 });

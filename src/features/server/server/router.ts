@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { getBlockedPeerIds } from "~/features/friend/server/blocking";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const serverInput = z.object({
@@ -37,6 +38,10 @@ const channelIdInput = serverIdInput.extend({
   channelId: z.string().min(1),
 });
 
+const messageIdInput = serverIdInput.extend({
+  messageId: z.string().min(1),
+});
+
 const conversationInput = serverIdInput.extend({
   channelId: z.string().min(1).optional(),
 });
@@ -58,11 +63,34 @@ function normalizeDescription(description: string | undefined) {
   return description;
 }
 
+function getServerMessageWhere({
+  channelId,
+  channelName,
+  hiddenUserIds = [],
+  readAt,
+  serverId,
+}: {
+  channelId: string;
+  channelName: string;
+  hiddenUserIds?: string[];
+  readAt?: Date;
+  serverId: string;
+}) {
+  return {
+    serverId,
+    ...(channelName === "general"
+      ? { OR: [{ channelId }, { channelId: null }] }
+      : { channelId }),
+    ...(hiddenUserIds.length > 0 ? { senderId: { notIn: hiddenUserIds } } : {}),
+    ...(readAt ? { createdAt: { gt: readAt } } : {}),
+  };
+}
+
 export const serverRouter = createTRPCRouter({
   getOverview: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
 
-    const [currentUser, memberships] = await Promise.all([
+    const [currentUser, memberships, blocks] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
         where: { id: currentUserId },
         select: { id: true, userId: true, name: true, image: true },
@@ -88,7 +116,17 @@ export const serverRouter = createTRPCRouter({
           },
         },
       }),
+      ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      }),
     ]);
+    const hiddenUnreadUserIds = [
+      currentUserId,
+      ...getBlockedPeerIds(currentUserId, blocks),
+    ];
 
     return {
       currentUser,
@@ -112,12 +150,36 @@ export const serverRouter = createTRPCRouter({
                     update: {},
                   }),
                 ];
+          const channelsWithUnread = await Promise.all(
+            channels.map(async (channel) => {
+              const read = await ctx.db.serverChannelRead.findUnique({
+                where: {
+                  channelId_userId: {
+                    channelId: channel.id,
+                    userId: currentUserId,
+                  },
+                },
+                select: { readAt: true },
+              });
+              const unreadCount = await ctx.db.serverMessage.count({
+                where: getServerMessageWhere({
+                  channelId: channel.id,
+                  channelName: channel.name,
+                  hiddenUserIds: hiddenUnreadUserIds,
+                  readAt: read?.readAt,
+                  serverId: membership.server.id,
+                }),
+              });
+
+              return { ...channel, unreadCount };
+            }),
+          );
 
           return {
             ...membership,
             server: {
               ...membership.server,
-              channels,
+              channels: channelsWithUnread,
               inviteCode:
                 membership.role === "OWNER"
                   ? membership.server.inviteCode
@@ -207,13 +269,18 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      const messageWhere =
-        channel.name === "general"
-          ? {
-              serverId: input.serverId,
-              OR: [{ channelId: channel.id }, { channelId: null }],
-            }
-          : { channelId: channel.id, serverId: input.serverId };
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      });
+      const messageWhere = getServerMessageWhere({
+        channelId: channel.id,
+        channelName: channel.name,
+        hiddenUserIds: getBlockedPeerIds(currentUserId, blocks),
+        serverId: input.serverId,
+      });
 
       const [currentUser, server, messages] = await Promise.all([
         ctx.db.user.findUniqueOrThrow({
@@ -239,6 +306,19 @@ export const serverRouter = createTRPCRouter({
           },
         }),
       ]);
+      await ctx.db.serverChannelRead.upsert({
+        where: {
+          channelId_userId: {
+            channelId: channel.id,
+            userId: currentUserId,
+          },
+        },
+        create: {
+          channelId: channel.id,
+          userId: currentUserId,
+        },
+        update: { readAt: new Date() },
+      });
 
       return {
         channel,
@@ -308,6 +388,50 @@ export const serverRouter = createTRPCRouter({
           serverId: input.serverId,
         },
       });
+    }),
+
+  deleteMessage: protectedProcedure
+    .input(messageIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: currentUserId,
+          },
+        },
+        select: { role: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "参加しているサーバーだけ操作できます",
+        });
+      }
+
+      const message = await ctx.db.serverMessage.findFirst({
+        where: { id: input.messageId, serverId: input.serverId },
+        select: { id: true, senderId: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "メッセージが見つかりません",
+        });
+      }
+
+      if (message.senderId !== currentUserId && membership.role !== "OWNER") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "削除できるのは自分のメッセージか管理者だけです",
+        });
+      }
+
+      await ctx.db.serverMessage.delete({ where: { id: message.id } });
+      return { id: message.id };
     }),
 
   createChannel: protectedProcedure
@@ -521,5 +645,34 @@ export const serverRouter = createTRPCRouter({
         data: { inviteCode: randomUUID() },
         select: { id: true, inviteCode: true },
       });
+    }),
+
+  leave: protectedProcedure
+    .input(serverIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: ctx.session.user.id,
+          },
+        },
+        select: { id: true, role: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "参加しているサーバーが見つかりません",
+        });
+      }
+
+      if (membership.role === "OWNER") {
+        await ctx.db.chatServer.delete({ where: { id: input.serverId } });
+      } else {
+        await ctx.db.serverMember.delete({ where: { id: membership.id } });
+      }
+
+      return { serverId: input.serverId };
     }),
 });
