@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { assertNotBlocked } from "~/features/friend/server/blocking";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const userIdSchema = z
@@ -23,6 +24,7 @@ export const friendRouter = createTRPCRouter({
       incomingRequests,
       outgoingRequests,
       notifications,
+      blockedUsers,
     ] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
         where: { id: currentUserId },
@@ -60,6 +62,15 @@ export const friendRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         take: 20,
       }),
+      ctx.db.userBlock.findMany({
+        where: { blockerId: currentUserId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          blocked: {
+            select: { id: true, userId: true, name: true, image: true },
+          },
+        },
+      }),
     ]);
 
     return {
@@ -68,6 +79,7 @@ export const friendRouter = createTRPCRouter({
       incomingRequests,
       outgoingRequests,
       notifications,
+      blockedUsers,
       unreadNotificationCount: notifications.filter(
         (notification) => !notification.readAt,
       ).length,
@@ -98,6 +110,7 @@ export const friendRouter = createTRPCRouter({
           message: "自分自身にフレンド申請はできません",
         });
       }
+      await assertNotBlocked(ctx.db, currentUserId, receiver.id);
 
       const existingFriendship = await ctx.db.friendship.findUnique({
         where: {
@@ -189,6 +202,7 @@ export const friendRouter = createTRPCRouter({
           message: "このフレンド申請は処理済みです",
         });
       }
+      await assertNotBlocked(ctx.db, request.senderId, request.receiverId);
 
       return ctx.db.$transaction(async (tx) => {
         const acceptedRequest = await tx.friendRequest.update({
@@ -276,4 +290,89 @@ export const friendRouter = createTRPCRouter({
 
     return { count: result.count };
   }),
+
+  blockUser: protectedProcedure
+    .input(z.object({ userId: userIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const blocked = await ctx.db.user.findUnique({
+        where: { userId: input.userId },
+        select: { id: true },
+      });
+
+      if (!blocked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "ユーザーが見つかりません",
+        });
+      }
+
+      if (blocked.id === currentUserId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "自分自身はブロックできません",
+        });
+      }
+
+      return ctx.db.$transaction(async (tx) => {
+        const block = await tx.userBlock.upsert({
+          where: {
+            blockerId_blockedId: {
+              blockerId: currentUserId,
+              blockedId: blocked.id,
+            },
+          },
+          update: {},
+          create: {
+            blockerId: currentUserId,
+            blockedId: blocked.id,
+          },
+        });
+
+        await tx.friendship.deleteMany({
+          where: {
+            OR: [
+              { userId: currentUserId, friendId: blocked.id },
+              { userId: blocked.id, friendId: currentUserId },
+            ],
+          },
+        });
+
+        await tx.friendRequest.deleteMany({
+          where: {
+            OR: [
+              { senderId: currentUserId, receiverId: blocked.id },
+              { senderId: blocked.id, receiverId: currentUserId },
+            ],
+          },
+        });
+
+        return block;
+      });
+    }),
+
+  unblockUser: protectedProcedure
+    .input(z.object({ userId: userIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const blocked = await ctx.db.user.findUnique({
+        where: { userId: input.userId },
+        select: { id: true },
+      });
+
+      if (!blocked) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "ユーザーが見つかりません",
+        });
+      }
+
+      await ctx.db.userBlock.deleteMany({
+        where: {
+          blockerId: ctx.session.user.id,
+          blockedId: blocked.id,
+        },
+      });
+
+      return { userId: input.userId };
+    }),
 });

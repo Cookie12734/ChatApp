@@ -1,6 +1,16 @@
 "use client";
 
-import { Bell, Check, Inbox, Send, UserPlus, X } from "lucide-react";
+import {
+  Ban,
+  Bell,
+  Check,
+  Inbox,
+  Send,
+  Undo2,
+  UserPlus,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { api } from "~/trpc/react";
@@ -53,6 +63,20 @@ export function FriendPanel() {
 
   const markNotificationsRead = api.friend.markNotificationsRead.useMutation({
     onSuccess: invalidateOverview,
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+  const blockUser = api.friend.blockUser.useMutation({
+    onSuccess: async () => {
+      setMessage("ユーザーをブロックしました");
+      await invalidateOverview();
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+  const unblockUser = api.friend.unblockUser.useMutation({
+    onSuccess: async () => {
+      setMessage("ブロックを解除しました");
+      await invalidateOverview();
+    },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
 
@@ -211,23 +235,82 @@ export function FriendPanel() {
               {data.friends.map((friendship) => (
                 <div
                   key={friendship.id}
-                  className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
                 >
-                  <UserPlus className="h-4 w-4 text-[#cc5f2f]" />
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {friendship.friend.name ?? friendship.friend.userId}
-                    </p>
-                    <p className="truncate font-mono text-sm text-[#68716b]">
-                      {friendship.friend.userId}
-                    </p>
-                  </div>
+                  <Link
+                    href={`/profile/${friendship.friend.userId}`}
+                    className="flex min-w-0 items-center gap-3 transition hover:text-[#114744]"
+                  >
+                    <UserPlus className="h-4 w-4 shrink-0 text-[#cc5f2f]" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {friendship.friend.name ?? friendship.friend.userId}
+                      </span>
+                      <span className="block truncate font-mono text-sm text-[#68716b]">
+                        {friendship.friend.userId}
+                      </span>
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!window.confirm("このユーザーをブロックしますか？")) {
+                        return;
+                      }
+                      blockUser.mutate({ userId: friendship.friend.userId });
+                    }}
+                    disabled={blockUser.isPending}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+                    aria-label="ブロック"
+                    title="ブロック"
+                  >
+                    <Ban className="h-4 w-4" aria-hidden="true" />
+                  </button>
                 </div>
               ))}
             </div>
           ) : (
             <p className="text-sm text-[#68716b]">
               まだフレンドはいません。ユーザーIDで申請してみましょう。
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5">
+          <h3 className="mb-3 text-base font-semibold">ブロック中</h3>
+          {data.blockedUsers.length > 0 ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {data.blockedUsers.map((block) => (
+                <div
+                  key={block.id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {block.blocked.name ?? block.blocked.userId}
+                    </p>
+                    <p className="truncate font-mono text-sm text-[#68716b]">
+                      {block.blocked.userId}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      unblockUser.mutate({ userId: block.blocked.userId })
+                    }
+                    disabled={unblockUser.isPending}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e4f2dc] text-[#114744] transition hover:bg-[#d1eac6] disabled:opacity-50"
+                    aria-label="ブロック解除"
+                    title="ブロック解除"
+                  >
+                    <Undo2 className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-[#68716b]">
+              ブロック中のユーザーはいません
             </p>
           )}
         </div>
