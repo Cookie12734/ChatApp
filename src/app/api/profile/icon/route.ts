@@ -1,7 +1,3 @@
-import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
@@ -10,18 +6,12 @@ import { db } from "~/server/db";
 export const runtime = "nodejs";
 
 const maxFileSize = 2 * 1024 * 1024;
-const uploadDir = path.join(
-  process.cwd(),
-  "public",
-  "uploads",
-  "profile-icons",
-);
 
 const imageTypes = {
-  "image/gif": "gif",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
+  "image/gif": true,
+  "image/jpeg": true,
+  "image/png": true,
+  "image/webp": true,
 } as const;
 
 export async function POST(request: Request) {
@@ -44,8 +34,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const extension = imageTypes[file.type as keyof typeof imageTypes];
-  if (!extension) {
+  if (!imageTypes[file.type as keyof typeof imageTypes]) {
     return NextResponse.json(
       { message: "PNG、JPG、WebP、GIF の画像を選択してください" },
       { status: 400 },
@@ -66,17 +55,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const filename = `${session.user.id}-${randomUUID()}.${extension}`;
-  const publicPath = `/uploads/profile-icons/${filename}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, filename), bytes);
+  const image = `data:${file.type};base64,${Buffer.from(
+    await file.arrayBuffer(),
+  ).toString("base64")}`;
 
   await db.user.update({
     where: { id: session.user.id },
-    data: { image: publicPath },
+    data: { image },
   });
 
-  return NextResponse.json({ image: publicPath });
+  return NextResponse.json({ image });
 }
