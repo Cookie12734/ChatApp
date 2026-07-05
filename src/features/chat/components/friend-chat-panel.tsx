@@ -8,6 +8,7 @@ import {
   LogOut,
   MessageCircle,
   Pencil,
+  Pin,
   Plus,
   Search,
   Send,
@@ -33,6 +34,10 @@ import {
   getSupabaseRealtimeClient,
 } from "~/lib/supabase/realtime";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
+import {
+  getPresenceDisplayLabel,
+  getPresenceDotClassName,
+} from "~/features/profile/presence";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
@@ -55,6 +60,12 @@ type TypingBroadcastPayload = {
 type FriendChatPanelProps = {
   initialServerId?: string;
 };
+type EditingMessage =
+  | { content: string; kind: "direct"; messageId: string }
+  | { content: string; kind: "server"; messageId: string };
+type MessageContextMenu =
+  | { kind: "direct"; messageId: string; x: number; y: number }
+  | { kind: "server"; messageId: string; x: number; y: number };
 const matchingTopics = [
   { label: "雑談", value: "CASUAL" },
   { label: "ゲーム", value: "GAME" },
@@ -187,6 +198,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     x: number;
     y: number;
   } | null>(null);
+  const [messageContextMenu, setMessageContextMenu] =
+    useState<MessageContextMenu | null>(null);
+  const [editingMessage, setEditingMessage] = useState<EditingMessage | null>(
+    null,
+  );
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
   const [serverNameDraft, setServerNameDraft] = useState("");
@@ -226,6 +242,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       ) ?? null
     );
   }, [serverOverview.data?.memberships, selectedServerId]);
+  const currentServerUser = serverOverview.data?.currentUser ?? null;
   const selectedServerChannel = useMemo(() => {
     if (!selectedServer) return null;
 
@@ -247,6 +264,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       ),
     );
   }, [selectedServer]);
+  const selectedServerBackHref = selectedServer
+    ? `/?serverId=${encodeURIComponent(selectedServer.server.id)}`
+    : "/";
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
@@ -366,6 +386,34 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [channelContextMenu]);
+
+  useEffect(() => {
+    if (!messageContextMenu) return;
+
+    const closeMenu = () => setMessageContextMenu(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    };
+
+    window.addEventListener("click", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("click", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [messageContextMenu]);
+
+  useEffect(() => {
+    setMessageContextMenu(null);
+    setEditingMessage(null);
+  }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
 
   useEffect(() => {
     if (conversation.data) {
@@ -722,8 +770,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
-  const deleteDirectMessage = api.chat.deleteMessage.useMutation({
+  const updateDirectMessage = api.chat.updateMessage.useMutation({
     onSuccess: async () => {
+      setEditingMessage(null);
+      setMessageContextMenu(null);
+      setMessage(null);
       await Promise.all([
         selectedFriendId
           ? utils.chat.getConversation.invalidate({
@@ -736,8 +787,49 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setMessage(getErrorMessage(error)),
   });
 
+  const deleteDirectMessage = api.chat.deleteMessage.useMutation({
+    onSuccess: async () => {
+      setMessageContextMenu(null);
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+
+  const updateServerMessage = api.server.updateMessage.useMutation({
+    onSuccess: async () => {
+      setEditingMessage(null);
+      setMessageContextMenu(null);
+      setServerMessage(null);
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const toggleServerMessagePin = api.server.toggleMessagePin.useMutation({
+    onSuccess: async () => {
+      setMessageContextMenu(null);
+      setServerMessage(null);
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
   const deleteServerMessage = api.server.deleteMessage.useMutation({
     onSuccess: async () => {
+      setMessageContextMenu(null);
       await Promise.all([
         utils.server.getConversation.invalidate({
           channelId: selectedServerChannel?.id,
@@ -1015,13 +1107,90 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     });
   };
 
+  const openDirectMessageMenu = (
+    event: MouseEvent<HTMLElement>,
+    chatMessage: { id: string; senderId: string },
+  ) => {
+    if (chatMessage.senderId !== conversation.data?.currentUserId) return;
+
+    event.preventDefault();
+    setChannelContextMenu(null);
+    setMessageContextMenu({
+      kind: "direct",
+      messageId: chatMessage.id,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 136)),
+    });
+  };
+
+  const openServerMessageMenu = (
+    event: MouseEvent<HTMLElement>,
+    chatMessage: { id: string; senderId: string },
+  ) => {
+    const isMine =
+      chatMessage.senderId === serverConversation.data?.currentUser.id;
+    if (!isMine && !isSelectedServerOwner) return;
+
+    event.preventDefault();
+    setChannelContextMenu(null);
+    setMessageContextMenu({
+      kind: "server",
+      messageId: chatMessage.id,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 144)),
+    });
+  };
+
+  const startEditingMessage = (
+    kind: EditingMessage["kind"],
+    chatMessage: { content: string; id: string },
+  ) => {
+    setMessageContextMenu(null);
+    setEditingMessage({
+      content: chatMessage.content,
+      kind,
+      messageId: chatMessage.id,
+    });
+  };
+
+  const handleMessageEditSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingMessage?.content.trim()) return;
+
+    if (editingMessage.kind === "direct") {
+      updateDirectMessage.mutate({
+        content: editingMessage.content,
+        messageId: editingMessage.messageId,
+      });
+      return;
+    }
+
+    if (!selectedServer?.server.id) return;
+    updateServerMessage.mutate({
+      content: editingMessage.content,
+      messageId: editingMessage.messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleToggleServerMessagePin = (messageId: string) => {
+    if (!selectedServer?.server.id) return;
+
+    toggleServerMessagePin.mutate({
+      messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
   const handleDeleteDirectMessage = (messageId: string) => {
+    setMessageContextMenu(null);
     if (!window.confirm("このメッセージを削除しますか？")) return;
     deleteDirectMessage.mutate({ messageId });
   };
 
   const handleDeleteServerMessage = (messageId: string) => {
     if (!selectedServer?.server.id) return;
+    setMessageContextMenu(null);
     if (!window.confirm("このメッセージを削除しますか？")) return;
 
     deleteServerMessage.mutate({
@@ -1045,6 +1214,34 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const serverMessages = serverConversationData?.messages ?? [];
   const directConversation = conversation.data ?? null;
   const directMessages = directConversation?.messages ?? [];
+  const serverMessageContextTarget =
+    messageContextMenu?.kind === "server"
+      ? serverMessages.find(
+          (chatMessage) => chatMessage.id === messageContextMenu.messageId,
+        )
+      : null;
+  const directMessageContextTarget =
+    messageContextMenu?.kind === "direct"
+      ? directMessages.find(
+          (chatMessage) => chatMessage.id === messageContextMenu.messageId,
+        )
+      : null;
+  const messageContextTarget =
+    serverMessageContextTarget ?? directMessageContextTarget;
+  const isDirectContextMessageMine =
+    directMessageContextTarget?.senderId === directConversation?.currentUserId;
+  const isServerContextMessageMine =
+    serverMessageContextTarget?.senderId ===
+    serverConversationData?.currentUser.id;
+  const canEditContextMessage = [
+    isDirectContextMessageMine,
+    isServerContextMessageMine,
+  ].some(Boolean);
+  const canDeleteContextMessage = [
+    isDirectContextMessageMine,
+    isServerContextMessageMine,
+    Boolean(serverMessageContextTarget && isSelectedServerOwner),
+  ].some(Boolean);
 
   return (
     <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
@@ -1267,12 +1464,36 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             </div>
 
             <div className="mt-auto border-t border-[#18221f]/15 px-4 py-3">
-              <p className="text-xs font-semibold text-[#68716b] uppercase">
-                あなたの権限
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                {selectedServer.role === "OWNER" ? "管理者" : "メンバー"}
-              </p>
+              {currentServerUser && (
+                <Link
+                  href={`/profile?from=${encodeURIComponent(
+                    selectedServerBackHref,
+                  )}`}
+                  className="flex items-center gap-3 rounded-md px-1 py-1 transition hover:bg-[#fff8ed]"
+                >
+                  <span className="relative shrink-0">
+                    <Avatar
+                      user={currentServerUser}
+                      className="h-10 w-10 rounded-full border border-black/10"
+                    />
+                    <span
+                      className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] ${getPresenceDotClassName(
+                        currentServerUser.presenceStatus,
+                      )}`}
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">
+                      {getDisplayName(currentServerUser)}
+                    </span>
+                    <span className="block truncate text-xs text-[#68716b]">
+                      {getPresenceDisplayLabel(
+                        currentServerUser.presenceStatus,
+                      )}
+                    </span>
+                  </span>
+                </Link>
+              )}
             </div>
           </>
         ) : (
@@ -1477,10 +1698,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         const author = isMine
                           ? { userId: "me", name: "あなた", image: null }
                           : chatMessage.sender;
+                        const isEditing =
+                          editingMessage?.kind === "server" &&
+                          editingMessage.messageId === chatMessage.id;
 
                         return (
                           <article
                             key={chatMessage.id}
+                            onContextMenu={(event) =>
+                              openServerMessageMenu(event, chatMessage)
+                            }
                             className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
                               isMine ? "flex-row-reverse" : ""
                             }`}
@@ -1505,32 +1732,67 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 <time className="text-xs text-[#68716b]">
                                   {formatTime(chatMessage.createdAt)}
                                 </time>
+                                {chatMessage.pinnedAt && (
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
+                                    <Pin
+                                      className="h-3 w-3"
+                                      aria-hidden="true"
+                                    />
+                                    ピン留め
+                                  </span>
+                                )}
                               </div>
-                              <p
-                                className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                  isMine
-                                    ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                    : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                }`}
-                              >
-                                {chatMessage.content}
-                              </p>
-                              {(isMine || isSelectedServerOwner) && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleDeleteServerMessage(chatMessage.id)
-                                  }
-                                  disabled={deleteServerMessage.isPending}
-                                  className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#9f4122] opacity-70 transition hover:bg-[#fff1e8] hover:opacity-100 disabled:opacity-30"
-                                  aria-label="メッセージを削除"
-                                  title="削除"
+                              {isEditing ? (
+                                <form
+                                  onSubmit={handleMessageEditSubmit}
+                                  className="space-y-2"
                                 >
-                                  <Trash2
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
+                                  <textarea
+                                    value={editingMessage.content}
+                                    onChange={(event) =>
+                                      setEditingMessage({
+                                        ...editingMessage,
+                                        content: event.target.value,
+                                      })
+                                    }
+                                    className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                    maxLength={1000}
+                                    autoFocus
                                   />
-                                </button>
+                                  <div
+                                    className={`flex gap-2 ${
+                                      isMine ? "justify-end" : ""
+                                    }`}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMessage(null)}
+                                      className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                    >
+                                      キャンセル
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        !editingMessage.content.trim() ||
+                                        updateServerMessage.isPending
+                                      }
+                                      className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                    >
+                                      保存
+                                    </button>
+                                  </div>
+                                </form>
+                              ) : (
+                                <p
+                                  className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                    isMine
+                                      ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                      : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                  }`}
+                                >
+                                  {chatMessage.content}
+                                </p>
                               )}
                             </div>
                           </article>
@@ -1620,10 +1882,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           const author = isMine
                             ? { userId: "me", name: "あなた", image: null }
                             : directConversation.friend;
+                          const isEditing =
+                            editingMessage?.kind === "direct" &&
+                            editingMessage.messageId === chatMessage.id;
 
                           return (
                             <article
                               key={chatMessage.id}
+                              onContextMenu={(event) =>
+                                openDirectMessageMenu(event, chatMessage)
+                              }
                               className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
                                 isMine ? "flex-row-reverse" : ""
                               }`}
@@ -1649,31 +1917,57 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     {formatTime(chatMessage.createdAt)}
                                   </time>
                                 </div>
-                                <p
-                                  className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                    isMine
-                                      ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                      : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                  }`}
-                                >
-                                  {chatMessage.content}
-                                </p>
-                                {isMine && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDeleteDirectMessage(chatMessage.id)
-                                    }
-                                    disabled={deleteDirectMessage.isPending}
-                                    className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#9f4122] opacity-70 transition hover:bg-[#fff1e8] hover:opacity-100 disabled:opacity-30"
-                                    aria-label="メッセージを削除"
-                                    title="削除"
+                                {isEditing ? (
+                                  <form
+                                    onSubmit={handleMessageEditSubmit}
+                                    className="space-y-2"
                                   >
-                                    <Trash2
-                                      className="h-4 w-4"
-                                      aria-hidden="true"
+                                    <textarea
+                                      value={editingMessage.content}
+                                      onChange={(event) =>
+                                        setEditingMessage({
+                                          ...editingMessage,
+                                          content: event.target.value,
+                                        })
+                                      }
+                                      className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                      maxLength={1000}
+                                      autoFocus
                                     />
-                                  </button>
+                                    <div
+                                      className={`flex gap-2 ${
+                                        isMine ? "justify-end" : ""
+                                      }`}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMessage(null)}
+                                        className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                      >
+                                        キャンセル
+                                      </button>
+                                      <button
+                                        type="submit"
+                                        disabled={
+                                          !editingMessage.content.trim() ||
+                                          updateDirectMessage.isPending
+                                        }
+                                        className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                      >
+                                        保存
+                                      </button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <p
+                                    className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                      isMine
+                                        ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                        : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                    }`}
+                                  >
+                                    {chatMessage.content}
+                                  </p>
                                 )}
                               </div>
                             </article>
@@ -1855,26 +2149,46 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 メンバー
               </h2>
               <div className="space-y-2">
-                {selectedServerMembers.map((member) => (
-                  <Link
-                    key={member.id}
-                    href={`/profile/${member.user.userId}`}
-                    className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
-                  >
-                    <Avatar
-                      user={member.user}
-                      className="h-9 w-9 shrink-0 rounded-full border border-black/10"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">
-                        {getDisplayName(member.user)}
-                      </p>
-                      <p className="truncate text-xs text-[#68716b]">
-                        {member.role === "OWNER" ? "管理者" : "メンバー"}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
+                {selectedServerMembers.map((member) => {
+                  const isCurrentUser =
+                    member.user.id === currentServerUser?.id;
+                  const profileHref = isCurrentUser
+                    ? `/profile?from=${encodeURIComponent(
+                        selectedServerBackHref,
+                      )}`
+                    : `/profile/${member.user.userId}?from=${encodeURIComponent(
+                        selectedServerBackHref,
+                      )}`;
+
+                  return (
+                    <Link
+                      key={member.id}
+                      href={profileHref}
+                      className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
+                    >
+                      <span className="relative shrink-0">
+                        <Avatar
+                          user={member.user}
+                          className="h-9 w-9 rounded-full border border-black/10"
+                        />
+                        <span
+                          className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
+                            member.user.presenceStatus,
+                          )}`}
+                        />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">
+                          {getDisplayName(member.user)}
+                        </p>
+                        <p className="truncate text-xs text-[#68716b]">
+                          {getPresenceDisplayLabel(member.user.presenceStatus)}{" "}
+                          ・{member.role === "OWNER" ? "管理者" : "メンバー"}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </aside>
           )}
@@ -2005,6 +2319,68 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             削除
           </button>
+        </div>
+      )}
+
+      {messageContextMenu && messageContextTarget && (
+        <div
+          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          style={{ left: messageContextMenu.x, top: messageContextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+          role="menu"
+        >
+          {serverMessageContextTarget && isSelectedServerOwner && (
+            <button
+              type="button"
+              onClick={() =>
+                handleToggleServerMessagePin(serverMessageContextTarget.id)
+              }
+              disabled={toggleServerMessagePin.isPending}
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc] disabled:opacity-45"
+              role="menuitem"
+            >
+              <Pin className="h-4 w-4" aria-hidden="true" />
+              {serverMessageContextTarget.pinnedAt
+                ? "ピン留め解除"
+                : "ピン留め"}
+            </button>
+          )}
+          {canEditContextMessage && (
+            <button
+              type="button"
+              onClick={() =>
+                startEditingMessage(
+                  messageContextMenu.kind,
+                  messageContextTarget,
+                )
+              }
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+              role="menuitem"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              編集
+            </button>
+          )}
+          {canDeleteContextMessage && (
+            <button
+              type="button"
+              onClick={() =>
+                messageContextMenu.kind === "server"
+                  ? handleDeleteServerMessage(messageContextTarget.id)
+                  : handleDeleteDirectMessage(messageContextTarget.id)
+              }
+              disabled={
+                messageContextMenu.kind === "server"
+                  ? deleteServerMessage.isPending
+                  : deleteDirectMessage.isPending
+              }
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-not-allowed disabled:opacity-45"
+              role="menuitem"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              削除
+            </button>
+          )}
         </div>
       )}
     </main>
