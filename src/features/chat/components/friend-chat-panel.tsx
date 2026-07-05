@@ -1943,7 +1943,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             </label>
 
             {serverSettingsMessage && (
-              <p className="rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+              <p
+                className={`rounded-md border px-3 py-2 text-sm ${
+                  serverSettingsMessage.includes("保存しました")
+                    ? "border-sky-200 bg-sky-50 text-sky-900"
+                    : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+                }`}
+              >
                 {serverSettingsMessage}
               </p>
             )}
