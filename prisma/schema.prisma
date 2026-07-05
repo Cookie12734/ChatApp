@@ -64,6 +64,7 @@ model User {
   createdServers         ChatServer[]        @relation("CreatedServers")
   friendships            Friendship[]        @relation("UserFriendships")
   friendOf               Friendship[]        @relation("FriendOf")
+  matchingQueue          MatchingQueue?
   notifications          Notification[]
   posts                  Post[]
   sentServerMessages     ServerMessage[]     @relation("SentServerMessages")
@@ -139,6 +140,18 @@ model DirectMessage {
   @@index([senderId, receiverId, createdAt])
 }
 
+model MatchingQueue {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  topic         MatchingTopic
+  matchedUserId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([topic, matchedUserId, createdAt])
+}
+
 model UserBlock {
   id        String   @id @default(cuid())
   blockerId String
@@ -155,6 +168,7 @@ model ChatServer {
   id          String          @id @default(cuid())
   name        String
   description String?
+  image       String?
   inviteCode  String          @unique @default(cuid())
   createdById String
   createdAt   DateTime        @default(now())
@@ -231,6 +245,12 @@ enum FriendRequestStatus {
 enum NotificationType {
   FRIEND_REQUEST
   FRIEND_REQUEST_ACCEPTED
+}
+
+enum MatchingTopic {
+  CASUAL
+  GAME
+  WORRIES
 }
 
 enum ServerMemberRole {

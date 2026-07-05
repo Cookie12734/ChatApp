@@ -23,6 +23,17 @@ const sendMessageInput = friendIdInput.extend({
     .max(1000, "メッセージは1000文字以内で入力してください"),
 });
 
+const matchingTopicInput = z.object({
+  topic: z.enum(["CASUAL", "GAME", "WORRIES"]),
+});
+
+const userPreviewSelect = {
+  id: true,
+  image: true,
+  name: true,
+  userId: true,
+} as const;
+
 export const chatRouter = createTRPCRouter({
   getFriends: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
@@ -98,6 +109,118 @@ export const chatRouter = createTRPCRouter({
       const bTime = b.lastMessage?.createdAt.getTime() ?? 0;
       return bTime - aTime;
     });
+  }),
+
+  getMatchingStatus: protectedProcedure.query(async ({ ctx }) => {
+    const queue = await ctx.db.matchingQueue.findUnique({
+      where: { userId: ctx.session.user.id },
+      select: { matchedUserId: true, topic: true },
+    });
+
+    if (!queue) {
+      return { status: "idle" as const };
+    }
+
+    if (!queue.matchedUserId) {
+      return { status: "waiting" as const, topic: queue.topic };
+    }
+
+    const friend = await ctx.db.user.findUnique({
+      where: { id: queue.matchedUserId },
+      select: userPreviewSelect,
+    });
+
+    return friend
+      ? { friend, status: "matched" as const, topic: queue.topic }
+      : { status: "idle" as const };
+  }),
+
+  matchRandom: protectedProcedure
+    .input(matchingTopicInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const [blocks, friendships] = await Promise.all([
+        ctx.db.userBlock.findMany({
+          where: {
+            OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+          },
+          select: { blockedId: true, blockerId: true },
+        }),
+        ctx.db.friendship.findMany({
+          where: { userId: currentUserId },
+          select: { friendId: true },
+        }),
+      ]);
+      const excludedUserIds = [
+        currentUserId,
+        ...getBlockedPeerIds(currentUserId, blocks),
+        ...friendships.map((friendship) => friendship.friendId),
+      ];
+
+      return ctx.db.$transaction(async (tx) => {
+        const wait = async () => {
+          await tx.matchingQueue.upsert({
+            where: { userId: currentUserId },
+            update: { matchedUserId: null, topic: input.topic },
+            create: { topic: input.topic, userId: currentUserId },
+          });
+
+          return { status: "waiting" as const, topic: input.topic };
+        };
+
+        await tx.matchingQueue.deleteMany({
+          where: { userId: currentUserId },
+        });
+
+        const waitingUsers = await tx.matchingQueue.findMany({
+          where: {
+            matchedUserId: null,
+            topic: input.topic,
+            userId: { notIn: excludedUserIds },
+          },
+          orderBy: { createdAt: "asc" },
+          take: 50,
+          include: { user: { select: userPreviewSelect } },
+        });
+
+        const match =
+          waitingUsers[Math.floor(Math.random() * waitingUsers.length)];
+        if (!match) {
+          return wait();
+        }
+
+        // ponytail: random from the oldest 50 keeps this cheap; use DB random/locks if traffic grows.
+        const claimed = await tx.matchingQueue.updateMany({
+          where: { id: match.id, matchedUserId: null },
+          data: { matchedUserId: currentUserId },
+        });
+
+        if (claimed.count === 0) {
+          return wait();
+        }
+
+        await tx.friendship.createMany({
+          data: [
+            { friendId: match.userId, userId: currentUserId },
+            { friendId: currentUserId, userId: match.userId },
+          ],
+          skipDuplicates: true,
+        });
+
+        return {
+          friend: match.user,
+          status: "matched" as const,
+          topic: input.topic,
+        };
+      });
+    }),
+
+  cancelMatching: protectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.db.matchingQueue.deleteMany({
+      where: { userId: ctx.session.user.id },
+    });
+
+    return { ok: true };
   }),
 
   getConversation: protectedProcedure

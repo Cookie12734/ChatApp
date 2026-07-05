@@ -61,6 +61,12 @@ export type Notification =
 export type DirectMessage =
   $Result.DefaultSelection<Prisma.$DirectMessagePayload>;
 /**
+ * Model MatchingQueue
+ *
+ */
+export type MatchingQueue =
+  $Result.DefaultSelection<Prisma.$MatchingQueuePayload>;
+/**
  * Model UserBlock
  *
  */
@@ -116,6 +122,15 @@ export namespace $Enums {
   export type NotificationType =
     (typeof NotificationType)[keyof typeof NotificationType];
 
+  export const MatchingTopic: {
+    CASUAL: "CASUAL";
+    GAME: "GAME";
+    WORRIES: "WORRIES";
+  };
+
+  export type MatchingTopic =
+    (typeof MatchingTopic)[keyof typeof MatchingTopic];
+
   export const ServerMemberRole: {
     OWNER: "OWNER";
     MEMBER: "MEMBER";
@@ -132,6 +147,10 @@ export const FriendRequestStatus: typeof $Enums.FriendRequestStatus;
 export type NotificationType = $Enums.NotificationType;
 
 export const NotificationType: typeof $Enums.NotificationType;
+
+export type MatchingTopic = $Enums.MatchingTopic;
+
+export const MatchingTopic: typeof $Enums.MatchingTopic;
 
 export type ServerMemberRole = $Enums.ServerMemberRole;
 
@@ -388,6 +407,16 @@ export class PrismaClient<
    * ```
    */
   get directMessage(): Prisma.DirectMessageDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.matchingQueue`: Exposes CRUD operations for the **MatchingQueue** model.
+   * Example usage:
+   * ```ts
+   * // Fetch zero or more MatchingQueues
+   * const matchingQueues = await prisma.matchingQueue.findMany()
+   * ```
+   */
+  get matchingQueue(): Prisma.MatchingQueueDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.userBlock`: Exposes CRUD operations for the **UserBlock** model.
@@ -919,6 +948,7 @@ export namespace Prisma {
     Friendship: "Friendship";
     Notification: "Notification";
     DirectMessage: "DirectMessage";
+    MatchingQueue: "MatchingQueue";
     UserBlock: "UserBlock";
     ChatServer: "ChatServer";
     ServerMember: "ServerMember";
@@ -961,6 +991,7 @@ export namespace Prisma {
         | "friendship"
         | "notification"
         | "directMessage"
+        | "matchingQueue"
         | "userBlock"
         | "chatServer"
         | "serverMember"
@@ -1646,6 +1677,82 @@ export namespace Prisma {
           };
         };
       };
+      MatchingQueue: {
+        payload: Prisma.$MatchingQueuePayload<ExtArgs>;
+        fields: Prisma.MatchingQueueFieldRefs;
+        operations: {
+          findUnique: {
+            args: Prisma.MatchingQueueFindUniqueArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload> | null;
+          };
+          findUniqueOrThrow: {
+            args: Prisma.MatchingQueueFindUniqueOrThrowArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          findFirst: {
+            args: Prisma.MatchingQueueFindFirstArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload> | null;
+          };
+          findFirstOrThrow: {
+            args: Prisma.MatchingQueueFindFirstOrThrowArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          findMany: {
+            args: Prisma.MatchingQueueFindManyArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[];
+          };
+          create: {
+            args: Prisma.MatchingQueueCreateArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          createMany: {
+            args: Prisma.MatchingQueueCreateManyArgs<ExtArgs>;
+            result: BatchPayload;
+          };
+          createManyAndReturn: {
+            args: Prisma.MatchingQueueCreateManyAndReturnArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[];
+          };
+          delete: {
+            args: Prisma.MatchingQueueDeleteArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          update: {
+            args: Prisma.MatchingQueueUpdateArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          deleteMany: {
+            args: Prisma.MatchingQueueDeleteManyArgs<ExtArgs>;
+            result: BatchPayload;
+          };
+          updateMany: {
+            args: Prisma.MatchingQueueUpdateManyArgs<ExtArgs>;
+            result: BatchPayload;
+          };
+          updateManyAndReturn: {
+            args: Prisma.MatchingQueueUpdateManyAndReturnArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[];
+          };
+          upsert: {
+            args: Prisma.MatchingQueueUpsertArgs<ExtArgs>;
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>;
+          };
+          aggregate: {
+            args: Prisma.MatchingQueueAggregateArgs<ExtArgs>;
+            result: $Utils.Optional<AggregateMatchingQueue>;
+          };
+          groupBy: {
+            args: Prisma.MatchingQueueGroupByArgs<ExtArgs>;
+            result: $Utils.Optional<MatchingQueueGroupByOutputType>[];
+          };
+          count: {
+            args: Prisma.MatchingQueueCountArgs<ExtArgs>;
+            result:
+              | $Utils.Optional<MatchingQueueCountAggregateOutputType>
+              | number;
+          };
+        };
+      };
       UserBlock: {
         payload: Prisma.$UserBlockPayload<ExtArgs>;
         fields: Prisma.UserBlockFieldRefs;
@@ -2209,6 +2316,7 @@ export namespace Prisma {
     friendship?: FriendshipOmit;
     notification?: NotificationOmit;
     directMessage?: DirectMessageOmit;
+    matchingQueue?: MatchingQueueOmit;
     userBlock?: UserBlockOmit;
     chatServer?: ChatServerOmit;
     serverMember?: ServerMemberOmit;
@@ -6924,6 +7032,7 @@ export namespace Prisma {
       createdServers?: boolean | User$createdServersArgs<ExtArgs>;
       friendships?: boolean | User$friendshipsArgs<ExtArgs>;
       friendOf?: boolean | User$friendOfArgs<ExtArgs>;
+      matchingQueue?: boolean | User$matchingQueueArgs<ExtArgs>;
       notifications?: boolean | User$notificationsArgs<ExtArgs>;
       posts?: boolean | User$postsArgs<ExtArgs>;
       sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>;
@@ -7010,6 +7119,7 @@ export namespace Prisma {
     createdServers?: boolean | User$createdServersArgs<ExtArgs>;
     friendships?: boolean | User$friendshipsArgs<ExtArgs>;
     friendOf?: boolean | User$friendOfArgs<ExtArgs>;
+    matchingQueue?: boolean | User$matchingQueueArgs<ExtArgs>;
     notifications?: boolean | User$notificationsArgs<ExtArgs>;
     posts?: boolean | User$postsArgs<ExtArgs>;
     sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>;
@@ -7040,6 +7150,7 @@ export namespace Prisma {
       createdServers: Prisma.$ChatServerPayload<ExtArgs>[];
       friendships: Prisma.$FriendshipPayload<ExtArgs>[];
       friendOf: Prisma.$FriendshipPayload<ExtArgs>[];
+      matchingQueue: Prisma.$MatchingQueuePayload<ExtArgs> | null;
       notifications: Prisma.$NotificationPayload<ExtArgs>[];
       posts: Prisma.$PostPayload<ExtArgs>[];
       sentServerMessages: Prisma.$ServerMessagePayload<ExtArgs>[];
@@ -7694,6 +7805,19 @@ export namespace Prisma {
           GlobalOmitOptions
         >
       | Null
+    >;
+    matchingQueue<T extends User$matchingQueueArgs<ExtArgs> = {}>(
+      args?: Subset<T, User$matchingQueueArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findUniqueOrThrow",
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
     >;
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(
       args?: Subset<T, User$notificationsArgs<ExtArgs>>,
@@ -8472,6 +8596,27 @@ export namespace Prisma {
     take?: number;
     skip?: number;
     distinct?: FriendshipScalarFieldEnum | FriendshipScalarFieldEnum[];
+  };
+
+  /**
+   * User.matchingQueue
+   */
+  export type User$matchingQueueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    where?: MatchingQueueWhereInput;
   };
 
   /**
@@ -15388,6 +15533,1332 @@ export namespace Prisma {
   };
 
   /**
+   * Model MatchingQueue
+   */
+
+  export type AggregateMatchingQueue = {
+    _count: MatchingQueueCountAggregateOutputType | null;
+    _min: MatchingQueueMinAggregateOutputType | null;
+    _max: MatchingQueueMaxAggregateOutputType | null;
+  };
+
+  export type MatchingQueueMinAggregateOutputType = {
+    id: string | null;
+    userId: string | null;
+    topic: $Enums.MatchingTopic | null;
+    matchedUserId: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+  };
+
+  export type MatchingQueueMaxAggregateOutputType = {
+    id: string | null;
+    userId: string | null;
+    topic: $Enums.MatchingTopic | null;
+    matchedUserId: string | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+  };
+
+  export type MatchingQueueCountAggregateOutputType = {
+    id: number;
+    userId: number;
+    topic: number;
+    matchedUserId: number;
+    createdAt: number;
+    updatedAt: number;
+    _all: number;
+  };
+
+  export type MatchingQueueMinAggregateInputType = {
+    id?: true;
+    userId?: true;
+    topic?: true;
+    matchedUserId?: true;
+    createdAt?: true;
+    updatedAt?: true;
+  };
+
+  export type MatchingQueueMaxAggregateInputType = {
+    id?: true;
+    userId?: true;
+    topic?: true;
+    matchedUserId?: true;
+    createdAt?: true;
+    updatedAt?: true;
+  };
+
+  export type MatchingQueueCountAggregateInputType = {
+    id?: true;
+    userId?: true;
+    topic?: true;
+    matchedUserId?: true;
+    createdAt?: true;
+    updatedAt?: true;
+    _all?: true;
+  };
+
+  export type MatchingQueueAggregateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Filter which MatchingQueue to aggregate.
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?:
+      | MatchingQueueOrderByWithRelationInput
+      | MatchingQueueOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the start position
+     */
+    cursor?: MatchingQueueWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Count returned MatchingQueues
+     **/
+    _count?: true | MatchingQueueCountAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the minimum value
+     **/
+    _min?: MatchingQueueMinAggregateInputType;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     *
+     * Select which fields to find the maximum value
+     **/
+    _max?: MatchingQueueMaxAggregateInputType;
+  };
+
+  export type GetMatchingQueueAggregateType<
+    T extends MatchingQueueAggregateArgs,
+  > = {
+    [P in keyof T & keyof AggregateMatchingQueue]: P extends "_count" | "count"
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateMatchingQueue[P]>
+      : GetScalarType<T[P], AggregateMatchingQueue[P]>;
+  };
+
+  export type MatchingQueueGroupByArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    where?: MatchingQueueWhereInput;
+    orderBy?:
+      | MatchingQueueOrderByWithAggregationInput
+      | MatchingQueueOrderByWithAggregationInput[];
+    by: MatchingQueueScalarFieldEnum[] | MatchingQueueScalarFieldEnum;
+    having?: MatchingQueueScalarWhereWithAggregatesInput;
+    take?: number;
+    skip?: number;
+    _count?: MatchingQueueCountAggregateInputType | true;
+    _min?: MatchingQueueMinAggregateInputType;
+    _max?: MatchingQueueMaxAggregateInputType;
+  };
+
+  export type MatchingQueueGroupByOutputType = {
+    id: string;
+    userId: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    _count: MatchingQueueCountAggregateOutputType | null;
+    _min: MatchingQueueMinAggregateOutputType | null;
+    _max: MatchingQueueMaxAggregateOutputType | null;
+  };
+
+  type GetMatchingQueueGroupByPayload<T extends MatchingQueueGroupByArgs> =
+    Prisma.PrismaPromise<
+      Array<
+        PickEnumerable<MatchingQueueGroupByOutputType, T["by"]> & {
+          [P in keyof T &
+            keyof MatchingQueueGroupByOutputType]: P extends "_count"
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MatchingQueueGroupByOutputType[P]>
+            : GetScalarType<T[P], MatchingQueueGroupByOutputType[P]>;
+        }
+      >
+    >;
+
+  export type MatchingQueueSelect<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean;
+      userId?: boolean;
+      topic?: boolean;
+      matchedUserId?: boolean;
+      createdAt?: boolean;
+      updatedAt?: boolean;
+      user?: boolean | UserDefaultArgs<ExtArgs>;
+    },
+    ExtArgs["result"]["matchingQueue"]
+  >;
+
+  export type MatchingQueueSelectCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean;
+      userId?: boolean;
+      topic?: boolean;
+      matchedUserId?: boolean;
+      createdAt?: boolean;
+      updatedAt?: boolean;
+      user?: boolean | UserDefaultArgs<ExtArgs>;
+    },
+    ExtArgs["result"]["matchingQueue"]
+  >;
+
+  export type MatchingQueueSelectUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetSelect<
+    {
+      id?: boolean;
+      userId?: boolean;
+      topic?: boolean;
+      matchedUserId?: boolean;
+      createdAt?: boolean;
+      updatedAt?: boolean;
+      user?: boolean | UserDefaultArgs<ExtArgs>;
+    },
+    ExtArgs["result"]["matchingQueue"]
+  >;
+
+  export type MatchingQueueSelectScalar = {
+    id?: boolean;
+    userId?: boolean;
+    topic?: boolean;
+    matchedUserId?: boolean;
+    createdAt?: boolean;
+    updatedAt?: boolean;
+  };
+
+  export type MatchingQueueOmit<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = $Extensions.GetOmit<
+    "id" | "userId" | "topic" | "matchedUserId" | "createdAt" | "updatedAt",
+    ExtArgs["result"]["matchingQueue"]
+  >;
+  export type MatchingQueueInclude<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    user?: boolean | UserDefaultArgs<ExtArgs>;
+  };
+  export type MatchingQueueIncludeCreateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    user?: boolean | UserDefaultArgs<ExtArgs>;
+  };
+  export type MatchingQueueIncludeUpdateManyAndReturn<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    user?: boolean | UserDefaultArgs<ExtArgs>;
+  };
+
+  export type $MatchingQueuePayload<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    name: "MatchingQueue";
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>;
+    };
+    scalars: $Extensions.GetPayloadResult<
+      {
+        id: string;
+        userId: string;
+        topic: $Enums.MatchingTopic;
+        matchedUserId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+      },
+      ExtArgs["result"]["matchingQueue"]
+    >;
+    composites: {};
+  };
+
+  type MatchingQueueGetPayload<
+    S extends boolean | null | undefined | MatchingQueueDefaultArgs,
+  > = $Result.GetResult<Prisma.$MatchingQueuePayload, S>;
+
+  type MatchingQueueCountArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = Omit<
+    MatchingQueueFindManyArgs,
+    "select" | "include" | "distinct" | "omit"
+  > & {
+    select?: MatchingQueueCountAggregateInputType | true;
+  };
+
+  export interface MatchingQueueDelegate<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > {
+    [K: symbol]: {
+      types: Prisma.TypeMap<ExtArgs>["model"]["MatchingQueue"];
+      meta: { name: "MatchingQueue" };
+    };
+    /**
+     * Find zero or one MatchingQueue that matches the filter.
+     * @param {MatchingQueueFindUniqueArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends MatchingQueueFindUniqueArgs>(
+      args: SelectSubset<T, MatchingQueueFindUniqueArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findUnique",
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Find one MatchingQueue that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {MatchingQueueFindUniqueOrThrowArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends MatchingQueueFindUniqueOrThrowArgs>(
+      args: SelectSubset<T, MatchingQueueFindUniqueOrThrowArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findUniqueOrThrow",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Find the first MatchingQueue that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindFirstArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends MatchingQueueFindFirstArgs>(
+      args?: SelectSubset<T, MatchingQueueFindFirstArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findFirst",
+        GlobalOmitOptions
+      > | null,
+      null,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Find the first MatchingQueue that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindFirstOrThrowArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends MatchingQueueFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, MatchingQueueFindFirstOrThrowArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findFirstOrThrow",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Find zero or more MatchingQueues that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all MatchingQueues
+     * const matchingQueues = await prisma.matchingQueue.findMany()
+     *
+     * // Get first 10 MatchingQueues
+     * const matchingQueues = await prisma.matchingQueue.findMany({ take: 10 })
+     *
+     * // Only select the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.findMany({ select: { id: true } })
+     *
+     */
+    findMany<T extends MatchingQueueFindManyArgs>(
+      args?: SelectSubset<T, MatchingQueueFindManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    >;
+
+    /**
+     * Create a MatchingQueue.
+     * @param {MatchingQueueCreateArgs} args - Arguments to create a MatchingQueue.
+     * @example
+     * // Create one MatchingQueue
+     * const MatchingQueue = await prisma.matchingQueue.create({
+     *   data: {
+     *     // ... data to create a MatchingQueue
+     *   }
+     * })
+     *
+     */
+    create<T extends MatchingQueueCreateArgs>(
+      args: SelectSubset<T, MatchingQueueCreateArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "create",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Create many MatchingQueues.
+     * @param {MatchingQueueCreateManyArgs} args - Arguments to create many MatchingQueues.
+     * @example
+     * // Create many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     */
+    createMany<T extends MatchingQueueCreateManyArgs>(
+      args?: SelectSubset<T, MatchingQueueCreateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>;
+
+    /**
+     * Create many MatchingQueues and returns the data saved in the database.
+     * @param {MatchingQueueCreateManyAndReturnArgs} args - Arguments to create many MatchingQueues.
+     * @example
+     * // Create many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Create many MatchingQueues and only return the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    createManyAndReturn<T extends MatchingQueueCreateManyAndReturnArgs>(
+      args?: SelectSubset<T, MatchingQueueCreateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "createManyAndReturn",
+        GlobalOmitOptions
+      >
+    >;
+
+    /**
+     * Delete a MatchingQueue.
+     * @param {MatchingQueueDeleteArgs} args - Arguments to delete one MatchingQueue.
+     * @example
+     * // Delete one MatchingQueue
+     * const MatchingQueue = await prisma.matchingQueue.delete({
+     *   where: {
+     *     // ... filter to delete one MatchingQueue
+     *   }
+     * })
+     *
+     */
+    delete<T extends MatchingQueueDeleteArgs>(
+      args: SelectSubset<T, MatchingQueueDeleteArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "delete",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Update one MatchingQueue.
+     * @param {MatchingQueueUpdateArgs} args - Arguments to update one MatchingQueue.
+     * @example
+     * // Update one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    update<T extends MatchingQueueUpdateArgs>(
+      args: SelectSubset<T, MatchingQueueUpdateArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "update",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Delete zero or more MatchingQueues.
+     * @param {MatchingQueueDeleteManyArgs} args - Arguments to filter MatchingQueues to delete.
+     * @example
+     * // Delete a few MatchingQueues
+     * const { count } = await prisma.matchingQueue.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     *
+     */
+    deleteMany<T extends MatchingQueueDeleteManyArgs>(
+      args?: SelectSubset<T, MatchingQueueDeleteManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>;
+
+    /**
+     * Update zero or more MatchingQueues.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     *
+     */
+    updateMany<T extends MatchingQueueUpdateManyArgs>(
+      args: SelectSubset<T, MatchingQueueUpdateManyArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<BatchPayload>;
+
+    /**
+     * Update zero or more MatchingQueues and returns the data updated in the database.
+     * @param {MatchingQueueUpdateManyAndReturnArgs} args - Arguments to update many MatchingQueues.
+     * @example
+     * // Update many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *
+     * // Update zero or more MatchingQueues and only return the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     *
+     */
+    updateManyAndReturn<T extends MatchingQueueUpdateManyAndReturnArgs>(
+      args: SelectSubset<T, MatchingQueueUpdateManyAndReturnArgs<ExtArgs>>,
+    ): Prisma.PrismaPromise<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "updateManyAndReturn",
+        GlobalOmitOptions
+      >
+    >;
+
+    /**
+     * Create or update one MatchingQueue.
+     * @param {MatchingQueueUpsertArgs} args - Arguments to update or create a MatchingQueue.
+     * @example
+     * // Update or create a MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.upsert({
+     *   create: {
+     *     // ... data to create a MatchingQueue
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the MatchingQueue we want to update
+     *   }
+     * })
+     */
+    upsert<T extends MatchingQueueUpsertArgs>(
+      args: SelectSubset<T, MatchingQueueUpsertArgs<ExtArgs>>,
+    ): Prisma__MatchingQueueClient<
+      $Result.GetResult<
+        Prisma.$MatchingQueuePayload<ExtArgs>,
+        T,
+        "upsert",
+        GlobalOmitOptions
+      >,
+      never,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+
+    /**
+     * Count the number of MatchingQueues.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueCountArgs} args - Arguments to filter MatchingQueues to count.
+     * @example
+     * // Count the number of MatchingQueues
+     * const count = await prisma.matchingQueue.count({
+     *   where: {
+     *     // ... the filter for the MatchingQueues we want to count
+     *   }
+     * })
+     **/
+    count<T extends MatchingQueueCountArgs>(
+      args?: Subset<T, MatchingQueueCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<"select", any>
+        ? T["select"] extends true
+          ? number
+          : GetScalarType<T["select"], MatchingQueueCountAggregateOutputType>
+        : number
+    >;
+
+    /**
+     * Allows you to perform aggregations operations on a MatchingQueue.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+     **/
+    aggregate<T extends MatchingQueueAggregateArgs>(
+      args: Subset<T, MatchingQueueAggregateArgs>,
+    ): Prisma.PrismaPromise<GetMatchingQueueAggregateType<T>>;
+
+    /**
+     * Group by MatchingQueue.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     *
+     **/
+    groupBy<
+      T extends MatchingQueueGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<"skip", Keys<T>>,
+        Extends<"take", Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: MatchingQueueGroupByArgs["orderBy"] }
+        : { orderBy?: MatchingQueueGroupByArgs["orderBy"] },
+      OrderFields extends ExcludeUnderscoreKeys<
+        Keys<MaybeTupleToUnion<T["orderBy"]>>
+      >,
+      ByFields extends MaybeTupleToUnion<T["by"]>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T["having"]>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T["by"] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+        ? `Error: "by" must not be empty.`
+        : HavingValid extends False
+          ? {
+              [P in HavingFields]: P extends ByFields
+                ? never
+                : P extends string
+                  ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+                  : [
+                      Error,
+                      "Field ",
+                      P,
+                      ` in "having" needs to be provided in "by"`,
+                    ];
+            }[HavingFields]
+          : "take" extends Keys<T>
+            ? "orderBy" extends Keys<T>
+              ? ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+                  }[OrderFields]
+              : 'Error: If you provide "take", you also need to provide "orderBy"'
+            : "skip" extends Keys<T>
+              ? "orderBy" extends Keys<T>
+                ? ByValid extends True
+                  ? {}
+                  : {
+                      [P in OrderFields]: P extends ByFields
+                        ? never
+                        : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+                    }[OrderFields]
+                : 'Error: If you provide "skip", you also need to provide "orderBy"'
+              : ByValid extends True
+                ? {}
+                : {
+                    [P in OrderFields]: P extends ByFields
+                      ? never
+                      : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
+                  }[OrderFields],
+    >(
+      args: SubsetIntersection<T, MatchingQueueGroupByArgs, OrderByArg> &
+        InputErrors,
+    ): {} extends InputErrors
+      ? GetMatchingQueueGroupByPayload<T>
+      : Prisma.PrismaPromise<InputErrors>;
+    /**
+     * Fields of the MatchingQueue model
+     */
+    readonly fields: MatchingQueueFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for MatchingQueue.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__MatchingQueueClient<
+    T,
+    Null = never,
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+    GlobalOmitOptions = {},
+  > extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise";
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(
+      args?: Subset<T, UserDefaultArgs<ExtArgs>>,
+    ): Prisma__UserClient<
+      | $Result.GetResult<
+          Prisma.$UserPayload<ExtArgs>,
+          T,
+          "findUniqueOrThrow",
+          GlobalOmitOptions
+        >
+      | Null,
+      Null,
+      ExtArgs,
+      GlobalOmitOptions
+    >;
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(
+      onfulfilled?:
+        | ((value: T) => TResult1 | PromiseLike<TResult1>)
+        | undefined
+        | null,
+      onrejected?:
+        | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(
+      onrejected?:
+        | ((reason: any) => TResult | PromiseLike<TResult>)
+        | undefined
+        | null,
+    ): $Utils.JsPromise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>;
+  }
+
+  /**
+   * Fields of the MatchingQueue model
+   */
+  interface MatchingQueueFieldRefs {
+    readonly id: FieldRef<"MatchingQueue", "String">;
+    readonly userId: FieldRef<"MatchingQueue", "String">;
+    readonly topic: FieldRef<"MatchingQueue", "MatchingTopic">;
+    readonly matchedUserId: FieldRef<"MatchingQueue", "String">;
+    readonly createdAt: FieldRef<"MatchingQueue", "DateTime">;
+    readonly updatedAt: FieldRef<"MatchingQueue", "DateTime">;
+  }
+
+  // Custom InputTypes
+  /**
+   * MatchingQueue findUnique
+   */
+  export type MatchingQueueFindUniqueArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where: MatchingQueueWhereUniqueInput;
+  };
+
+  /**
+   * MatchingQueue findUniqueOrThrow
+   */
+  export type MatchingQueueFindUniqueOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where: MatchingQueueWhereUniqueInput;
+  };
+
+  /**
+   * MatchingQueue findFirst
+   */
+  export type MatchingQueueFindFirstArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?:
+      | MatchingQueueOrderByWithRelationInput
+      | MatchingQueueOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of MatchingQueues.
+     */
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[];
+  };
+
+  /**
+   * MatchingQueue findFirstOrThrow
+   */
+  export type MatchingQueueFindFirstOrThrowArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?:
+      | MatchingQueueOrderByWithRelationInput
+      | MatchingQueueOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for searching for MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     *
+     * Filter by unique combinations of MatchingQueues.
+     */
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[];
+  };
+
+  /**
+   * MatchingQueue findMany
+   */
+  export type MatchingQueueFindManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter, which MatchingQueues to fetch.
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     *
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?:
+      | MatchingQueueOrderByWithRelationInput
+      | MatchingQueueOrderByWithRelationInput[];
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     *
+     * Sets the position for listing MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number;
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     *
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number;
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[];
+  };
+
+  /**
+   * MatchingQueue create
+   */
+  export type MatchingQueueCreateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * The data needed to create a MatchingQueue.
+     */
+    data: XOR<MatchingQueueCreateInput, MatchingQueueUncheckedCreateInput>;
+  };
+
+  /**
+   * MatchingQueue createMany
+   */
+  export type MatchingQueueCreateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * The data used to create many MatchingQueues.
+     */
+    data: MatchingQueueCreateManyInput | MatchingQueueCreateManyInput[];
+    skipDuplicates?: boolean;
+  };
+
+  /**
+   * MatchingQueue createManyAndReturn
+   */
+  export type MatchingQueueCreateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelectCreateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * The data used to create many MatchingQueues.
+     */
+    data: MatchingQueueCreateManyInput | MatchingQueueCreateManyInput[];
+    skipDuplicates?: boolean;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueIncludeCreateManyAndReturn<ExtArgs> | null;
+  };
+
+  /**
+   * MatchingQueue update
+   */
+  export type MatchingQueueUpdateArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * The data needed to update a MatchingQueue.
+     */
+    data: XOR<MatchingQueueUpdateInput, MatchingQueueUncheckedUpdateInput>;
+    /**
+     * Choose, which MatchingQueue to update.
+     */
+    where: MatchingQueueWhereUniqueInput;
+  };
+
+  /**
+   * MatchingQueue updateMany
+   */
+  export type MatchingQueueUpdateManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * The data used to update MatchingQueues.
+     */
+    data: XOR<
+      MatchingQueueUpdateManyMutationInput,
+      MatchingQueueUncheckedUpdateManyInput
+    >;
+    /**
+     * Filter which MatchingQueues to update
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * Limit how many MatchingQueues to update.
+     */
+    limit?: number;
+  };
+
+  /**
+   * MatchingQueue updateManyAndReturn
+   */
+  export type MatchingQueueUpdateManyAndReturnArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelectUpdateManyAndReturn<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * The data used to update MatchingQueues.
+     */
+    data: XOR<
+      MatchingQueueUpdateManyMutationInput,
+      MatchingQueueUncheckedUpdateManyInput
+    >;
+    /**
+     * Filter which MatchingQueues to update
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * Limit how many MatchingQueues to update.
+     */
+    limit?: number;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueIncludeUpdateManyAndReturn<ExtArgs> | null;
+  };
+
+  /**
+   * MatchingQueue upsert
+   */
+  export type MatchingQueueUpsertArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * The filter to search for the MatchingQueue to update in case it exists.
+     */
+    where: MatchingQueueWhereUniqueInput;
+    /**
+     * In case the MatchingQueue found by the `where` argument doesn't exist, create a new MatchingQueue with this data.
+     */
+    create: XOR<MatchingQueueCreateInput, MatchingQueueUncheckedCreateInput>;
+    /**
+     * In case the MatchingQueue was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<MatchingQueueUpdateInput, MatchingQueueUncheckedUpdateInput>;
+  };
+
+  /**
+   * MatchingQueue delete
+   */
+  export type MatchingQueueDeleteArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+    /**
+     * Filter which MatchingQueue to delete.
+     */
+    where: MatchingQueueWhereUniqueInput;
+  };
+
+  /**
+   * MatchingQueue deleteMany
+   */
+  export type MatchingQueueDeleteManyArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Filter which MatchingQueues to delete
+     */
+    where?: MatchingQueueWhereInput;
+    /**
+     * Limit how many MatchingQueues to delete.
+     */
+    limit?: number;
+  };
+
+  /**
+   * MatchingQueue without action
+   */
+  export type MatchingQueueDefaultArgs<
+    ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
+  > = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null;
+  };
+
+  /**
    * Model UserBlock
    */
 
@@ -16719,6 +18190,7 @@ export namespace Prisma {
     id: string | null;
     name: string | null;
     description: string | null;
+    image: string | null;
     inviteCode: string | null;
     createdById: string | null;
     createdAt: Date | null;
@@ -16729,6 +18201,7 @@ export namespace Prisma {
     id: string | null;
     name: string | null;
     description: string | null;
+    image: string | null;
     inviteCode: string | null;
     createdById: string | null;
     createdAt: Date | null;
@@ -16739,6 +18212,7 @@ export namespace Prisma {
     id: number;
     name: number;
     description: number;
+    image: number;
     inviteCode: number;
     createdById: number;
     createdAt: number;
@@ -16750,6 +18224,7 @@ export namespace Prisma {
     id?: true;
     name?: true;
     description?: true;
+    image?: true;
     inviteCode?: true;
     createdById?: true;
     createdAt?: true;
@@ -16760,6 +18235,7 @@ export namespace Prisma {
     id?: true;
     name?: true;
     description?: true;
+    image?: true;
     inviteCode?: true;
     createdById?: true;
     createdAt?: true;
@@ -16770,6 +18246,7 @@ export namespace Prisma {
     id?: true;
     name?: true;
     description?: true;
+    image?: true;
     inviteCode?: true;
     createdById?: true;
     createdAt?: true;
@@ -16858,6 +18335,7 @@ export namespace Prisma {
     id: string;
     name: string;
     description: string | null;
+    image: string | null;
     inviteCode: string;
     createdById: string;
     createdAt: Date;
@@ -16887,6 +18365,7 @@ export namespace Prisma {
       id?: boolean;
       name?: boolean;
       description?: boolean;
+      image?: boolean;
       inviteCode?: boolean;
       createdById?: boolean;
       createdAt?: boolean;
@@ -16907,6 +18386,7 @@ export namespace Prisma {
       id?: boolean;
       name?: boolean;
       description?: boolean;
+      image?: boolean;
       inviteCode?: boolean;
       createdById?: boolean;
       createdAt?: boolean;
@@ -16923,6 +18403,7 @@ export namespace Prisma {
       id?: boolean;
       name?: boolean;
       description?: boolean;
+      image?: boolean;
       inviteCode?: boolean;
       createdById?: boolean;
       createdAt?: boolean;
@@ -16936,6 +18417,7 @@ export namespace Prisma {
     id?: boolean;
     name?: boolean;
     description?: boolean;
+    image?: boolean;
     inviteCode?: boolean;
     createdById?: boolean;
     createdAt?: boolean;
@@ -16948,6 +18430,7 @@ export namespace Prisma {
     | "id"
     | "name"
     | "description"
+    | "image"
     | "inviteCode"
     | "createdById"
     | "createdAt"
@@ -16989,6 +18472,7 @@ export namespace Prisma {
         id: string;
         name: string;
         description: string | null;
+        image: string | null;
         inviteCode: string;
         createdById: string;
         createdAt: Date;
@@ -17633,6 +19117,7 @@ export namespace Prisma {
     readonly id: FieldRef<"ChatServer", "String">;
     readonly name: FieldRef<"ChatServer", "String">;
     readonly description: FieldRef<"ChatServer", "String">;
+    readonly image: FieldRef<"ChatServer", "String">;
     readonly inviteCode: FieldRef<"ChatServer", "String">;
     readonly createdById: FieldRef<"ChatServer", "String">;
     readonly createdAt: FieldRef<"ChatServer", "DateTime">;
@@ -23768,6 +25253,18 @@ export namespace Prisma {
   export type DirectMessageScalarFieldEnum =
     (typeof DirectMessageScalarFieldEnum)[keyof typeof DirectMessageScalarFieldEnum];
 
+  export const MatchingQueueScalarFieldEnum: {
+    id: "id";
+    userId: "userId";
+    topic: "topic";
+    matchedUserId: "matchedUserId";
+    createdAt: "createdAt";
+    updatedAt: "updatedAt";
+  };
+
+  export type MatchingQueueScalarFieldEnum =
+    (typeof MatchingQueueScalarFieldEnum)[keyof typeof MatchingQueueScalarFieldEnum];
+
   export const UserBlockScalarFieldEnum: {
     id: "id";
     blockerId: "blockerId";
@@ -23782,6 +25279,7 @@ export namespace Prisma {
     id: "id";
     name: "name";
     description: "description";
+    image: "image";
     inviteCode: "inviteCode";
     createdById: "createdById";
     createdAt: "createdAt";
@@ -23931,6 +25429,20 @@ export namespace Prisma {
    */
   export type ListEnumNotificationTypeFieldRefInput<$PrismaModel> =
     FieldRefInputType<$PrismaModel, "NotificationType[]">;
+
+  /**
+   * Reference to a field of type 'MatchingTopic'
+   */
+  export type EnumMatchingTopicFieldRefInput<$PrismaModel> = FieldRefInputType<
+    $PrismaModel,
+    "MatchingTopic"
+  >;
+
+  /**
+   * Reference to a field of type 'MatchingTopic[]'
+   */
+  export type ListEnumMatchingTopicFieldRefInput<$PrismaModel> =
+    FieldRefInputType<$PrismaModel, "MatchingTopic[]">;
 
   /**
    * Reference to a field of type 'ServerMemberRole'
@@ -24223,6 +25735,10 @@ export namespace Prisma {
     createdServers?: ChatServerListRelationFilter;
     friendships?: FriendshipListRelationFilter;
     friendOf?: FriendshipListRelationFilter;
+    matchingQueue?: XOR<
+      MatchingQueueNullableScalarRelationFilter,
+      MatchingQueueWhereInput
+    > | null;
     notifications?: NotificationListRelationFilter;
     posts?: PostListRelationFilter;
     sentServerMessages?: ServerMessageListRelationFilter;
@@ -24251,6 +25767,7 @@ export namespace Prisma {
     createdServers?: ChatServerOrderByRelationAggregateInput;
     friendships?: FriendshipOrderByRelationAggregateInput;
     friendOf?: FriendshipOrderByRelationAggregateInput;
+    matchingQueue?: MatchingQueueOrderByWithRelationInput;
     notifications?: NotificationOrderByRelationAggregateInput;
     posts?: PostOrderByRelationAggregateInput;
     sentServerMessages?: ServerMessageOrderByRelationAggregateInput;
@@ -24283,6 +25800,10 @@ export namespace Prisma {
       createdServers?: ChatServerListRelationFilter;
       friendships?: FriendshipListRelationFilter;
       friendOf?: FriendshipListRelationFilter;
+      matchingQueue?: XOR<
+        MatchingQueueNullableScalarRelationFilter,
+        MatchingQueueWhereInput
+      > | null;
       notifications?: NotificationListRelationFilter;
       posts?: PostListRelationFilter;
       sentServerMessages?: ServerMessageListRelationFilter;
@@ -24690,6 +26211,78 @@ export namespace Prisma {
     senderId?: StringWithAggregatesFilter<"DirectMessage"> | string;
   };
 
+  export type MatchingQueueWhereInput = {
+    AND?: MatchingQueueWhereInput | MatchingQueueWhereInput[];
+    OR?: MatchingQueueWhereInput[];
+    NOT?: MatchingQueueWhereInput | MatchingQueueWhereInput[];
+    id?: StringFilter<"MatchingQueue"> | string;
+    userId?: StringFilter<"MatchingQueue"> | string;
+    topic?: EnumMatchingTopicFilter<"MatchingQueue"> | $Enums.MatchingTopic;
+    matchedUserId?: StringNullableFilter<"MatchingQueue"> | string | null;
+    createdAt?: DateTimeFilter<"MatchingQueue"> | Date | string;
+    updatedAt?: DateTimeFilter<"MatchingQueue"> | Date | string;
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>;
+  };
+
+  export type MatchingQueueOrderByWithRelationInput = {
+    id?: SortOrder;
+    userId?: SortOrder;
+    topic?: SortOrder;
+    matchedUserId?: SortOrderInput | SortOrder;
+    createdAt?: SortOrder;
+    updatedAt?: SortOrder;
+    user?: UserOrderByWithRelationInput;
+  };
+
+  export type MatchingQueueWhereUniqueInput = Prisma.AtLeast<
+    {
+      id?: string;
+      userId?: string;
+      AND?: MatchingQueueWhereInput | MatchingQueueWhereInput[];
+      OR?: MatchingQueueWhereInput[];
+      NOT?: MatchingQueueWhereInput | MatchingQueueWhereInput[];
+      topic?: EnumMatchingTopicFilter<"MatchingQueue"> | $Enums.MatchingTopic;
+      matchedUserId?: StringNullableFilter<"MatchingQueue"> | string | null;
+      createdAt?: DateTimeFilter<"MatchingQueue"> | Date | string;
+      updatedAt?: DateTimeFilter<"MatchingQueue"> | Date | string;
+      user?: XOR<UserScalarRelationFilter, UserWhereInput>;
+    },
+    "id" | "userId"
+  >;
+
+  export type MatchingQueueOrderByWithAggregationInput = {
+    id?: SortOrder;
+    userId?: SortOrder;
+    topic?: SortOrder;
+    matchedUserId?: SortOrderInput | SortOrder;
+    createdAt?: SortOrder;
+    updatedAt?: SortOrder;
+    _count?: MatchingQueueCountOrderByAggregateInput;
+    _max?: MatchingQueueMaxOrderByAggregateInput;
+    _min?: MatchingQueueMinOrderByAggregateInput;
+  };
+
+  export type MatchingQueueScalarWhereWithAggregatesInput = {
+    AND?:
+      | MatchingQueueScalarWhereWithAggregatesInput
+      | MatchingQueueScalarWhereWithAggregatesInput[];
+    OR?: MatchingQueueScalarWhereWithAggregatesInput[];
+    NOT?:
+      | MatchingQueueScalarWhereWithAggregatesInput
+      | MatchingQueueScalarWhereWithAggregatesInput[];
+    id?: StringWithAggregatesFilter<"MatchingQueue"> | string;
+    userId?: StringWithAggregatesFilter<"MatchingQueue"> | string;
+    topic?:
+      | EnumMatchingTopicWithAggregatesFilter<"MatchingQueue">
+      | $Enums.MatchingTopic;
+    matchedUserId?:
+      | StringNullableWithAggregatesFilter<"MatchingQueue">
+      | string
+      | null;
+    createdAt?: DateTimeWithAggregatesFilter<"MatchingQueue"> | Date | string;
+    updatedAt?: DateTimeWithAggregatesFilter<"MatchingQueue"> | Date | string;
+  };
+
   export type UserBlockWhereInput = {
     AND?: UserBlockWhereInput | UserBlockWhereInput[];
     OR?: UserBlockWhereInput[];
@@ -24758,6 +26351,7 @@ export namespace Prisma {
     id?: StringFilter<"ChatServer"> | string;
     name?: StringFilter<"ChatServer"> | string;
     description?: StringNullableFilter<"ChatServer"> | string | null;
+    image?: StringNullableFilter<"ChatServer"> | string | null;
     inviteCode?: StringFilter<"ChatServer"> | string;
     createdById?: StringFilter<"ChatServer"> | string;
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string;
@@ -24772,6 +26366,7 @@ export namespace Prisma {
     id?: SortOrder;
     name?: SortOrder;
     description?: SortOrderInput | SortOrder;
+    image?: SortOrderInput | SortOrder;
     inviteCode?: SortOrder;
     createdById?: SortOrder;
     createdAt?: SortOrder;
@@ -24791,6 +26386,7 @@ export namespace Prisma {
       NOT?: ChatServerWhereInput | ChatServerWhereInput[];
       name?: StringFilter<"ChatServer"> | string;
       description?: StringNullableFilter<"ChatServer"> | string | null;
+      image?: StringNullableFilter<"ChatServer"> | string | null;
       createdById?: StringFilter<"ChatServer"> | string;
       createdAt?: DateTimeFilter<"ChatServer"> | Date | string;
       updatedAt?: DateTimeFilter<"ChatServer"> | Date | string;
@@ -24806,6 +26402,7 @@ export namespace Prisma {
     id?: SortOrder;
     name?: SortOrder;
     description?: SortOrderInput | SortOrder;
+    image?: SortOrderInput | SortOrder;
     inviteCode?: SortOrder;
     createdById?: SortOrder;
     createdAt?: SortOrder;
@@ -24829,6 +26426,7 @@ export namespace Prisma {
       | StringNullableWithAggregatesFilter<"ChatServer">
       | string
       | null;
+    image?: StringNullableWithAggregatesFilter<"ChatServer"> | string | null;
     inviteCode?: StringWithAggregatesFilter<"ChatServer"> | string;
     createdById?: StringWithAggregatesFilter<"ChatServer"> | string;
     createdAt?: DateTimeWithAggregatesFilter<"ChatServer"> | Date | string;
@@ -25358,6 +26956,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -25386,6 +26985,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -25418,6 +27018,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -25450,6 +27051,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -25803,6 +27405,68 @@ export namespace Prisma {
     senderId?: StringFieldUpdateOperationsInput | string;
   };
 
+  export type MatchingQueueCreateInput = {
+    id?: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    user: UserCreateNestedOneWithoutMatchingQueueInput;
+  };
+
+  export type MatchingQueueUncheckedCreateInput = {
+    id?: string;
+    userId: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  };
+
+  export type MatchingQueueUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    user?: UserUpdateOneRequiredWithoutMatchingQueueNestedInput;
+  };
+
+  export type MatchingQueueUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    userId?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+  };
+
+  export type MatchingQueueCreateManyInput = {
+    id?: string;
+    userId: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  };
+
+  export type MatchingQueueUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+  };
+
+  export type MatchingQueueUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    userId?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+  };
+
   export type UserBlockCreateInput = {
     id?: string;
     createdAt?: Date | string;
@@ -25854,6 +27518,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -25867,6 +27532,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdById: string;
     createdAt?: Date | string;
@@ -25880,6 +27546,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -25893,6 +27560,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdById?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -25906,6 +27574,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdById: string;
     createdAt?: Date | string;
@@ -25916,6 +27585,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -25925,6 +27595,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdById?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -26484,6 +28155,11 @@ export namespace Prisma {
     none?: FriendshipWhereInput;
   };
 
+  export type MatchingQueueNullableScalarRelationFilter = {
+    is?: MatchingQueueWhereInput | null;
+    isNot?: MatchingQueueWhereInput | null;
+  };
+
   export type NotificationListRelationFilter = {
     every?: NotificationWhereInput;
     some?: NotificationWhereInput;
@@ -26833,6 +28509,64 @@ export namespace Prisma {
     senderId?: SortOrder;
   };
 
+  export type EnumMatchingTopicFilter<$PrismaModel = never> = {
+    equals?:
+      | $Enums.MatchingTopic
+      | EnumMatchingTopicFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    not?: NestedEnumMatchingTopicFilter<$PrismaModel> | $Enums.MatchingTopic;
+  };
+
+  export type MatchingQueueCountOrderByAggregateInput = {
+    id?: SortOrder;
+    userId?: SortOrder;
+    topic?: SortOrder;
+    matchedUserId?: SortOrder;
+    createdAt?: SortOrder;
+    updatedAt?: SortOrder;
+  };
+
+  export type MatchingQueueMaxOrderByAggregateInput = {
+    id?: SortOrder;
+    userId?: SortOrder;
+    topic?: SortOrder;
+    matchedUserId?: SortOrder;
+    createdAt?: SortOrder;
+    updatedAt?: SortOrder;
+  };
+
+  export type MatchingQueueMinOrderByAggregateInput = {
+    id?: SortOrder;
+    userId?: SortOrder;
+    topic?: SortOrder;
+    matchedUserId?: SortOrder;
+    createdAt?: SortOrder;
+    updatedAt?: SortOrder;
+  };
+
+  export type EnumMatchingTopicWithAggregatesFilter<$PrismaModel = never> = {
+    equals?:
+      | $Enums.MatchingTopic
+      | EnumMatchingTopicFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    not?:
+      | NestedEnumMatchingTopicWithAggregatesFilter<$PrismaModel>
+      | $Enums.MatchingTopic;
+    _count?: NestedIntFilter<$PrismaModel>;
+    _min?: NestedEnumMatchingTopicFilter<$PrismaModel>;
+    _max?: NestedEnumMatchingTopicFilter<$PrismaModel>;
+  };
+
   export type UserBlockBlockerIdBlockedIdCompoundUniqueInput = {
     blockerId: string;
     blockedId: string;
@@ -26873,6 +28607,7 @@ export namespace Prisma {
     id?: SortOrder;
     name?: SortOrder;
     description?: SortOrder;
+    image?: SortOrder;
     inviteCode?: SortOrder;
     createdById?: SortOrder;
     createdAt?: SortOrder;
@@ -26883,6 +28618,7 @@ export namespace Prisma {
     id?: SortOrder;
     name?: SortOrder;
     description?: SortOrder;
+    image?: SortOrder;
     inviteCode?: SortOrder;
     createdById?: SortOrder;
     createdAt?: SortOrder;
@@ -26893,6 +28629,7 @@ export namespace Prisma {
     id?: SortOrder;
     name?: SortOrder;
     description?: SortOrder;
+    image?: SortOrder;
     inviteCode?: SortOrder;
     createdById?: SortOrder;
     createdAt?: SortOrder;
@@ -27286,6 +29023,15 @@ export namespace Prisma {
     connect?: FriendshipWhereUniqueInput | FriendshipWhereUniqueInput[];
   };
 
+  export type MatchingQueueCreateNestedOneWithoutUserInput = {
+    create?: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput;
+    connect?: MatchingQueueWhereUniqueInput;
+  };
+
   export type NotificationCreateNestedManyWithoutUserInput = {
     create?:
       | XOR<
@@ -27526,6 +29272,15 @@ export namespace Prisma {
       | FriendshipCreateOrConnectWithoutFriendInput[];
     createMany?: FriendshipCreateManyFriendInputEnvelope;
     connect?: FriendshipWhereUniqueInput | FriendshipWhereUniqueInput[];
+  };
+
+  export type MatchingQueueUncheckedCreateNestedOneWithoutUserInput = {
+    create?: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput;
+    connect?: MatchingQueueWhereUniqueInput;
   };
 
   export type NotificationUncheckedCreateNestedManyWithoutUserInput = {
@@ -27888,6 +29643,25 @@ export namespace Prisma {
       | FriendshipUpdateManyWithWhereWithoutFriendInput
       | FriendshipUpdateManyWithWhereWithoutFriendInput[];
     deleteMany?: FriendshipScalarWhereInput | FriendshipScalarWhereInput[];
+  };
+
+  export type MatchingQueueUpdateOneWithoutUserNestedInput = {
+    create?: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput;
+    upsert?: MatchingQueueUpsertWithoutUserInput;
+    disconnect?: MatchingQueueWhereInput | boolean;
+    delete?: MatchingQueueWhereInput | boolean;
+    connect?: MatchingQueueWhereUniqueInput;
+    update?: XOR<
+      XOR<
+        MatchingQueueUpdateToOneWithWhereWithoutUserInput,
+        MatchingQueueUpdateWithoutUserInput
+      >,
+      MatchingQueueUncheckedUpdateWithoutUserInput
+    >;
   };
 
   export type NotificationUpdateManyWithoutUserNestedInput = {
@@ -28366,6 +30140,25 @@ export namespace Prisma {
       | FriendshipUpdateManyWithWhereWithoutFriendInput
       | FriendshipUpdateManyWithWhereWithoutFriendInput[];
     deleteMany?: FriendshipScalarWhereInput | FriendshipScalarWhereInput[];
+  };
+
+  export type MatchingQueueUncheckedUpdateOneWithoutUserNestedInput = {
+    create?: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput;
+    upsert?: MatchingQueueUpsertWithoutUserInput;
+    disconnect?: MatchingQueueWhereInput | boolean;
+    delete?: MatchingQueueWhereInput | boolean;
+    connect?: MatchingQueueWhereUniqueInput;
+    update?: XOR<
+      XOR<
+        MatchingQueueUpdateToOneWithWhereWithoutUserInput,
+        MatchingQueueUpdateWithoutUserInput
+      >,
+      MatchingQueueUncheckedUpdateWithoutUserInput
+    >;
   };
 
   export type NotificationUncheckedUpdateManyWithoutUserNestedInput = {
@@ -28909,6 +30702,36 @@ export namespace Prisma {
         UserUpdateWithoutSentDirectMessagesInput
       >,
       UserUncheckedUpdateWithoutSentDirectMessagesInput
+    >;
+  };
+
+  export type UserCreateNestedOneWithoutMatchingQueueInput = {
+    create?: XOR<
+      UserCreateWithoutMatchingQueueInput,
+      UserUncheckedCreateWithoutMatchingQueueInput
+    >;
+    connectOrCreate?: UserCreateOrConnectWithoutMatchingQueueInput;
+    connect?: UserWhereUniqueInput;
+  };
+
+  export type EnumMatchingTopicFieldUpdateOperationsInput = {
+    set?: $Enums.MatchingTopic;
+  };
+
+  export type UserUpdateOneRequiredWithoutMatchingQueueNestedInput = {
+    create?: XOR<
+      UserCreateWithoutMatchingQueueInput,
+      UserUncheckedCreateWithoutMatchingQueueInput
+    >;
+    connectOrCreate?: UserCreateOrConnectWithoutMatchingQueueInput;
+    upsert?: UserUpsertWithoutMatchingQueueInput;
+    connect?: UserWhereUniqueInput;
+    update?: XOR<
+      XOR<
+        UserUpdateToOneWithWhereWithoutMatchingQueueInput,
+        UserUpdateWithoutMatchingQueueInput
+      >,
+      UserUncheckedUpdateWithoutMatchingQueueInput
     >;
   };
 
@@ -29952,6 +31775,39 @@ export namespace Prisma {
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>;
   };
 
+  export type NestedEnumMatchingTopicFilter<$PrismaModel = never> = {
+    equals?:
+      | $Enums.MatchingTopic
+      | EnumMatchingTopicFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    not?: NestedEnumMatchingTopicFilter<$PrismaModel> | $Enums.MatchingTopic;
+  };
+
+  export type NestedEnumMatchingTopicWithAggregatesFilter<
+    $PrismaModel = never,
+  > = {
+    equals?:
+      | $Enums.MatchingTopic
+      | EnumMatchingTopicFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.MatchingTopic[]
+      | ListEnumMatchingTopicFieldRefInput<$PrismaModel>;
+    not?:
+      | NestedEnumMatchingTopicWithAggregatesFilter<$PrismaModel>
+      | $Enums.MatchingTopic;
+    _count?: NestedIntFilter<$PrismaModel>;
+    _min?: NestedEnumMatchingTopicFilter<$PrismaModel>;
+    _max?: NestedEnumMatchingTopicFilter<$PrismaModel>;
+  };
+
   export type NestedEnumServerMemberRoleFilter<$PrismaModel = never> = {
     equals?:
       | $Enums.ServerMemberRole
@@ -30005,6 +31861,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput;
@@ -30032,6 +31889,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -30091,6 +31949,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput;
@@ -30122,6 +31981,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -30148,6 +32008,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -30175,6 +32036,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -30234,6 +32096,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -30265,6 +32128,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -30293,6 +32157,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -30320,6 +32185,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -30379,6 +32245,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -30410,6 +32277,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -30574,6 +32442,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -30586,6 +32455,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -30657,6 +32527,30 @@ export namespace Prisma {
   export type FriendshipCreateManyFriendInputEnvelope = {
     data: FriendshipCreateManyFriendInput | FriendshipCreateManyFriendInput[];
     skipDuplicates?: boolean;
+  };
+
+  export type MatchingQueueCreateWithoutUserInput = {
+    id?: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  };
+
+  export type MatchingQueueUncheckedCreateWithoutUserInput = {
+    id?: string;
+    topic: $Enums.MatchingTopic;
+    matchedUserId?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  };
+
+  export type MatchingQueueCreateOrConnectWithoutUserInput = {
+    where: MatchingQueueWhereUniqueInput;
+    create: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
   };
 
   export type NotificationCreateWithoutUserInput = {
@@ -31126,6 +33020,7 @@ export namespace Prisma {
     id?: StringFilter<"ChatServer"> | string;
     name?: StringFilter<"ChatServer"> | string;
     description?: StringNullableFilter<"ChatServer"> | string | null;
+    image?: StringNullableFilter<"ChatServer"> | string | null;
     inviteCode?: StringFilter<"ChatServer"> | string;
     createdById?: StringFilter<"ChatServer"> | string;
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string;
@@ -31196,6 +33091,42 @@ export namespace Prisma {
       FriendshipUpdateManyMutationInput,
       FriendshipUncheckedUpdateManyWithoutFriendInput
     >;
+  };
+
+  export type MatchingQueueUpsertWithoutUserInput = {
+    update: XOR<
+      MatchingQueueUpdateWithoutUserInput,
+      MatchingQueueUncheckedUpdateWithoutUserInput
+    >;
+    create: XOR<
+      MatchingQueueCreateWithoutUserInput,
+      MatchingQueueUncheckedCreateWithoutUserInput
+    >;
+    where?: MatchingQueueWhereInput;
+  };
+
+  export type MatchingQueueUpdateToOneWithWhereWithoutUserInput = {
+    where?: MatchingQueueWhereInput;
+    data: XOR<
+      MatchingQueueUpdateWithoutUserInput,
+      MatchingQueueUncheckedUpdateWithoutUserInput
+    >;
+  };
+
+  export type MatchingQueueUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+  };
+
+  export type MatchingQueueUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic;
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
   };
 
   export type NotificationUpsertWithWhereUniqueWithoutUserInput = {
@@ -31544,6 +33475,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -31571,6 +33503,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -31606,6 +33539,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -31633,6 +33567,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -31720,6 +33655,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -31751,6 +33687,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -31802,6 +33739,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -31833,6 +33771,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -31859,6 +33798,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput;
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -31886,6 +33826,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput;
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -31921,6 +33862,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput;
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -31948,6 +33890,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput;
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32007,6 +33950,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput;
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32038,6 +33982,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput;
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32089,6 +34034,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput;
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32120,6 +34066,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput;
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32174,6 +34121,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput;
@@ -32201,6 +34149,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32302,6 +34251,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput;
@@ -32333,6 +34283,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32359,6 +34310,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -32386,6 +34338,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32422,6 +34375,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -32449,6 +34403,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32507,6 +34462,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32538,6 +34494,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32590,6 +34547,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32621,9 +34579,158 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput;
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput;
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput;
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput;
+  };
+
+  export type UserCreateWithoutMatchingQueueInput = {
+    id?: string;
+    userId: string;
+    name?: string | null;
+    email?: string | null;
+    emailVerified?: Date | string | null;
+    passwordHash?: string | null;
+    image?: string | null;
+    bio?: string | null;
+    statusMessage?: string | null;
+    accounts?: AccountCreateNestedManyWithoutUserInput;
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput;
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput;
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput;
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput;
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
+    friendships?: FriendshipCreateNestedManyWithoutUserInput;
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    notifications?: NotificationCreateNestedManyWithoutUserInput;
+    posts?: PostCreateNestedManyWithoutCreatedByInput;
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput;
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput;
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput;
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput;
+    sessions?: SessionCreateNestedManyWithoutUserInput;
+  };
+
+  export type UserUncheckedCreateWithoutMatchingQueueInput = {
+    id?: string;
+    userId: string;
+    name?: string | null;
+    email?: string | null;
+    emailVerified?: Date | string | null;
+    passwordHash?: string | null;
+    image?: string | null;
+    bio?: string | null;
+    statusMessage?: string | null;
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput;
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput;
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput;
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput;
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput;
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput;
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput;
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput;
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput;
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput;
+  };
+
+  export type UserCreateOrConnectWithoutMatchingQueueInput = {
+    where: UserWhereUniqueInput;
+    create: XOR<
+      UserCreateWithoutMatchingQueueInput,
+      UserUncheckedCreateWithoutMatchingQueueInput
+    >;
+  };
+
+  export type UserUpsertWithoutMatchingQueueInput = {
+    update: XOR<
+      UserUpdateWithoutMatchingQueueInput,
+      UserUncheckedUpdateWithoutMatchingQueueInput
+    >;
+    create: XOR<
+      UserCreateWithoutMatchingQueueInput,
+      UserUncheckedCreateWithoutMatchingQueueInput
+    >;
+    where?: UserWhereInput;
+  };
+
+  export type UserUpdateToOneWithWhereWithoutMatchingQueueInput = {
+    where?: UserWhereInput;
+    data: XOR<
+      UserUpdateWithoutMatchingQueueInput,
+      UserUncheckedUpdateWithoutMatchingQueueInput
+    >;
+  };
+
+  export type UserUpdateWithoutMatchingQueueInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    userId?: StringFieldUpdateOperationsInput | string;
+    name?: NullableStringFieldUpdateOperationsInput | string | null;
+    email?: NullableStringFieldUpdateOperationsInput | string | null;
+    emailVerified?:
+      | NullableDateTimeFieldUpdateOperationsInput
+      | Date
+      | string
+      | null;
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
+    bio?: NullableStringFieldUpdateOperationsInput | string | null;
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null;
+    accounts?: AccountUpdateManyWithoutUserNestedInput;
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput;
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput;
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput;
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput;
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput;
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    notifications?: NotificationUpdateManyWithoutUserNestedInput;
+    posts?: PostUpdateManyWithoutCreatedByNestedInput;
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput;
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput;
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput;
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput;
+    sessions?: SessionUpdateManyWithoutUserNestedInput;
+  };
+
+  export type UserUncheckedUpdateWithoutMatchingQueueInput = {
+    id?: StringFieldUpdateOperationsInput | string;
+    userId?: StringFieldUpdateOperationsInput | string;
+    name?: NullableStringFieldUpdateOperationsInput | string | null;
+    email?: NullableStringFieldUpdateOperationsInput | string | null;
+    emailVerified?:
+      | NullableDateTimeFieldUpdateOperationsInput
+      | Date
+      | string
+      | null;
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
+    bio?: NullableStringFieldUpdateOperationsInput | string | null;
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null;
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput;
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput;
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput;
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput;
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput;
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput;
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput;
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput;
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32647,6 +34754,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -32674,6 +34782,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32709,6 +34818,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -32736,6 +34846,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -32795,6 +34906,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32826,6 +34938,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32877,6 +34990,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -32908,6 +35022,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -32935,6 +35050,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -32962,6 +35078,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -33114,6 +35231,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -33145,6 +35263,7 @@ export namespace Prisma {
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -33254,6 +35373,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -33266,6 +35386,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdById: string;
     createdAt?: Date | string;
@@ -33300,6 +35421,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -33327,6 +35449,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -33368,6 +35491,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -33380,6 +35504,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdById?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -33430,6 +35555,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -33461,6 +35587,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -33501,6 +35628,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -33513,6 +35641,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdById: string;
     createdAt?: Date | string;
@@ -33612,6 +35741,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -33624,6 +35754,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdById?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -33703,6 +35834,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput;
@@ -33730,6 +35862,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -33827,6 +35960,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput;
@@ -33858,6 +35992,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -33912,6 +36047,7 @@ export namespace Prisma {
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput;
     notifications?: NotificationCreateNestedManyWithoutUserInput;
     posts?: PostCreateNestedManyWithoutCreatedByInput;
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput;
@@ -33939,6 +36075,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput;
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput;
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput;
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput;
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput;
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput;
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput;
@@ -33960,6 +36097,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -33972,6 +36110,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdById: string;
     createdAt?: Date | string;
@@ -34068,6 +36207,7 @@ export namespace Prisma {
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUpdateManyWithoutUserNestedInput;
     posts?: PostUpdateManyWithoutCreatedByNestedInput;
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput;
@@ -34099,6 +36239,7 @@ export namespace Prisma {
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput;
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput;
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput;
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput;
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput;
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput;
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput;
@@ -34132,6 +36273,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -34144,6 +36286,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdById?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -34197,6 +36340,7 @@ export namespace Prisma {
     id?: string;
     name: string;
     description?: string | null;
+    image?: string | null;
     inviteCode?: string;
     createdAt?: Date | string;
     updatedAt?: Date | string;
@@ -34411,6 +36555,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -34423,6 +36568,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
@@ -34435,6 +36581,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string;
     name?: StringFieldUpdateOperationsInput | string;
     description?: NullableStringFieldUpdateOperationsInput | string | null;
+    image?: NullableStringFieldUpdateOperationsInput | string | null;
     inviteCode?: StringFieldUpdateOperationsInput | string;
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string;
