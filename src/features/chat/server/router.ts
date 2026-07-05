@@ -23,6 +23,10 @@ const sendMessageInput = friendIdInput.extend({
     .max(1000, "メッセージは1000文字以内で入力してください"),
 });
 
+const updateMessageInput = messageIdInput.extend({
+  content: sendMessageInput.shape.content,
+});
+
 const matchingTopicInput = z.object({
   topic: z.enum(["CASUAL", "GAME", "WORRIES"]),
 });
@@ -327,6 +331,28 @@ export const chatRouter = createTRPCRouter({
           receiverId: input.friendId,
           senderId: currentUserId,
         },
+      });
+    }),
+
+  updateMessage: protectedProcedure
+    .input(updateMessageInput)
+    .mutation(async ({ ctx, input }) => {
+      const message = await ctx.db.directMessage.findUnique({
+        where: { id: input.messageId },
+        select: { id: true, senderId: true },
+      });
+
+      if (message?.senderId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "編集できるメッセージが見つかりません",
+        });
+      }
+
+      return ctx.db.directMessage.update({
+        where: { id: message.id },
+        data: { content: input.content },
+        select: { id: true, content: true },
       });
     }),
 
