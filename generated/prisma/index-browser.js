@@ -160,7 +160,8 @@ exports.Prisma.UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   passwordHash: 'passwordHash',
   image: 'image',
-  bio: 'bio'
+  bio: 'bio',
+  statusMessage: 'statusMessage'
 };
 
 exports.Prisma.VerificationTokenScalarFieldEnum = {
@@ -204,6 +205,13 @@ exports.Prisma.DirectMessageScalarFieldEnum = {
   senderId: 'senderId'
 };
 
+exports.Prisma.UserBlockScalarFieldEnum = {
+  id: 'id',
+  blockerId: 'blockerId',
+  blockedId: 'blockedId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.ChatServerScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -228,6 +236,13 @@ exports.Prisma.ServerChannelScalarFieldEnum = {
   name: 'name',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ServerChannelReadScalarFieldEnum = {
+  id: 'id',
+  channelId: 'channelId',
+  userId: 'userId',
+  readAt: 'readAt'
 };
 
 exports.Prisma.ServerMessageScalarFieldEnum = {
@@ -279,9 +294,11 @@ exports.Prisma.ModelName = {
   Friendship: 'Friendship',
   Notification: 'Notification',
   DirectMessage: 'DirectMessage',
+  UserBlock: 'UserBlock',
   ChatServer: 'ChatServer',
   ServerMember: 'ServerMember',
   ServerChannel: 'ServerChannel',
+  ServerChannelRead: 'ServerChannelRead',
   ServerMessage: 'ServerMessage'
 };
 

@@ -4,6 +4,7 @@ import {
   Check,
   Hash,
   Inbox,
+  LogOut,
   MessageCircle,
   Pencil,
   Plus,
@@ -23,6 +24,7 @@ import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
 } from "~/lib/supabase/realtime";
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
@@ -231,13 +233,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   );
 
   useEffect(() => {
-    if (!initialServerId) return;
-
-    setSelectedServerId(initialServerId);
-    setSelectedFriendId(null);
+    setSelectedServerId(initialServerId ?? null);
+    if (initialServerId) {
+      setSelectedFriendId(null);
+    }
   }, [initialServerId]);
 
   useEffect(() => {
+    if (selectedServerId) return;
+
     const data = friends.data;
     if (!data?.length) {
       setSelectedFriendId(null);
@@ -250,7 +254,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     ) {
       setSelectedFriendId(data[0]?.friend.id ?? null);
     }
-  }, [friends.data, selectedFriendId]);
+  }, [friends.data, selectedFriendId, selectedServerId]);
 
   const conversation = api.chat.getConversation.useQuery(
     { friendId: selectedFriendId ?? "" },
@@ -329,6 +333,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       void utils.chat.getFriends.invalidate();
     }
   }, [conversation.data, utils.chat.getFriends]);
+
+  useEffect(() => {
+    if (serverConversation.data) {
+      void utils.server.getOverview.invalidate();
+    }
+  }, [serverConversation.data, utils.server.getOverview]);
 
   useEffect(() => {
     if (!realtimeClient || !friends.data?.length) {
@@ -588,6 +598,56 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
+  const deleteDirectMessage = api.chat.deleteMessage.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+
+  const deleteServerMessage = api.server.deleteMessage.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.server.getConversation.invalidate({
+          channelId: selectedServerChannel?.id,
+          serverId: selectedServerId ?? "",
+        }),
+        utils.server.getOverview.invalidate(),
+      ]);
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const leaveServer = api.server.leave.useMutation({
+    onSuccess: async () => {
+      setSelectedServerId(null);
+      setSelectedServerChannelId(null);
+      setServerMessage(null);
+      setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const selectHome = () => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setServerMessage(null);
+    setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+  };
+
   const selectFriend = (friendId: string) => {
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
@@ -698,19 +758,50 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     });
   };
 
+  const handleDeleteDirectMessage = (messageId: string) => {
+    if (!window.confirm("このメッセージを削除しますか？")) return;
+    deleteDirectMessage.mutate({ messageId });
+  };
+
+  const handleDeleteServerMessage = (messageId: string) => {
+    if (!selectedServer?.server.id) return;
+    if (!window.confirm("このメッセージを削除しますか？")) return;
+
+    deleteServerMessage.mutate({
+      messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleLeaveServer = () => {
+    if (!selectedServer?.server.id) return;
+    const action =
+      selectedServer.role === "OWNER"
+        ? "サーバーを削除して退出しますか？"
+        : "このサーバーから退出しますか？";
+    if (!window.confirm(action)) return;
+
+    leaveServer.mutate({ serverId: selectedServer.server.id });
+  };
+
   const serverConversationData = serverConversation.data ?? null;
   const serverMessages = serverConversationData?.messages ?? [];
   const directConversation = conversation.data ?? null;
   const directMessages = directConversation?.messages ?? [];
 
   return (
-    <main className="flex min-h-screen overflow-hidden bg-[#f6f0e4] text-[#18221f]">
+    <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
       <ServerRail
         memberships={serverOverview.data?.memberships}
+        onSelectHome={selectHome}
         onSelectServer={selectServer}
         selectedServerId={selectedServerId}
       />
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0]">
+      <aside
+        className={`${
+          selectedServer || selectedFriendId ? "hidden md:flex" : "flex"
+        } w-[calc(100vw-4rem)] max-w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px]`}
+      >
         {selectedServer ? (
           <>
             <div className="border-b border-[#18221f]/15 px-4 py-4 shadow-sm">
@@ -862,6 +953,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         <span className="truncate text-sm font-medium">
                           {channel.name}
                         </span>
+                        {channel.unreadCount > 0 && (
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#cc5f2f] px-1 text-[11px] font-semibold text-white">
+                            {channel.unreadCount}
+                          </span>
+                        )}
                       </button>
                     </div>
                   );
@@ -876,6 +972,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <p className="mt-1 text-sm font-semibold">
                 {selectedServer.role === "OWNER" ? "管理者" : "メンバー"}
               </p>
+              <button
+                type="button"
+                onClick={handleLeaveServer}
+                disabled={leaveServer.isPending}
+                className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                {selectedServer.role === "OWNER" ? "削除して退出" : "退出"}
+              </button>
             </div>
           </>
         ) : (
@@ -978,13 +1083,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <h1 className="font-semibold">ダイレクトメッセージ</h1>
             )}
           </div>
-          <Link
-            href="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="設定"
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </Link>
+          <ProfileSettingsDialog>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+              aria-label="設定"
+            >
+              <Settings className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </ProfileSettingsDialog>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -1070,6 +1177,23 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               >
                                 {chatMessage.content}
                               </p>
+                              {(isMine || isSelectedServerOwner) && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDeleteServerMessage(chatMessage.id)
+                                  }
+                                  disabled={deleteServerMessage.isPending}
+                                  className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#9f4122] opacity-70 transition hover:bg-[#fff1e8] hover:opacity-100 disabled:opacity-30"
+                                  aria-label="メッセージを削除"
+                                  title="削除"
+                                >
+                                  <Trash2
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              )}
                             </div>
                           </article>
                         );
@@ -1173,6 +1297,23 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               >
                                 {chatMessage.content}
                               </p>
+                              {isMine && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDeleteDirectMessage(chatMessage.id)
+                                  }
+                                  disabled={deleteDirectMessage.isPending}
+                                  className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-[#9f4122] opacity-70 transition hover:bg-[#fff1e8] hover:opacity-100 disabled:opacity-30"
+                                  aria-label="メッセージを削除"
+                                  title="削除"
+                                >
+                                  <Trash2
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              )}
                             </div>
                           </article>
                         );
@@ -1286,8 +1427,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </h2>
               <div className="space-y-2">
                 {selectedServerMembers.map((member) => (
-                  <div
+                  <Link
                     key={member.id}
+                    href={`/profile/${member.user.userId}`}
                     className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
                   >
                     <Avatar
@@ -1302,7 +1444,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         {member.role === "OWNER" ? "管理者" : "メンバー"}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </aside>

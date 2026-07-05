@@ -14,6 +14,11 @@ const profileInput = z.object({
     .trim()
     .max(160, "自己紹介は160文字以内で入力してください")
     .optional(),
+  statusMessage: z
+    .string()
+    .trim()
+    .max(80, "ステータスは80文字以内で入力してください")
+    .optional(),
 });
 
 function normalizeOptionalText(value: string | undefined) {
@@ -36,6 +41,7 @@ export const profileRouter = createTRPCRouter({
         name: true,
         image: true,
         bio: true,
+        statusMessage: true,
       },
     });
   }),
@@ -49,6 +55,7 @@ export const profileRouter = createTRPCRouter({
           name: input.name.trim(),
           image: normalizeOptionalText(input.image),
           bio: normalizeOptionalText(input.bio),
+          statusMessage: normalizeOptionalText(input.statusMessage),
         },
         select: {
           id: true,
@@ -56,6 +63,7 @@ export const profileRouter = createTRPCRouter({
           name: true,
           image: true,
           bio: true,
+          statusMessage: true,
         },
       });
     }),
