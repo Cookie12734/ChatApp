@@ -1915,7 +1915,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 </span>
                 <input
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  accept="image/png,image/jpeg"
                   onChange={(event) =>
                     setServerIconFile(event.target.files?.[0] ?? null)
                   }

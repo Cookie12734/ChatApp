@@ -8,7 +8,6 @@ const profileInput = z.object({
     .trim()
     .min(1, "名前を入力してください")
     .max(50, "名前は50文字以内で入力してください"),
-  image: z.string().trim().max(500).optional(),
   bio: z
     .string()
     .trim()
@@ -53,7 +52,6 @@ export const profileRouter = createTRPCRouter({
         where: { id: ctx.session.user.id },
         data: {
           name: input.name.trim(),
-          image: normalizeOptionalText(input.image),
           bio: normalizeOptionalText(input.bio),
           statusMessage: normalizeOptionalText(input.statusMessage),
         },

@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
+import { readStaticImageDataUrl } from "~/lib/static-image";
 import { db } from "~/server/db";
 
 export const runtime = "nodejs";
 
 const maxFileSize = 2 * 1024 * 1024;
 
-const imageTypes = {
-  "image/gif": true,
-  "image/jpeg": true,
-  "image/png": true,
-  "image/webp": true,
-} as const;
+function getErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : "アイコンのアップロードに失敗しました";
+}
 
 export async function POST(
   request: Request,
@@ -55,35 +55,19 @@ export async function POST(
     );
   }
 
-  if (!imageTypes[file.type as keyof typeof imageTypes]) {
+  try {
+    const image = await readStaticImageDataUrl(file, maxFileSize);
+
+    await db.chatServer.update({
+      where: { id: serverId },
+      data: { image },
+    });
+
+    return NextResponse.json({ image });
+  } catch (error) {
     return NextResponse.json(
-      { message: "PNG、JPG、WebP、GIF の画像を選択してください" },
+      { message: getErrorMessage(error) },
       { status: 400 },
     );
   }
-
-  if (file.size === 0) {
-    return NextResponse.json(
-      { message: "空のファイルはアップロードできません" },
-      { status: 400 },
-    );
-  }
-
-  if (file.size > maxFileSize) {
-    return NextResponse.json(
-      { message: "画像は2MB以内にしてください" },
-      { status: 400 },
-    );
-  }
-
-  const image = `data:${file.type};base64,${Buffer.from(
-    await file.arrayBuffer(),
-  ).toString("base64")}`;
-
-  await db.chatServer.update({
-    where: { id: serverId },
-    data: { image },
-  });
-
-  return NextResponse.json({ image });
 }

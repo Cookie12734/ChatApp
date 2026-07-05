@@ -111,7 +111,7 @@ export function ProfileForm() {
         onSubmit={(event) => {
           event.preventDefault();
           setMessage(null);
-          updateProfile.mutate({ name, image, bio, statusMessage });
+          updateProfile.mutate({ name, bio, statusMessage });
         }}
       >
         <div className="space-y-5">
@@ -126,14 +126,12 @@ export function ProfileForm() {
                 <input
                   className="sr-only"
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  accept="image/png,image/jpeg"
                   disabled={isUploading}
                   onChange={uploadIcon}
                 />
               </label>
-              <span className="text-sm text-[#68716b]">
-                PNG / JPG / WebP / GIF、2MBまで
-              </span>
+              <span className="text-sm text-[#68716b]">PNG / JPG、2MBまで</span>
             </div>
           </label>
 
