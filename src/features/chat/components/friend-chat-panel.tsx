@@ -2,6 +2,7 @@
 
 import {
   Check,
+  ChevronDown,
   Hash,
   Inbox,
   LogOut,
@@ -21,6 +22,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
 import { type RealtimeChannel } from "@supabase/supabase-js";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
@@ -180,6 +187,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     x: number;
     y: number;
   } | null>(null);
+  const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
+  const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
+  const [serverNameDraft, setServerNameDraft] = useState("");
+  const [serverIconFile, setServerIconFile] = useState<File | null>(null);
+  const [serverSettingsMessage, setServerSettingsMessage] = useState<
+    string | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
@@ -741,11 +755,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       setSelectedServerChannelId(null);
       setIsFriendsOpen(false);
       setIsMatchingOpen(false);
+      setIsServerSettingsOpen(false);
       setServerMessage(null);
       setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
       await utils.server.getOverview.invalidate();
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const updateServer = api.server.update.useMutation({
+    onSuccess: async () => {
+      setServerIconFile(null);
+      setServerSettingsMessage("サーバー設定を保存しました");
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
   });
 
   const selectHome = () => {
@@ -758,6 +782,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
   };
@@ -772,6 +797,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setSelectedFriendId(friendId);
     setServerMessage(null);
   };
@@ -787,6 +813,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setMessage(null);
   };
@@ -830,6 +857,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setMessage(null);
   };
@@ -845,6 +873,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setMessage(null);
   };
@@ -859,6 +888,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setMessage(null);
     setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
@@ -868,6 +898,59 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setMatchingState("idle");
     setMatchingMessage(null);
     cancelMatching.mutate();
+  };
+
+  const openServerSettings = () => {
+    if (!selectedServer) return;
+
+    setServerNameDraft(selectedServer.server.name);
+    setServerIconFile(null);
+    setServerSettingsMessage(null);
+    setIsServerMenuOpen(false);
+    setIsServerSettingsOpen(true);
+  };
+
+  const handleServerSettingsSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    if (!selectedServer?.server.id || !serverNameDraft.trim()) return;
+
+    try {
+      if (serverIconFile) {
+        const formData = new FormData();
+        formData.append("icon", serverIconFile);
+        const response = await fetch(
+          `/api/servers/${selectedServer.server.id}/icon`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => null)) as {
+            message?: string;
+          } | null;
+          throw new Error(data?.message ?? "アイコンの保存に失敗しました");
+        }
+      }
+
+      updateServer.mutate({
+        description: selectedServer.server.description ?? undefined,
+        name: serverNameDraft,
+        serverId: selectedServer.server.id,
+      });
+    } catch (error) {
+      setServerSettingsMessage(getErrorMessage(error));
+    }
+  };
+
+  const handleDeleteServer = () => {
+    if (!selectedServer?.server.id) return;
+    if (!window.confirm("このサーバーを削除しますか？")) return;
+
+    leaveServer.mutate({ serverId: selectedServer.server.id });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -980,13 +1063,54 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       >
         {selectedServer ? (
           <>
-            <div className="border-b border-[#18221f]/15 px-4 py-4 shadow-sm">
-              <h2 className="truncate text-lg font-semibold">
-                {selectedServer.server.name}
-              </h2>
-              <p className="mt-1 text-xs text-[#68716b]">
-                {selectedServer.server.members.length} メンバー
-              </p>
+            <div className="relative border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsServerMenuOpen((isOpen) => !isOpen)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-[#fff8ed]"
+                aria-expanded={isServerMenuOpen}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-lg font-semibold">
+                    {selectedServer.server.name}
+                  </span>
+                  <span className="mt-1 block text-xs text-[#68716b]">
+                    {selectedServer.server.members.length} メンバー
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-[#68716b] transition ${
+                    isServerMenuOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+              {isServerMenuOpen && (
+                <div className="absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm shadow-xl">
+                  {isSelectedServerOwner && (
+                    <button
+                      type="button"
+                      onClick={openServerSettings}
+                      className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition hover:bg-[#e4f2dc]"
+                    >
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                      サーバー設定
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsServerMenuOpen(false);
+                      handleLeaveServer();
+                    }}
+                    disabled={leaveServer.isPending}
+                    className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+                    {selectedServer.role === "OWNER" ? "削除して退出" : "退出"}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
@@ -1121,6 +1245,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         type="button"
                         onClick={() => {
                           setSelectedServerChannelId(channel.id);
+                          setIsServerMenuOpen(false);
                           setServerMessage(null);
                         }}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -1148,15 +1273,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <p className="mt-1 text-sm font-semibold">
                 {selectedServer.role === "OWNER" ? "管理者" : "メンバー"}
               </p>
-              <button
-                type="button"
-                onClick={handleLeaveServer}
-                disabled={leaveServer.isPending}
-                className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                {selectedServer.role === "OWNER" ? "削除して退出" : "退出"}
-              </button>
             </div>
           </>
         ) : (
@@ -1764,6 +1880,95 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           )}
         </div>
       </section>
+
+      <Dialog
+        open={isServerSettingsOpen}
+        onOpenChange={(isOpen) => {
+          setIsServerSettingsOpen(isOpen);
+          if (!isOpen) {
+            setServerIconFile(null);
+            setServerSettingsMessage(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-lg">
+          <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+            <DialogTitle>サーバー設定</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleServerSettingsSubmit} className="space-y-5 p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
+                {selectedServer?.server.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedServer.server.image}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  selectedServer?.server.name.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <label className="min-w-0 flex-1">
+                <span className="mb-1 block text-sm font-semibold">
+                  サーバーアイコン
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={(event) =>
+                    setServerIconFile(event.target.files?.[0] ?? null)
+                  }
+                  className="block w-full text-sm text-[#53615a] file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-[#18221f] file:px-3 file:font-semibold file:text-[#f6f0e4]"
+                />
+                {serverIconFile && (
+                  <span className="mt-1 block truncate text-xs text-[#68716b]">
+                    {serverIconFile.name}
+                  </span>
+                )}
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold">
+                サーバー名
+              </span>
+              <input
+                value={serverNameDraft}
+                onChange={(event) => setServerNameDraft(event.target.value)}
+                className="min-h-11 w-full rounded-md border border-[#18221f]/15 bg-white px-3 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                maxLength={50}
+                required
+              />
+            </label>
+
+            {serverSettingsMessage && (
+              <p className="rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+                {serverSettingsMessage}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                onClick={handleDeleteServer}
+                disabled={leaveServer.isPending}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                サーバー削除
+              </button>
+              <button
+                type="submit"
+                disabled={!serverNameDraft.trim() || updateServer.isPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
+              >
+                保存
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {channelContextMenu && channelContextTarget && selectedServer && (
         <div

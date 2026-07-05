@@ -54,7 +54,7 @@ export function ServerRail({
             (total, channel) => total + channel.unreadCount,
             0,
           );
-          const className = `relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition hover:rounded-xl ${
+          const className = `relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-sm font-semibold transition hover:rounded-xl ${
             membership.server.id === selectedServerId
               ? "bg-[#d8efee] text-[#114744]"
               : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
@@ -70,7 +70,16 @@ export function ServerRail({
                 aria-label={label}
                 title={label}
               >
-                {label.slice(0, 2).toUpperCase()}
+                {membership.server.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={membership.server.image}
+                    alt=""
+                    className="h-full w-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  label.slice(0, 2).toUpperCase()
+                )}
                 {unreadCount > 0 && (
                   <span className="absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#18221f] bg-[#cc5f2f] px-1 text-[11px] text-white">
                     {unreadCount}
@@ -88,7 +97,16 @@ export function ServerRail({
               aria-label={label}
               title={label}
             >
-              {label.slice(0, 2).toUpperCase()}
+              {membership.server.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={membership.server.image}
+                  alt=""
+                  className="h-full w-full rounded-2xl object-cover"
+                />
+              ) : (
+                label.slice(0, 2).toUpperCase()
+              )}
               {unreadCount > 0 && (
                 <span className="absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#18221f] bg-[#cc5f2f] px-1 text-[11px] text-white">
                   {unreadCount}
