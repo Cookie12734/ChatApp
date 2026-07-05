@@ -194,7 +194,7 @@ export function ProfileForm() {
           <button
             type="submit"
             disabled={updateProfile.isPending}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 py-2 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
             {updateProfile.isPending ? "保存中..." : "保存"}

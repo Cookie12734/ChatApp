@@ -1208,7 +1208,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             !editingChannelName.trim() ||
                             updateChannel.isPending
                           }
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-not-allowed disabled:opacity-45"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-600 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-45"
                           aria-label="保存"
                           title="保存"
                         >
@@ -1961,7 +1961,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="submit"
                 disabled={!serverNameDraft.trim() || updateServer.isPending}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-green-600 px-4 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
               >
                 保存
               </button>
