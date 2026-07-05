@@ -4,6 +4,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
+import {
+  canDeleteServerMessage,
+  canEditMessage,
+  canPinServerMessage,
+} from "~/features/server/server/message-permissions";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const serverInput = z.object({
@@ -55,6 +60,10 @@ const sendMessageInput = serverIdInput.extend({
     .max(1000, "メッセージは1000文字以内で入力してください"),
 });
 
+const updateMessageInput = messageIdInput.extend({
+  content: sendMessageInput.shape.content,
+});
+
 function normalizeDescription(description: string | undefined) {
   if (description === undefined || description.length === 0) {
     return null;
@@ -93,7 +102,13 @@ export const serverRouter = createTRPCRouter({
     const [currentUser, memberships, blocks] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
         where: { id: currentUserId },
-        select: { id: true, userId: true, name: true, image: true },
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          image: true,
+          presenceStatus: true,
+        },
       }),
       ctx.db.serverMember.findMany({
         where: { userId: currentUserId },
@@ -108,7 +123,13 @@ export const serverRouter = createTRPCRouter({
                 orderBy: { createdAt: "asc" },
                 include: {
                   user: {
-                    select: { id: true, userId: true, name: true, image: true },
+                    select: {
+                      id: true,
+                      userId: true,
+                      name: true,
+                      image: true,
+                      presenceStatus: true,
+                    },
                   },
                 },
               },
@@ -390,6 +411,94 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
+  updateMessage: protectedProcedure
+    .input(updateMessageInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: currentUserId,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "参加しているサーバーだけ操作できます",
+        });
+      }
+
+      const message = await ctx.db.serverMessage.findFirst({
+        where: { id: input.messageId, serverId: input.serverId },
+        select: { id: true, senderId: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "メッセージが見つかりません",
+        });
+      }
+
+      if (!canEditMessage(currentUserId, message.senderId)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "編集できるのは自分のメッセージだけです",
+        });
+      }
+
+      return ctx.db.serverMessage.update({
+        where: { id: message.id },
+        data: { content: input.content },
+        select: { id: true, content: true },
+      });
+    }),
+
+  toggleMessagePin: protectedProcedure
+    .input(messageIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: ctx.session.user.id,
+          },
+        },
+        select: { role: true },
+      });
+
+      if (!membership || !canPinServerMessage(membership.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "ピン留めできるのは管理者だけです",
+        });
+      }
+
+      const message = await ctx.db.serverMessage.findFirst({
+        where: { id: input.messageId, serverId: input.serverId },
+        select: { id: true, pinnedAt: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "メッセージが見つかりません",
+        });
+      }
+
+      const pinnedAt = message.pinnedAt ? null : new Date();
+
+      return ctx.db.serverMessage.update({
+        where: { id: message.id },
+        data: { pinnedAt },
+        select: { id: true, pinnedAt: true },
+      });
+    }),
+
   deleteMessage: protectedProcedure
     .input(messageIdInput)
     .mutation(async ({ ctx, input }) => {
@@ -423,7 +532,13 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      if (message.senderId !== currentUserId && membership.role !== "OWNER") {
+      if (
+        !canDeleteServerMessage(
+          currentUserId,
+          message.senderId,
+          membership.role,
+        )
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "削除できるのは自分のメッセージか管理者だけです",

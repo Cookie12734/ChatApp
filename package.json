@@ -20,7 +20,7 @@
     "mailpit:down": "docker compose down",
     "preview": "next build && next start",
     "start": "next start",
-    "test": "node --test src/features/friend/server/blocking.test.mjs src/lib/static-image.test.mjs",
+    "test": "node --test src/features/friend/server/blocking.test.mjs src/features/server/server/message-permissions.test.mjs src/lib/static-image.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
