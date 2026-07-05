@@ -6,7 +6,7 @@ import { db } from "~/server/db";
 
 export const runtime = "nodejs";
 
-const maxFileSize = 2 * 1024 * 1024;
+const maxFileSize = 5 * 1024 * 1024;
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error
