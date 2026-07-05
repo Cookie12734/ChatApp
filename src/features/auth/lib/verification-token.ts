@@ -1,5 +1,6 @@
 import crypto from "crypto";
 
+import { buildVerificationUrl } from "~/features/auth/lib/email";
 import { sendSignupVerificationEmail } from "~/features/auth/lib/email";
 import { db } from "~/server/db";
 
@@ -18,6 +19,22 @@ export async function createAndSendVerificationToken(email: string) {
   });
 
   await sendSignupVerificationEmail(email, token);
+}
+
+export async function getDevelopmentVerificationUrl(email: string) {
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
+  const verificationToken = await db.verificationToken.findFirst({
+    where: { identifier: email },
+    orderBy: { expires: "desc" },
+    select: { token: true },
+  });
+
+  return verificationToken
+    ? buildVerificationUrl(verificationToken.token)
+    : null;
 }
 
 export async function verifyEmailToken(token: string) {
