@@ -28,24 +28,30 @@ export function ServerRail({
     refetchInterval: memberships === undefined ? 15000 : false,
   });
   const items = memberships ?? overview.data?.memberships ?? [];
+  const homeIndicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
+    selectedServerId ? "h-0 w-0 group-hover:h-5 group-hover:w-1" : "h-10 w-1"
+  }`;
 
   return (
-    <aside className="flex w-16 shrink-0 flex-col items-center gap-3 bg-[#18221f] px-2 py-4 sm:w-[72px] sm:px-3">
-      <Link
-        href="/"
-        onClick={onSelectHome}
-        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] transition hover:rounded-xl"
-        aria-label="connect"
-      >
-        <Image
-          src="/connect-icon.png"
-          alt=""
-          width={40}
-          height={40}
-          className="h-10 w-10 rounded-xl object-cover"
-          priority
-        />
-      </Link>
+    <aside className="flex w-16 shrink-0 flex-col items-center gap-3 bg-[#18221f] py-4 sm:w-[72px]">
+      <div className="group relative flex h-12 w-full justify-center">
+        <span className={homeIndicatorClass} aria-hidden="true" />
+        <Link
+          href="/"
+          onClick={onSelectHome}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] transition hover:rounded-xl"
+          aria-label="connect"
+        >
+          <Image
+            src="/connect-icon.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl object-cover"
+            priority
+          />
+        </Link>
+      </div>
       <div className="h-px w-8 bg-[#f6f0e4]/25" />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
         {items.map((membership) => {
@@ -54,20 +60,59 @@ export function ServerRail({
             (total, channel) => total + channel.unreadCount,
             0,
           );
+          const isSelected = membership.server.id === selectedServerId;
           const unreadLabel =
             unreadCount > 0 ? `${label}、未読${unreadCount}件` : label;
-          const className = `relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition ${
-            membership.server.id === selectedServerId
+          const indicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
+            isSelected
+              ? "h-10 w-1"
+              : unreadCount > 0
+                ? "h-3 w-3 ring-2 ring-[#18221f] group-hover:h-5 group-hover:w-1"
+                : "h-0 w-0 group-hover:h-5 group-hover:w-1"
+          }`;
+          const className = `flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition ${
+            isSelected
               ? "bg-[#d8efee] text-[#114744]"
               : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
           }`;
 
           if (onSelectServer) {
             return (
-              <button
+              <div
                 key={membership.id}
-                type="button"
-                onClick={() => onSelectServer(membership)}
+                className="group relative flex h-12 w-full justify-center"
+              >
+                <span className={indicatorClass} aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => onSelectServer(membership)}
+                  className={className}
+                  aria-label={unreadLabel}
+                  title={unreadLabel}
+                >
+                  {membership.server.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={membership.server.image}
+                      alt=""
+                      className="h-full w-full rounded-2xl object-cover"
+                    />
+                  ) : (
+                    label.slice(0, 2).toUpperCase()
+                  )}
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={membership.id}
+              className="group relative flex h-12 w-full justify-center"
+            >
+              <span className={indicatorClass} aria-hidden="true" />
+              <Link
+                href={`/?serverId=${encodeURIComponent(membership.server.id)}`}
                 className={className}
                 aria-label={unreadLabel}
                 title={unreadLabel}
@@ -82,41 +127,8 @@ export function ServerRail({
                 ) : (
                   label.slice(0, 2).toUpperCase()
                 )}
-                {unreadCount > 0 && (
-                  <span
-                    className="absolute top-1/2 -left-1 h-3 w-3 -translate-y-1/2 rounded-full bg-white ring-2 ring-[#18221f]"
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={membership.id}
-              href={`/?serverId=${encodeURIComponent(membership.server.id)}`}
-              className={className}
-              aria-label={unreadLabel}
-              title={unreadLabel}
-            >
-              {membership.server.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={membership.server.image}
-                  alt=""
-                  className="h-full w-full rounded-2xl object-cover"
-                />
-              ) : (
-                label.slice(0, 2).toUpperCase()
-              )}
-              {unreadCount > 0 && (
-                <span
-                  className="absolute top-1/2 -left-1 h-3 w-3 -translate-y-1/2 rounded-full bg-white ring-2 ring-[#18221f]"
-                  aria-hidden="true"
-                />
-              )}
-            </Link>
+              </Link>
+            </div>
           );
         })}
         <Link
