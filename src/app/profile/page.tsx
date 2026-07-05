@@ -5,12 +5,18 @@ import { BackButton } from "~/components/back-button";
 import { auth } from "~/features/auth";
 import { ProfileForm } from "~/features/profile/components/profile-form";
 
-export default async function ProfilePage() {
+type ProfilePageProps = {
+  searchParams: Promise<{ from?: string }>;
+};
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/auth/login");
   }
+
+  const { from } = await searchParams;
 
   return (
     <main className="min-h-screen bg-[#f6f0e4] px-5 py-6 text-[#18221f] sm:px-8 lg:px-10">
@@ -27,7 +33,7 @@ export default async function ProfilePage() {
               <h1 className="text-2xl font-semibold">プロフィール</h1>
             </div>
           </div>
-          <BackButton />
+          <BackButton href={from} />
         </header>
         <ProfileForm />
       </div>

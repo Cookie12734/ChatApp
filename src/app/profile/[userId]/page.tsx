@@ -3,14 +3,20 @@ import { notFound, redirect } from "next/navigation";
 
 import { BackButton } from "~/components/back-button";
 import { auth } from "~/features/auth";
+import {
+  getPresenceDisplayLabel,
+  getPresenceDotClassName,
+} from "~/features/profile/presence";
 import { db } from "~/server/db";
 
 type ProfileDetailPageProps = {
   params: Promise<{ userId: string }>;
+  searchParams: Promise<{ from?: string }>;
 };
 
 export default async function ProfileDetailPage({
   params,
+  searchParams,
 }: ProfileDetailPageProps) {
   const session = await auth();
 
@@ -18,13 +24,15 @@ export default async function ProfileDetailPage({
     redirect("/auth/login");
   }
 
-  const { userId } = await params;
+  const [{ userId }, { from }] = await Promise.all([params, searchParams]);
   const profile = await db.user.findUnique({
     where: { userId },
     select: {
       bio: true,
+      id: true,
       image: true,
       name: true,
+      presenceStatus: true,
       statusMessage: true,
       userId: true,
     },
@@ -32,6 +40,10 @@ export default async function ProfileDetailPage({
 
   if (!profile) {
     notFound();
+  }
+
+  if (profile.id === session.user.id) {
+    redirect(`/profile${from ? `?from=${encodeURIComponent(from)}` : ""}`);
   }
 
   return (
@@ -51,7 +63,7 @@ export default async function ProfileDetailPage({
               </h1>
             </div>
           </div>
-          <BackButton />
+          <BackButton href={from} />
         </header>
 
         <section className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5 shadow-[8px_8px_0_#d8efee]">
@@ -74,6 +86,14 @@ export default async function ProfileDetailPage({
               </h2>
               <p className="font-mono text-sm text-[#68716b]">
                 @{profile.userId}
+              </p>
+              <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#68716b]">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${getPresenceDotClassName(
+                    profile.presenceStatus,
+                  )}`}
+                />
+                {getPresenceDisplayLabel(profile.presenceStatus)}
               </p>
             </div>
           </div>
