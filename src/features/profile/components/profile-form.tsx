@@ -3,6 +3,12 @@
 import { Camera, Save, UserRound } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
+import {
+  getPresenceDisplayLabel,
+  getPresenceDotClassName,
+  presenceOptions,
+  type PresenceStatus,
+} from "~/features/profile/presence";
 import { api } from "~/trpc/react";
 
 function getErrorMessage(error: unknown) {
@@ -21,6 +27,8 @@ export function ProfileForm() {
   const [imageFailed, setImageFailed] = useState(false);
   const [bio, setBio] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [presenceStatus, setPresenceStatus] =
+    useState<PresenceStatus>("ONLINE");
   const [message, setMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -32,6 +40,7 @@ export function ProfileForm() {
     setImageFailed(false);
     setBio(profile.data.bio ?? "");
     setStatusMessage(profile.data.statusMessage ?? "");
+    setPresenceStatus(profile.data.presenceStatus);
   }, [profile.data]);
 
   const initial = useMemo(() => {
@@ -45,7 +54,10 @@ export function ProfileForm() {
   const updateProfile = api.profile.updateMine.useMutation({
     onSuccess: async () => {
       setMessage("プロフィールを保存しました");
-      await utils.profile.getMine.invalidate();
+      await Promise.all([
+        utils.profile.getMine.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
@@ -79,7 +91,10 @@ export function ProfileForm() {
       setImage(result.image);
       setImageFailed(false);
       setMessage("アイコンをアップロードしました");
-      await utils.profile.getMine.invalidate();
+      await Promise.all([
+        utils.profile.getMine.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     } catch (error) {
       setMessage(getErrorMessage(error));
     } finally {
@@ -111,7 +126,12 @@ export function ProfileForm() {
         onSubmit={(event) => {
           event.preventDefault();
           setMessage(null);
-          updateProfile.mutate({ name, bio, statusMessage });
+          updateProfile.mutate({
+            bio,
+            name,
+            presenceStatus,
+            statusMessage,
+          });
         }}
       >
         <div className="space-y-5">
@@ -131,7 +151,7 @@ export function ProfileForm() {
                   onChange={uploadIcon}
                 />
               </label>
-              <span className="text-sm text-[#68716b]">PNG / JPG、2MBまで</span>
+              <span className="text-sm text-[#68716b]">PNG / JPG、5MBまで</span>
             </div>
           </label>
 
@@ -163,6 +183,25 @@ export function ProfileForm() {
               placeholder="いまの気分や作業状況"
               maxLength={80}
             />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-[#53615a]">
+              オンライン状態
+            </span>
+            <select
+              value={presenceStatus}
+              onChange={(event) =>
+                setPresenceStatus(event.target.value as PresenceStatus)
+              }
+              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            >
+              {presenceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block">
@@ -230,6 +269,14 @@ export function ProfileForm() {
               </p>
               <p className="font-mono text-sm text-[#68716b]">
                 @{profile.data?.userId}
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-[#68716b]">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${getPresenceDotClassName(
+                    presenceStatus,
+                  )}`}
+                />
+                {getPresenceDisplayLabel(presenceStatus)}
               </p>
             </div>
           </div>
