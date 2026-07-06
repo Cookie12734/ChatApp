@@ -6,7 +6,7 @@ import { FriendChatPanel } from "~/features/chat/components/friend-chat-panel";
 export default async function ChatsPage() {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

@@ -7,7 +7,7 @@ import { SignUpForm } from "~/features/auth/components/sign-up-form";
 export default async function SignUpPage() {
   const session = await auth();
 
-  if (session?.user) {
+  if (session?.user?.id) {
     redirect("/");
   }
 

@@ -9,11 +9,11 @@ type ServersPageProps = {
 export default async function ServersPage({ searchParams }: ServersPageProps) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 
   const { serverId } = await searchParams;
 
-  redirect(serverId ? `/?serverId=${serverId}` : "/");
+  redirect(serverId ? `/?serverId=${encodeURIComponent(serverId)}` : "/");
 }

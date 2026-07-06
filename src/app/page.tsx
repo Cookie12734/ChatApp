@@ -10,7 +10,7 @@ type HomePageProps = {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 

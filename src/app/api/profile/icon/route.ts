@@ -17,7 +17,7 @@ function getErrorMessage(error: unknown) {
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return NextResponse.json(
       { message: "ログインが必要です" },
       { status: 401 },

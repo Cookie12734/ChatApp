@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
   const { verified } = await searchParams;
 
-  if (session?.user) {
+  if (session?.user?.id) {
     redirect("/");
   }
 
