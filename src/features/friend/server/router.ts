@@ -1,7 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { assertNotBlocked } from "~/features/friend/server/blocking";
+import {
+  assertNotBlocked,
+  getBlockedPeerIds,
+  isVisibleFriendNotification,
+} from "~/features/friend/server/blocking";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const userIdSchema = z
@@ -24,6 +28,7 @@ export const friendRouter = createTRPCRouter({
       incomingRequests,
       outgoingRequests,
       notifications,
+      blocks,
       blockedUsers,
     ] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
@@ -61,6 +66,17 @@ export const friendRouter = createTRPCRouter({
         where: { userId: currentUserId },
         orderBy: { createdAt: "desc" },
         take: 20,
+        include: {
+          friendRequest: {
+            select: { receiverId: true, senderId: true },
+          },
+        },
+      }),
+      ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
       }),
       ctx.db.userBlock.findMany({
         where: { blockerId: currentUserId },
@@ -72,15 +88,33 @@ export const friendRouter = createTRPCRouter({
         },
       }),
     ]);
+    const blockedPeerIds = new Set(getBlockedPeerIds(currentUserId, blocks));
+    const visibleNotifications = notifications
+      .filter((notification) =>
+        isVisibleFriendNotification(
+          currentUserId,
+          blockedPeerIds,
+          notification,
+        ),
+      )
+      .map(
+        ({ friendRequest: _friendRequest, ...notification }) => notification,
+      );
 
     return {
       currentUser,
-      friends,
-      incomingRequests,
-      outgoingRequests,
-      notifications,
+      friends: friends.filter(
+        (friendship) => !blockedPeerIds.has(friendship.friendId),
+      ),
+      incomingRequests: incomingRequests.filter(
+        (request) => !blockedPeerIds.has(request.senderId),
+      ),
+      outgoingRequests: outgoingRequests.filter(
+        (request) => !blockedPeerIds.has(request.receiverId),
+      ),
+      notifications: visibleNotifications,
       blockedUsers,
-      unreadNotificationCount: notifications.filter(
+      unreadNotificationCount: visibleNotifications.filter(
         (notification) => !notification.readAt,
       ).length,
     };
@@ -343,6 +377,17 @@ export const friendRouter = createTRPCRouter({
             OR: [
               { senderId: currentUserId, receiverId: blocked.id },
               { senderId: blocked.id, receiverId: currentUserId },
+            ],
+          },
+        });
+
+        await tx.matchingQueue.deleteMany({
+          where: {
+            OR: [
+              { userId: currentUserId },
+              { userId: blocked.id },
+              { matchedUserId: currentUserId },
+              { matchedUserId: blocked.id },
             ],
           },
         });

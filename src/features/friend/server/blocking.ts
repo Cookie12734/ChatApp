@@ -24,6 +24,22 @@ export function getBlockedPeerIds(currentUserId: string, blocks: BlockEdge[]) {
   ];
 }
 
+export function isVisibleFriendNotification(
+  currentUserId: string,
+  blockedPeerIds: Set<string>,
+  notification: {
+    friendRequest: { receiverId: string; senderId: string } | null;
+  },
+) {
+  const request = notification.friendRequest;
+  if (!request) return true;
+
+  const peerId =
+    request.senderId === currentUserId ? request.receiverId : request.senderId;
+
+  return !blockedPeerIds.has(peerId);
+}
+
 export async function assertNotBlocked(
   db: BlockReader,
   userAId: string,
