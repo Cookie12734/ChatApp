@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
+import { canManageServer } from "~/features/server/server/message-permissions";
 import { readStaticImageDataUrl } from "~/lib/static-image";
 import { db } from "~/server/db";
 
@@ -20,7 +21,7 @@ export async function POST(
 ) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return NextResponse.json(
       { message: "ログインが必要です" },
       { status: 401 },
@@ -38,7 +39,7 @@ export async function POST(
     select: { role: true },
   });
 
-  if (membership?.role !== "OWNER") {
+  if (!canManageServer(membership?.role)) {
     return NextResponse.json(
       { message: "サーバーアイコンを変更できるのは管理者だけです" },
       { status: 403 },
