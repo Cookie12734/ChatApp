@@ -13,8 +13,11 @@ import {
   Search,
   Send,
   Settings,
+  Shield,
+  ShieldOff,
   Shuffle,
   Trash2,
+  UserMinus,
   Users,
   X,
 } from "lucide-react";
@@ -268,6 +271,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     ? `/?serverId=${encodeURIComponent(selectedServer.server.id)}`
     : "/";
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
+  const willDeleteSelectedServerOnLeave =
+    selectedServer?.role === "OWNER" && selectedServer.server.ownerCount <= 1;
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
         (channel) => channel.id === channelContextMenu.channelId,
@@ -855,6 +860,36 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
+  const deleteServer = api.server.deleteServer.useMutation({
+    onSuccess: async () => {
+      setSelectedServerId(null);
+      setSelectedServerChannelId(null);
+      setIsFriendsOpen(false);
+      setIsMatchingOpen(false);
+      setIsServerSettingsOpen(false);
+      setServerMessage(null);
+      setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
+  });
+
+  const updateServerMemberRole = api.server.updateMemberRole.useMutation({
+    onSuccess: async () => {
+      setServerMessage(null);
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const removeServerMember = api.server.removeMember.useMutation({
+    onSuccess: async () => {
+      setServerMessage(null);
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
   const updateServer = api.server.update.useMutation({
     onSuccess: async () => {
       setServerIconFile(null);
@@ -1042,7 +1077,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (!selectedServer?.server.id) return;
     if (!window.confirm("このサーバーを削除しますか？")) return;
 
-    leaveServer.mutate({ serverId: selectedServer.server.id });
+    deleteServer.mutate({ serverId: selectedServer.server.id });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -1103,6 +1138,29 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setChannelContextMenu(null);
     deleteChannel.mutate({
       channelId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleUpdateServerMemberRole = (
+    memberId: string,
+    role: "MEMBER" | "OWNER",
+  ) => {
+    if (!selectedServer?.server.id) return;
+
+    updateServerMemberRole.mutate({
+      memberId,
+      role,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleRemoveServerMember = (memberId: string, name: string) => {
+    if (!selectedServer?.server.id) return;
+    if (!window.confirm(`${name}をこのサーバーから退出させますか？`)) return;
+
+    removeServerMember.mutate({
+      memberId,
       serverId: selectedServer.server.id,
     });
   };
@@ -1201,10 +1259,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleLeaveServer = () => {
     if (!selectedServer?.server.id) return;
-    const action =
-      selectedServer.role === "OWNER"
-        ? "サーバーを削除して退出しますか？"
-        : "このサーバーから退出しますか？";
+    const action = willDeleteSelectedServerOnLeave
+      ? "サーバーを削除して退出しますか？"
+      : "このサーバーから退出しますか？";
     if (!window.confirm(action)) return;
 
     leaveServer.mutate({ serverId: selectedServer.server.id });
@@ -1304,7 +1361,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-50"
                   >
                     <LogOut className="h-4 w-4" aria-hidden="true" />
-                    {selectedServer.role === "OWNER" ? "削除して退出" : "退出"}
+                    {willDeleteSelectedServerOnLeave ? "削除して退出" : "退出"}
                   </button>
                 </div>
               )}
@@ -2161,32 +2218,87 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       )}`;
 
                   return (
-                    <Link
+                    <div
                       key={member.id}
-                      href={profileHref}
-                      className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
+                      className="flex items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
                     >
-                      <span className="relative shrink-0">
-                        <Avatar
-                          user={member.user}
-                          className="h-9 w-9 rounded-full border border-black/10"
-                        />
-                        <span
-                          className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
-                            member.user.presenceStatus,
-                          )}`}
-                        />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">
-                          {getDisplayName(member.user)}
-                        </p>
-                        <p className="truncate text-xs text-[#68716b]">
-                          {getPresenceDisplayLabel(member.user.presenceStatus)}{" "}
-                          ・{member.role === "OWNER" ? "管理者" : "メンバー"}
-                        </p>
-                      </div>
-                    </Link>
+                      <Link
+                        href={profileHref}
+                        className="flex min-w-0 flex-1 items-center gap-3"
+                      >
+                        <span className="relative shrink-0">
+                          <Avatar
+                            user={member.user}
+                            className="h-9 w-9 rounded-full border border-black/10"
+                          />
+                          <span
+                            className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
+                              member.user.presenceStatus,
+                            )}`}
+                          />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">
+                            {getDisplayName(member.user)}
+                          </p>
+                          <p className="truncate text-xs text-[#68716b]">
+                            {getPresenceDisplayLabel(
+                              member.user.presenceStatus,
+                            )}{" "}
+                            ・{member.role === "OWNER" ? "管理者" : "メンバー"}
+                          </p>
+                        </div>
+                      </Link>
+                      {isSelectedServerOwner && !isCurrentUser && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleUpdateServerMemberRole(
+                                member.id,
+                                member.role === "OWNER" ? "MEMBER" : "OWNER",
+                              )
+                            }
+                            disabled={updateServerMemberRole.isPending}
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
+                            aria-label={
+                              member.role === "OWNER"
+                                ? "メンバーに戻す"
+                                : "管理者にする"
+                            }
+                            title={
+                              member.role === "OWNER"
+                                ? "メンバーに戻す"
+                                : "管理者にする"
+                            }
+                          >
+                            {member.role === "OWNER" ? (
+                              <ShieldOff
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Shield className="h-4 w-4" aria-hidden="true" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRemoveServerMember(
+                                member.id,
+                                getDisplayName(member.user),
+                              )
+                            }
+                            disabled={removeServerMember.isPending}
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-45"
+                            aria-label="退出させる"
+                            title="退出させる"
+                          >
+                            <UserMinus className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -2272,7 +2384,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="button"
                 onClick={handleDeleteServer}
-                disabled={leaveServer.isPending}
+                disabled={deleteServer.isPending}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
               >
                 <Trash2 className="h-4 w-4" aria-hidden="true" />

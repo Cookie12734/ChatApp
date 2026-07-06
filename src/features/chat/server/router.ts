@@ -5,6 +5,8 @@ import {
   assertNotBlocked,
   getBlockedPeerIds,
 } from "~/features/friend/server/blocking";
+import { canManageDirectMessage } from "~/features/chat/server/direct-message-permissions";
+import { canShowMatchedUser } from "~/features/chat/server/matching-permissions";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const friendIdInput = z.object({
@@ -116,8 +118,9 @@ export const chatRouter = createTRPCRouter({
   }),
 
   getMatchingStatus: protectedProcedure.query(async ({ ctx }) => {
+    const currentUserId = ctx.session.user.id;
     const queue = await ctx.db.matchingQueue.findUnique({
-      where: { userId: ctx.session.user.id },
+      where: { userId: currentUserId },
       select: { matchedUserId: true, topic: true },
     });
 
@@ -129,12 +132,36 @@ export const chatRouter = createTRPCRouter({
       return { status: "waiting" as const, topic: queue.topic };
     }
 
-    const friend = await ctx.db.user.findUnique({
-      where: { id: queue.matchedUserId },
-      select: userPreviewSelect,
-    });
+    const [block, friendship, friend] = await Promise.all([
+      ctx.db.userBlock.findFirst({
+        where: {
+          OR: [
+            { blockerId: currentUserId, blockedId: queue.matchedUserId },
+            { blockerId: queue.matchedUserId, blockedId: currentUserId },
+          ],
+        },
+        select: { id: true },
+      }),
+      ctx.db.friendship.findUnique({
+        where: {
+          userId_friendId: {
+            userId: currentUserId,
+            friendId: queue.matchedUserId,
+          },
+        },
+        select: { id: true },
+      }),
+      ctx.db.user.findUnique({
+        where: { id: queue.matchedUserId },
+        select: userPreviewSelect,
+      }),
+    ]);
 
-    return friend
+    return friend &&
+      canShowMatchedUser({
+        isBlocked: Boolean(block),
+        isFriend: Boolean(friendship),
+      })
       ? { friend, status: "matched" as const, topic: queue.topic }
       : { status: "idle" as const };
   }),
@@ -337,15 +364,51 @@ export const chatRouter = createTRPCRouter({
   updateMessage: protectedProcedure
     .input(updateMessageInput)
     .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, senderId: true },
+        select: { id: true, receiverId: true, senderId: true },
       });
 
-      if (message?.senderId !== ctx.session.user.id) {
+      if (message?.senderId !== currentUserId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "編集できるメッセージが見つかりません",
+        });
+      }
+
+      const [block, friendship] = await Promise.all([
+        ctx.db.userBlock.findFirst({
+          where: {
+            OR: [
+              { blockerId: currentUserId, blockedId: message.receiverId },
+              { blockerId: message.receiverId, blockedId: currentUserId },
+            ],
+          },
+          select: { id: true },
+        }),
+        ctx.db.friendship.findUnique({
+          where: {
+            userId_friendId: {
+              userId: currentUserId,
+              friendId: message.receiverId,
+            },
+          },
+          select: { id: true },
+        }),
+      ]);
+
+      if (
+        !canManageDirectMessage({
+          currentUserId,
+          isBlocked: Boolean(block),
+          isFriend: Boolean(friendship),
+          senderId: message.senderId,
+        })
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot edit this message",
         });
       }
 
@@ -359,15 +422,51 @@ export const chatRouter = createTRPCRouter({
   deleteMessage: protectedProcedure
     .input(messageIdInput)
     .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, senderId: true },
+        select: { id: true, receiverId: true, senderId: true },
       });
 
-      if (message?.senderId !== ctx.session.user.id) {
+      if (message?.senderId !== currentUserId) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "削除できるメッセージが見つかりません",
+        });
+      }
+
+      const [block, friendship] = await Promise.all([
+        ctx.db.userBlock.findFirst({
+          where: {
+            OR: [
+              { blockerId: currentUserId, blockedId: message.receiverId },
+              { blockerId: message.receiverId, blockedId: currentUserId },
+            ],
+          },
+          select: { id: true },
+        }),
+        ctx.db.friendship.findUnique({
+          where: {
+            userId_friendId: {
+              userId: currentUserId,
+              friendId: message.receiverId,
+            },
+          },
+          select: { id: true },
+        }),
+      ]);
+
+      if (
+        !canManageDirectMessage({
+          currentUserId,
+          isBlocked: Boolean(block),
+          isFriend: Boolean(friendship),
+          senderId: message.senderId,
+        })
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot delete this message",
         });
       }
 
