@@ -7,6 +7,7 @@ import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
 } from "~/features/profile/presence";
+import { canViewProfile } from "~/features/profile/server/profile-permissions";
 import { db } from "~/server/db";
 
 type ProfileDetailPageProps = {
@@ -20,7 +21,7 @@ export default async function ProfileDetailPage({
 }: ProfileDetailPageProps) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/auth/login");
   }
 
@@ -44,6 +45,48 @@ export default async function ProfileDetailPage({
 
   if (profile.id === session.user.id) {
     redirect(`/profile${from ? `?from=${encodeURIComponent(from)}` : ""}`);
+  }
+
+  const [block, friendship, sharedServer] = await Promise.all([
+    db.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: session.user.id, blockedId: profile.id },
+          { blockerId: profile.id, blockedId: session.user.id },
+        ],
+      },
+      select: { id: true },
+    }),
+    db.friendship.findUnique({
+      where: {
+        userId_friendId: {
+          userId: session.user.id,
+          friendId: profile.id,
+        },
+      },
+      select: { id: true },
+    }),
+    db.serverMember.findFirst({
+      where: {
+        userId: session.user.id,
+        server: {
+          members: {
+            some: { userId: profile.id },
+          },
+        },
+      },
+      select: { id: true },
+    }),
+  ]);
+
+  if (
+    !canViewProfile({
+      isBlocked: Boolean(block),
+      isFriend: Boolean(friendship),
+      sharesServer: Boolean(sharedServer),
+    })
+  ) {
+    notFound();
   }
 
   return (

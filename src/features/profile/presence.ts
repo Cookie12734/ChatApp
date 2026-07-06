@@ -34,7 +34,7 @@ export const presenceOptions = [
 function getPresenceOption(status: PresenceStatus | null | undefined) {
   return (
     presenceOptions.find((option) => option.value === status) ??
-    presenceOptions[0]!
+    presenceOptions[presenceOptions.length - 1]!
   );
 }
 
