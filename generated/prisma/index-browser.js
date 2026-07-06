@@ -160,7 +160,9 @@ exports.Prisma.UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   passwordHash: 'passwordHash',
   image: 'image',
-  bio: 'bio'
+  bio: 'bio',
+  statusMessage: 'statusMessage',
+  presenceStatus: 'presenceStatus'
 };
 
 exports.Prisma.VerificationTokenScalarFieldEnum = {
@@ -204,10 +206,27 @@ exports.Prisma.DirectMessageScalarFieldEnum = {
   senderId: 'senderId'
 };
 
+exports.Prisma.MatchingQueueScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  topic: 'topic',
+  matchedUserId: 'matchedUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.UserBlockScalarFieldEnum = {
+  id: 'id',
+  blockerId: 'blockerId',
+  blockedId: 'blockedId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.ChatServerScalarFieldEnum = {
   id: 'id',
   name: 'name',
   description: 'description',
+  image: 'image',
   inviteCode: 'inviteCode',
   createdById: 'createdById',
   createdAt: 'createdAt',
@@ -230,10 +249,18 @@ exports.Prisma.ServerChannelScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ServerChannelReadScalarFieldEnum = {
+  id: 'id',
+  channelId: 'channelId',
+  userId: 'userId',
+  readAt: 'readAt'
+};
+
 exports.Prisma.ServerMessageScalarFieldEnum = {
   id: 'id',
   content: 'content',
   createdAt: 'createdAt',
+  pinnedAt: 'pinnedAt',
   channelId: 'channelId',
   serverId: 'serverId',
   senderId: 'senderId'
@@ -253,6 +280,13 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.UserPresenceStatus = exports.$Enums.UserPresenceStatus = {
+  ONLINE: 'ONLINE',
+  IDLE: 'IDLE',
+  DND: 'DND',
+  INVISIBLE: 'INVISIBLE'
+};
+
 exports.FriendRequestStatus = exports.$Enums.FriendRequestStatus = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
@@ -262,6 +296,12 @@ exports.FriendRequestStatus = exports.$Enums.FriendRequestStatus = {
 exports.NotificationType = exports.$Enums.NotificationType = {
   FRIEND_REQUEST: 'FRIEND_REQUEST',
   FRIEND_REQUEST_ACCEPTED: 'FRIEND_REQUEST_ACCEPTED'
+};
+
+exports.MatchingTopic = exports.$Enums.MatchingTopic = {
+  CASUAL: 'CASUAL',
+  GAME: 'GAME',
+  WORRIES: 'WORRIES'
 };
 
 exports.ServerMemberRole = exports.$Enums.ServerMemberRole = {
@@ -279,9 +319,12 @@ exports.Prisma.ModelName = {
   Friendship: 'Friendship',
   Notification: 'Notification',
   DirectMessage: 'DirectMessage',
+  MatchingQueue: 'MatchingQueue',
+  UserBlock: 'UserBlock',
   ChatServer: 'ChatServer',
   ServerMember: 'ServerMember',
   ServerChannel: 'ServerChannel',
+  ServerChannelRead: 'ServerChannelRead',
   ServerMessage: 'ServerMessage'
 };
 

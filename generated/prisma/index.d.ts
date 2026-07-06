@@ -59,6 +59,16 @@ export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
  */
 export type DirectMessage = $Result.DefaultSelection<Prisma.$DirectMessagePayload>
 /**
+ * Model MatchingQueue
+ * 
+ */
+export type MatchingQueue = $Result.DefaultSelection<Prisma.$MatchingQueuePayload>
+/**
+ * Model UserBlock
+ * 
+ */
+export type UserBlock = $Result.DefaultSelection<Prisma.$UserBlockPayload>
+/**
  * Model ChatServer
  * 
  */
@@ -73,6 +83,11 @@ export type ServerMember = $Result.DefaultSelection<Prisma.$ServerMemberPayload>
  * 
  */
 export type ServerChannel = $Result.DefaultSelection<Prisma.$ServerChannelPayload>
+/**
+ * Model ServerChannelRead
+ * 
+ */
+export type ServerChannelRead = $Result.DefaultSelection<Prisma.$ServerChannelReadPayload>
 /**
  * Model ServerMessage
  * 
@@ -100,6 +115,25 @@ export const NotificationType: {
 export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
 
 
+export const UserPresenceStatus: {
+  ONLINE: 'ONLINE',
+  IDLE: 'IDLE',
+  DND: 'DND',
+  INVISIBLE: 'INVISIBLE'
+};
+
+export type UserPresenceStatus = (typeof UserPresenceStatus)[keyof typeof UserPresenceStatus]
+
+
+export const MatchingTopic: {
+  CASUAL: 'CASUAL',
+  GAME: 'GAME',
+  WORRIES: 'WORRIES'
+};
+
+export type MatchingTopic = (typeof MatchingTopic)[keyof typeof MatchingTopic]
+
+
 export const ServerMemberRole: {
   OWNER: 'OWNER',
   MEMBER: 'MEMBER'
@@ -116,6 +150,14 @@ export const FriendRequestStatus: typeof $Enums.FriendRequestStatus
 export type NotificationType = $Enums.NotificationType
 
 export const NotificationType: typeof $Enums.NotificationType
+
+export type UserPresenceStatus = $Enums.UserPresenceStatus
+
+export const UserPresenceStatus: typeof $Enums.UserPresenceStatus
+
+export type MatchingTopic = $Enums.MatchingTopic
+
+export const MatchingTopic: typeof $Enums.MatchingTopic
 
 export type ServerMemberRole = $Enums.ServerMemberRole
 
@@ -330,6 +372,26 @@ export class PrismaClient<
   get directMessage(): Prisma.DirectMessageDelegate<ExtArgs, ClientOptions>;
 
   /**
+   * `prisma.matchingQueue`: Exposes CRUD operations for the **MatchingQueue** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more MatchingQueues
+    * const matchingQueues = await prisma.matchingQueue.findMany()
+    * ```
+    */
+  get matchingQueue(): Prisma.MatchingQueueDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.userBlock`: Exposes CRUD operations for the **UserBlock** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more UserBlocks
+    * const userBlocks = await prisma.userBlock.findMany()
+    * ```
+    */
+  get userBlock(): Prisma.UserBlockDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.chatServer`: Exposes CRUD operations for the **ChatServer** model.
     * Example usage:
     * ```ts
@@ -358,6 +420,16 @@ export class PrismaClient<
     * ```
     */
   get serverChannel(): Prisma.ServerChannelDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.serverChannelRead`: Exposes CRUD operations for the **ServerChannelRead** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ServerChannelReads
+    * const serverChannelReads = await prisma.serverChannelRead.findMany()
+    * ```
+    */
+  get serverChannelRead(): Prisma.ServerChannelReadDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.serverMessage`: Exposes CRUD operations for the **ServerMessage** model.
@@ -818,9 +890,12 @@ export namespace Prisma {
     Friendship: 'Friendship',
     Notification: 'Notification',
     DirectMessage: 'DirectMessage',
+    MatchingQueue: 'MatchingQueue',
+    UserBlock: 'UserBlock',
     ChatServer: 'ChatServer',
     ServerMember: 'ServerMember',
     ServerChannel: 'ServerChannel',
+    ServerChannelRead: 'ServerChannelRead',
     ServerMessage: 'ServerMessage'
   };
 
@@ -840,7 +915,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification" | "directMessage" | "chatServer" | "serverMember" | "serverChannel" | "serverMessage"
+      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "friendRequest" | "friendship" | "notification" | "directMessage" | "matchingQueue" | "userBlock" | "chatServer" | "serverMember" | "serverChannel" | "serverChannelRead" | "serverMessage"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1510,6 +1585,154 @@ export namespace Prisma {
           }
         }
       }
+      MatchingQueue: {
+        payload: Prisma.$MatchingQueuePayload<ExtArgs>
+        fields: Prisma.MatchingQueueFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.MatchingQueueFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.MatchingQueueFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          findFirst: {
+            args: Prisma.MatchingQueueFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.MatchingQueueFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          findMany: {
+            args: Prisma.MatchingQueueFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[]
+          }
+          create: {
+            args: Prisma.MatchingQueueCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          createMany: {
+            args: Prisma.MatchingQueueCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.MatchingQueueCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[]
+          }
+          delete: {
+            args: Prisma.MatchingQueueDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          update: {
+            args: Prisma.MatchingQueueUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          deleteMany: {
+            args: Prisma.MatchingQueueDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.MatchingQueueUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.MatchingQueueUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>[]
+          }
+          upsert: {
+            args: Prisma.MatchingQueueUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$MatchingQueuePayload>
+          }
+          aggregate: {
+            args: Prisma.MatchingQueueAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateMatchingQueue>
+          }
+          groupBy: {
+            args: Prisma.MatchingQueueGroupByArgs<ExtArgs>
+            result: $Utils.Optional<MatchingQueueGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.MatchingQueueCountArgs<ExtArgs>
+            result: $Utils.Optional<MatchingQueueCountAggregateOutputType> | number
+          }
+        }
+      }
+      UserBlock: {
+        payload: Prisma.$UserBlockPayload<ExtArgs>
+        fields: Prisma.UserBlockFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.UserBlockFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.UserBlockFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          findFirst: {
+            args: Prisma.UserBlockFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.UserBlockFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          findMany: {
+            args: Prisma.UserBlockFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>[]
+          }
+          create: {
+            args: Prisma.UserBlockCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          createMany: {
+            args: Prisma.UserBlockCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.UserBlockCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>[]
+          }
+          delete: {
+            args: Prisma.UserBlockDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          update: {
+            args: Prisma.UserBlockUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          deleteMany: {
+            args: Prisma.UserBlockDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.UserBlockUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.UserBlockUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>[]
+          }
+          upsert: {
+            args: Prisma.UserBlockUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserBlockPayload>
+          }
+          aggregate: {
+            args: Prisma.UserBlockAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateUserBlock>
+          }
+          groupBy: {
+            args: Prisma.UserBlockGroupByArgs<ExtArgs>
+            result: $Utils.Optional<UserBlockGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.UserBlockCountArgs<ExtArgs>
+            result: $Utils.Optional<UserBlockCountAggregateOutputType> | number
+          }
+        }
+      }
       ChatServer: {
         payload: Prisma.$ChatServerPayload<ExtArgs>
         fields: Prisma.ChatServerFieldRefs
@@ -1732,6 +1955,80 @@ export namespace Prisma {
           }
         }
       }
+      ServerChannelRead: {
+        payload: Prisma.$ServerChannelReadPayload<ExtArgs>
+        fields: Prisma.ServerChannelReadFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ServerChannelReadFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ServerChannelReadFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          findFirst: {
+            args: Prisma.ServerChannelReadFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ServerChannelReadFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          findMany: {
+            args: Prisma.ServerChannelReadFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>[]
+          }
+          create: {
+            args: Prisma.ServerChannelReadCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          createMany: {
+            args: Prisma.ServerChannelReadCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ServerChannelReadCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>[]
+          }
+          delete: {
+            args: Prisma.ServerChannelReadDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          update: {
+            args: Prisma.ServerChannelReadUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          deleteMany: {
+            args: Prisma.ServerChannelReadDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ServerChannelReadUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ServerChannelReadUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>[]
+          }
+          upsert: {
+            args: Prisma.ServerChannelReadUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ServerChannelReadPayload>
+          }
+          aggregate: {
+            args: Prisma.ServerChannelReadAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateServerChannelRead>
+          }
+          groupBy: {
+            args: Prisma.ServerChannelReadGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ServerChannelReadGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ServerChannelReadCountArgs<ExtArgs>
+            result: $Utils.Optional<ServerChannelReadCountAggregateOutputType> | number
+          }
+        }
+      }
       ServerMessage: {
         payload: Prisma.$ServerMessagePayload<ExtArgs>
         fields: Prisma.ServerMessageFieldRefs
@@ -1911,9 +2208,12 @@ export namespace Prisma {
     friendship?: FriendshipOmit
     notification?: NotificationOmit
     directMessage?: DirectMessageOmit
+    matchingQueue?: MatchingQueueOmit
+    userBlock?: UserBlockOmit
     chatServer?: ChatServerOmit
     serverMember?: ServerMemberOmit
     serverChannel?: ServerChannelOmit
+    serverChannelRead?: ServerChannelReadOmit
     serverMessage?: ServerMessageOmit
   }
 
@@ -1996,6 +2296,9 @@ export namespace Prisma {
 
   export type UserCountOutputType = {
     accounts: number
+    blockedBy: number
+    blockedUsers: number
+    channelReads: number
     receivedDirectMessages: number
     createdServers: number
     friendships: number
@@ -2012,6 +2315,9 @@ export namespace Prisma {
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | UserCountOutputTypeCountAccountsArgs
+    blockedBy?: boolean | UserCountOutputTypeCountBlockedByArgs
+    blockedUsers?: boolean | UserCountOutputTypeCountBlockedUsersArgs
+    channelReads?: boolean | UserCountOutputTypeCountChannelReadsArgs
     receivedDirectMessages?: boolean | UserCountOutputTypeCountReceivedDirectMessagesArgs
     createdServers?: boolean | UserCountOutputTypeCountCreatedServersArgs
     friendships?: boolean | UserCountOutputTypeCountFriendshipsArgs
@@ -2042,6 +2348,27 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountAccountsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: AccountWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountBlockedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserBlockWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountBlockedUsersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserBlockWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountChannelReadsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerChannelReadWhereInput
   }
 
   /**
@@ -2214,10 +2541,12 @@ export namespace Prisma {
    */
 
   export type ServerChannelCountOutputType = {
+    reads: number
     messages: number
   }
 
   export type ServerChannelCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    reads?: boolean | ServerChannelCountOutputTypeCountReadsArgs
     messages?: boolean | ServerChannelCountOutputTypeCountMessagesArgs
   }
 
@@ -2230,6 +2559,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the ServerChannelCountOutputType
      */
     select?: ServerChannelCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannelCountOutputType without action
+   */
+  export type ServerChannelCountOutputTypeCountReadsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerChannelReadWhereInput
   }
 
   /**
@@ -5600,6 +5936,8 @@ export namespace Prisma {
     passwordHash: string | null
     image: string | null
     bio: string | null
+    statusMessage: string | null
+    presenceStatus: $Enums.UserPresenceStatus | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -5611,6 +5949,8 @@ export namespace Prisma {
     passwordHash: string | null
     image: string | null
     bio: string | null
+    statusMessage: string | null
+    presenceStatus: $Enums.UserPresenceStatus | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -5622,6 +5962,8 @@ export namespace Prisma {
     passwordHash: number
     image: number
     bio: number
+    statusMessage: number
+    presenceStatus: number
     _all: number
   }
 
@@ -5635,6 +5977,8 @@ export namespace Prisma {
     passwordHash?: true
     image?: true
     bio?: true
+    statusMessage?: true
+    presenceStatus?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -5646,6 +5990,8 @@ export namespace Prisma {
     passwordHash?: true
     image?: true
     bio?: true
+    statusMessage?: true
+    presenceStatus?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -5657,6 +6003,8 @@ export namespace Prisma {
     passwordHash?: true
     image?: true
     bio?: true
+    statusMessage?: true
+    presenceStatus?: true
     _all?: true
   }
 
@@ -5741,6 +6089,8 @@ export namespace Prisma {
     passwordHash: string | null
     image: string | null
     bio: string | null
+    statusMessage: string | null
+    presenceStatus: $Enums.UserPresenceStatus
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -5769,11 +6119,17 @@ export namespace Prisma {
     passwordHash?: boolean
     image?: boolean
     bio?: boolean
+    statusMessage?: boolean
+    presenceStatus?: boolean
     accounts?: boolean | User$accountsArgs<ExtArgs>
+    blockedBy?: boolean | User$blockedByArgs<ExtArgs>
+    blockedUsers?: boolean | User$blockedUsersArgs<ExtArgs>
+    channelReads?: boolean | User$channelReadsArgs<ExtArgs>
     receivedDirectMessages?: boolean | User$receivedDirectMessagesArgs<ExtArgs>
     createdServers?: boolean | User$createdServersArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
+    matchingQueue?: boolean | User$matchingQueueArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
     sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>
@@ -5794,6 +6150,8 @@ export namespace Prisma {
     passwordHash?: boolean
     image?: boolean
     bio?: boolean
+    statusMessage?: boolean
+    presenceStatus?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5805,6 +6163,8 @@ export namespace Prisma {
     passwordHash?: boolean
     image?: boolean
     bio?: boolean
+    statusMessage?: boolean
+    presenceStatus?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -5816,15 +6176,21 @@ export namespace Prisma {
     passwordHash?: boolean
     image?: boolean
     bio?: boolean
+    statusMessage?: boolean
+    presenceStatus?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio" | "statusMessage" | "presenceStatus", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
+    blockedBy?: boolean | User$blockedByArgs<ExtArgs>
+    blockedUsers?: boolean | User$blockedUsersArgs<ExtArgs>
+    channelReads?: boolean | User$channelReadsArgs<ExtArgs>
     receivedDirectMessages?: boolean | User$receivedDirectMessagesArgs<ExtArgs>
     createdServers?: boolean | User$createdServersArgs<ExtArgs>
     friendships?: boolean | User$friendshipsArgs<ExtArgs>
     friendOf?: boolean | User$friendOfArgs<ExtArgs>
+    matchingQueue?: boolean | User$matchingQueueArgs<ExtArgs>
     notifications?: boolean | User$notificationsArgs<ExtArgs>
     posts?: boolean | User$postsArgs<ExtArgs>
     sentServerMessages?: boolean | User$sentServerMessagesArgs<ExtArgs>
@@ -5842,10 +6208,14 @@ export namespace Prisma {
     name: "User"
     objects: {
       accounts: Prisma.$AccountPayload<ExtArgs>[]
+      blockedBy: Prisma.$UserBlockPayload<ExtArgs>[]
+      blockedUsers: Prisma.$UserBlockPayload<ExtArgs>[]
+      channelReads: Prisma.$ServerChannelReadPayload<ExtArgs>[]
       receivedDirectMessages: Prisma.$DirectMessagePayload<ExtArgs>[]
       createdServers: Prisma.$ChatServerPayload<ExtArgs>[]
       friendships: Prisma.$FriendshipPayload<ExtArgs>[]
       friendOf: Prisma.$FriendshipPayload<ExtArgs>[]
+      matchingQueue: Prisma.$MatchingQueuePayload<ExtArgs> | null
       notifications: Prisma.$NotificationPayload<ExtArgs>[]
       posts: Prisma.$PostPayload<ExtArgs>[]
       sentServerMessages: Prisma.$ServerMessagePayload<ExtArgs>[]
@@ -5864,6 +6234,8 @@ export namespace Prisma {
       passwordHash: string | null
       image: string | null
       bio: string | null
+      statusMessage: string | null
+      presenceStatus: $Enums.UserPresenceStatus
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -6259,10 +6631,14 @@ export namespace Prisma {
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     accounts<T extends User$accountsArgs<ExtArgs> = {}>(args?: Subset<T, User$accountsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    blockedBy<T extends User$blockedByArgs<ExtArgs> = {}>(args?: Subset<T, User$blockedByArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    blockedUsers<T extends User$blockedUsersArgs<ExtArgs> = {}>(args?: Subset<T, User$blockedUsersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    channelReads<T extends User$channelReadsArgs<ExtArgs> = {}>(args?: Subset<T, User$channelReadsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     receivedDirectMessages<T extends User$receivedDirectMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$receivedDirectMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     createdServers<T extends User$createdServersArgs<ExtArgs> = {}>(args?: Subset<T, User$createdServersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatServerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     friendships<T extends User$friendshipsArgs<ExtArgs> = {}>(args?: Subset<T, User$friendshipsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     friendOf<T extends User$friendOfArgs<ExtArgs> = {}>(args?: Subset<T, User$friendOfArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FriendshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    matchingQueue<T extends User$matchingQueueArgs<ExtArgs> = {}>(args?: Subset<T, User$matchingQueueArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     posts<T extends User$postsArgs<ExtArgs> = {}>(args?: Subset<T, User$postsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     sentServerMessages<T extends User$sentServerMessagesArgs<ExtArgs> = {}>(args?: Subset<T, User$sentServerMessagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -6308,6 +6684,8 @@ export namespace Prisma {
     readonly passwordHash: FieldRef<"User", 'String'>
     readonly image: FieldRef<"User", 'String'>
     readonly bio: FieldRef<"User", 'String'>
+    readonly statusMessage: FieldRef<"User", 'String'>
+    readonly presenceStatus: FieldRef<"User", 'UserPresenceStatus'>
   }
     
 
@@ -6720,6 +7098,78 @@ export namespace Prisma {
   }
 
   /**
+   * User.blockedBy
+   */
+  export type User$blockedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    where?: UserBlockWhereInput
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    cursor?: UserBlockWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: UserBlockScalarFieldEnum | UserBlockScalarFieldEnum[]
+  }
+
+  /**
+   * User.blockedUsers
+   */
+  export type User$blockedUsersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    where?: UserBlockWhereInput
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    cursor?: UserBlockWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: UserBlockScalarFieldEnum | UserBlockScalarFieldEnum[]
+  }
+
+  /**
+   * User.channelReads
+   */
+  export type User$channelReadsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    where?: ServerChannelReadWhereInput
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    cursor?: ServerChannelReadWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerChannelReadScalarFieldEnum | ServerChannelReadScalarFieldEnum[]
+  }
+
+  /**
    * User.receivedDirectMessages
    */
   export type User$receivedDirectMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6813,6 +7263,25 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: FriendshipScalarFieldEnum | FriendshipScalarFieldEnum[]
+  }
+
+  /**
+   * User.matchingQueue
+   */
+  export type User$matchingQueueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    where?: MatchingQueueWhereInput
   }
 
   /**
@@ -12348,6 +12817,2130 @@ export namespace Prisma {
 
 
   /**
+   * Model MatchingQueue
+   */
+
+  export type AggregateMatchingQueue = {
+    _count: MatchingQueueCountAggregateOutputType | null
+    _min: MatchingQueueMinAggregateOutputType | null
+    _max: MatchingQueueMaxAggregateOutputType | null
+  }
+
+  export type MatchingQueueMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    topic: $Enums.MatchingTopic | null
+    matchedUserId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type MatchingQueueMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    topic: $Enums.MatchingTopic | null
+    matchedUserId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type MatchingQueueCountAggregateOutputType = {
+    id: number
+    userId: number
+    topic: number
+    matchedUserId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type MatchingQueueMinAggregateInputType = {
+    id?: true
+    userId?: true
+    topic?: true
+    matchedUserId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type MatchingQueueMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    topic?: true
+    matchedUserId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type MatchingQueueCountAggregateInputType = {
+    id?: true
+    userId?: true
+    topic?: true
+    matchedUserId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type MatchingQueueAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MatchingQueue to aggregate.
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?: MatchingQueueOrderByWithRelationInput | MatchingQueueOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: MatchingQueueWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned MatchingQueues
+    **/
+    _count?: true | MatchingQueueCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: MatchingQueueMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: MatchingQueueMaxAggregateInputType
+  }
+
+  export type GetMatchingQueueAggregateType<T extends MatchingQueueAggregateArgs> = {
+        [P in keyof T & keyof AggregateMatchingQueue]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateMatchingQueue[P]>
+      : GetScalarType<T[P], AggregateMatchingQueue[P]>
+  }
+
+
+
+
+  export type MatchingQueueGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: MatchingQueueWhereInput
+    orderBy?: MatchingQueueOrderByWithAggregationInput | MatchingQueueOrderByWithAggregationInput[]
+    by: MatchingQueueScalarFieldEnum[] | MatchingQueueScalarFieldEnum
+    having?: MatchingQueueScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: MatchingQueueCountAggregateInputType | true
+    _min?: MatchingQueueMinAggregateInputType
+    _max?: MatchingQueueMaxAggregateInputType
+  }
+
+  export type MatchingQueueGroupByOutputType = {
+    id: string
+    userId: string
+    topic: $Enums.MatchingTopic
+    matchedUserId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: MatchingQueueCountAggregateOutputType | null
+    _min: MatchingQueueMinAggregateOutputType | null
+    _max: MatchingQueueMaxAggregateOutputType | null
+  }
+
+  type GetMatchingQueueGroupByPayload<T extends MatchingQueueGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<MatchingQueueGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof MatchingQueueGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MatchingQueueGroupByOutputType[P]>
+            : GetScalarType<T[P], MatchingQueueGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type MatchingQueueSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    topic?: boolean
+    matchedUserId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["matchingQueue"]>
+
+  export type MatchingQueueSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    topic?: boolean
+    matchedUserId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["matchingQueue"]>
+
+  export type MatchingQueueSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    topic?: boolean
+    matchedUserId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["matchingQueue"]>
+
+  export type MatchingQueueSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    topic?: boolean
+    matchedUserId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type MatchingQueueOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "topic" | "matchedUserId" | "createdAt" | "updatedAt", ExtArgs["result"]["matchingQueue"]>
+  export type MatchingQueueInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type MatchingQueueIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type MatchingQueueIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $MatchingQueuePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "MatchingQueue"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      topic: $Enums.MatchingTopic
+      matchedUserId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["matchingQueue"]>
+    composites: {}
+  }
+
+  type MatchingQueueGetPayload<S extends boolean | null | undefined | MatchingQueueDefaultArgs> = $Result.GetResult<Prisma.$MatchingQueuePayload, S>
+
+  type MatchingQueueCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<MatchingQueueFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: MatchingQueueCountAggregateInputType | true
+    }
+
+  export interface MatchingQueueDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['MatchingQueue'], meta: { name: 'MatchingQueue' } }
+    /**
+     * Find zero or one MatchingQueue that matches the filter.
+     * @param {MatchingQueueFindUniqueArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends MatchingQueueFindUniqueArgs>(args: SelectSubset<T, MatchingQueueFindUniqueArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one MatchingQueue that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {MatchingQueueFindUniqueOrThrowArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends MatchingQueueFindUniqueOrThrowArgs>(args: SelectSubset<T, MatchingQueueFindUniqueOrThrowArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MatchingQueue that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindFirstArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends MatchingQueueFindFirstArgs>(args?: SelectSubset<T, MatchingQueueFindFirstArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first MatchingQueue that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindFirstOrThrowArgs} args - Arguments to find a MatchingQueue
+     * @example
+     * // Get one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends MatchingQueueFindFirstOrThrowArgs>(args?: SelectSubset<T, MatchingQueueFindFirstOrThrowArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more MatchingQueues that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all MatchingQueues
+     * const matchingQueues = await prisma.matchingQueue.findMany()
+     * 
+     * // Get first 10 MatchingQueues
+     * const matchingQueues = await prisma.matchingQueue.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends MatchingQueueFindManyArgs>(args?: SelectSubset<T, MatchingQueueFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a MatchingQueue.
+     * @param {MatchingQueueCreateArgs} args - Arguments to create a MatchingQueue.
+     * @example
+     * // Create one MatchingQueue
+     * const MatchingQueue = await prisma.matchingQueue.create({
+     *   data: {
+     *     // ... data to create a MatchingQueue
+     *   }
+     * })
+     * 
+     */
+    create<T extends MatchingQueueCreateArgs>(args: SelectSubset<T, MatchingQueueCreateArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many MatchingQueues.
+     * @param {MatchingQueueCreateManyArgs} args - Arguments to create many MatchingQueues.
+     * @example
+     * // Create many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends MatchingQueueCreateManyArgs>(args?: SelectSubset<T, MatchingQueueCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many MatchingQueues and returns the data saved in the database.
+     * @param {MatchingQueueCreateManyAndReturnArgs} args - Arguments to create many MatchingQueues.
+     * @example
+     * // Create many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many MatchingQueues and only return the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends MatchingQueueCreateManyAndReturnArgs>(args?: SelectSubset<T, MatchingQueueCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a MatchingQueue.
+     * @param {MatchingQueueDeleteArgs} args - Arguments to delete one MatchingQueue.
+     * @example
+     * // Delete one MatchingQueue
+     * const MatchingQueue = await prisma.matchingQueue.delete({
+     *   where: {
+     *     // ... filter to delete one MatchingQueue
+     *   }
+     * })
+     * 
+     */
+    delete<T extends MatchingQueueDeleteArgs>(args: SelectSubset<T, MatchingQueueDeleteArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one MatchingQueue.
+     * @param {MatchingQueueUpdateArgs} args - Arguments to update one MatchingQueue.
+     * @example
+     * // Update one MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends MatchingQueueUpdateArgs>(args: SelectSubset<T, MatchingQueueUpdateArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more MatchingQueues.
+     * @param {MatchingQueueDeleteManyArgs} args - Arguments to filter MatchingQueues to delete.
+     * @example
+     * // Delete a few MatchingQueues
+     * const { count } = await prisma.matchingQueue.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends MatchingQueueDeleteManyArgs>(args?: SelectSubset<T, MatchingQueueDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MatchingQueues.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends MatchingQueueUpdateManyArgs>(args: SelectSubset<T, MatchingQueueUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more MatchingQueues and returns the data updated in the database.
+     * @param {MatchingQueueUpdateManyAndReturnArgs} args - Arguments to update many MatchingQueues.
+     * @example
+     * // Update many MatchingQueues
+     * const matchingQueue = await prisma.matchingQueue.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more MatchingQueues and only return the `id`
+     * const matchingQueueWithIdOnly = await prisma.matchingQueue.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends MatchingQueueUpdateManyAndReturnArgs>(args: SelectSubset<T, MatchingQueueUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one MatchingQueue.
+     * @param {MatchingQueueUpsertArgs} args - Arguments to update or create a MatchingQueue.
+     * @example
+     * // Update or create a MatchingQueue
+     * const matchingQueue = await prisma.matchingQueue.upsert({
+     *   create: {
+     *     // ... data to create a MatchingQueue
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the MatchingQueue we want to update
+     *   }
+     * })
+     */
+    upsert<T extends MatchingQueueUpsertArgs>(args: SelectSubset<T, MatchingQueueUpsertArgs<ExtArgs>>): Prisma__MatchingQueueClient<$Result.GetResult<Prisma.$MatchingQueuePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of MatchingQueues.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueCountArgs} args - Arguments to filter MatchingQueues to count.
+     * @example
+     * // Count the number of MatchingQueues
+     * const count = await prisma.matchingQueue.count({
+     *   where: {
+     *     // ... the filter for the MatchingQueues we want to count
+     *   }
+     * })
+    **/
+    count<T extends MatchingQueueCountArgs>(
+      args?: Subset<T, MatchingQueueCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], MatchingQueueCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a MatchingQueue.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends MatchingQueueAggregateArgs>(args: Subset<T, MatchingQueueAggregateArgs>): Prisma.PrismaPromise<GetMatchingQueueAggregateType<T>>
+
+    /**
+     * Group by MatchingQueue.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {MatchingQueueGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends MatchingQueueGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: MatchingQueueGroupByArgs['orderBy'] }
+        : { orderBy?: MatchingQueueGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, MatchingQueueGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMatchingQueueGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the MatchingQueue model
+   */
+  readonly fields: MatchingQueueFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for MatchingQueue.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__MatchingQueueClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the MatchingQueue model
+   */
+  interface MatchingQueueFieldRefs {
+    readonly id: FieldRef<"MatchingQueue", 'String'>
+    readonly userId: FieldRef<"MatchingQueue", 'String'>
+    readonly topic: FieldRef<"MatchingQueue", 'MatchingTopic'>
+    readonly matchedUserId: FieldRef<"MatchingQueue", 'String'>
+    readonly createdAt: FieldRef<"MatchingQueue", 'DateTime'>
+    readonly updatedAt: FieldRef<"MatchingQueue", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * MatchingQueue findUnique
+   */
+  export type MatchingQueueFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where: MatchingQueueWhereUniqueInput
+  }
+
+  /**
+   * MatchingQueue findUniqueOrThrow
+   */
+  export type MatchingQueueFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where: MatchingQueueWhereUniqueInput
+  }
+
+  /**
+   * MatchingQueue findFirst
+   */
+  export type MatchingQueueFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?: MatchingQueueOrderByWithRelationInput | MatchingQueueOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MatchingQueues.
+     */
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[]
+  }
+
+  /**
+   * MatchingQueue findFirstOrThrow
+   */
+  export type MatchingQueueFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter, which MatchingQueue to fetch.
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?: MatchingQueueOrderByWithRelationInput | MatchingQueueOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of MatchingQueues.
+     */
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[]
+  }
+
+  /**
+   * MatchingQueue findMany
+   */
+  export type MatchingQueueFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter, which MatchingQueues to fetch.
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of MatchingQueues to fetch.
+     */
+    orderBy?: MatchingQueueOrderByWithRelationInput | MatchingQueueOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing MatchingQueues.
+     */
+    cursor?: MatchingQueueWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` MatchingQueues from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` MatchingQueues.
+     */
+    skip?: number
+    distinct?: MatchingQueueScalarFieldEnum | MatchingQueueScalarFieldEnum[]
+  }
+
+  /**
+   * MatchingQueue create
+   */
+  export type MatchingQueueCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * The data needed to create a MatchingQueue.
+     */
+    data: XOR<MatchingQueueCreateInput, MatchingQueueUncheckedCreateInput>
+  }
+
+  /**
+   * MatchingQueue createMany
+   */
+  export type MatchingQueueCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many MatchingQueues.
+     */
+    data: MatchingQueueCreateManyInput | MatchingQueueCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * MatchingQueue createManyAndReturn
+   */
+  export type MatchingQueueCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * The data used to create many MatchingQueues.
+     */
+    data: MatchingQueueCreateManyInput | MatchingQueueCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * MatchingQueue update
+   */
+  export type MatchingQueueUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * The data needed to update a MatchingQueue.
+     */
+    data: XOR<MatchingQueueUpdateInput, MatchingQueueUncheckedUpdateInput>
+    /**
+     * Choose, which MatchingQueue to update.
+     */
+    where: MatchingQueueWhereUniqueInput
+  }
+
+  /**
+   * MatchingQueue updateMany
+   */
+  export type MatchingQueueUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update MatchingQueues.
+     */
+    data: XOR<MatchingQueueUpdateManyMutationInput, MatchingQueueUncheckedUpdateManyInput>
+    /**
+     * Filter which MatchingQueues to update
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * Limit how many MatchingQueues to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * MatchingQueue updateManyAndReturn
+   */
+  export type MatchingQueueUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * The data used to update MatchingQueues.
+     */
+    data: XOR<MatchingQueueUpdateManyMutationInput, MatchingQueueUncheckedUpdateManyInput>
+    /**
+     * Filter which MatchingQueues to update
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * Limit how many MatchingQueues to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * MatchingQueue upsert
+   */
+  export type MatchingQueueUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * The filter to search for the MatchingQueue to update in case it exists.
+     */
+    where: MatchingQueueWhereUniqueInput
+    /**
+     * In case the MatchingQueue found by the `where` argument doesn't exist, create a new MatchingQueue with this data.
+     */
+    create: XOR<MatchingQueueCreateInput, MatchingQueueUncheckedCreateInput>
+    /**
+     * In case the MatchingQueue was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<MatchingQueueUpdateInput, MatchingQueueUncheckedUpdateInput>
+  }
+
+  /**
+   * MatchingQueue delete
+   */
+  export type MatchingQueueDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+    /**
+     * Filter which MatchingQueue to delete.
+     */
+    where: MatchingQueueWhereUniqueInput
+  }
+
+  /**
+   * MatchingQueue deleteMany
+   */
+  export type MatchingQueueDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which MatchingQueues to delete
+     */
+    where?: MatchingQueueWhereInput
+    /**
+     * Limit how many MatchingQueues to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * MatchingQueue without action
+   */
+  export type MatchingQueueDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the MatchingQueue
+     */
+    select?: MatchingQueueSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the MatchingQueue
+     */
+    omit?: MatchingQueueOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: MatchingQueueInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model UserBlock
+   */
+
+  export type AggregateUserBlock = {
+    _count: UserBlockCountAggregateOutputType | null
+    _min: UserBlockMinAggregateOutputType | null
+    _max: UserBlockMaxAggregateOutputType | null
+  }
+
+  export type UserBlockMinAggregateOutputType = {
+    id: string | null
+    blockerId: string | null
+    blockedId: string | null
+    createdAt: Date | null
+  }
+
+  export type UserBlockMaxAggregateOutputType = {
+    id: string | null
+    blockerId: string | null
+    blockedId: string | null
+    createdAt: Date | null
+  }
+
+  export type UserBlockCountAggregateOutputType = {
+    id: number
+    blockerId: number
+    blockedId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type UserBlockMinAggregateInputType = {
+    id?: true
+    blockerId?: true
+    blockedId?: true
+    createdAt?: true
+  }
+
+  export type UserBlockMaxAggregateInputType = {
+    id?: true
+    blockerId?: true
+    blockedId?: true
+    createdAt?: true
+  }
+
+  export type UserBlockCountAggregateInputType = {
+    id?: true
+    blockerId?: true
+    blockedId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type UserBlockAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserBlock to aggregate.
+     */
+    where?: UserBlockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserBlocks to fetch.
+     */
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: UserBlockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserBlocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserBlocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned UserBlocks
+    **/
+    _count?: true | UserBlockCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: UserBlockMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: UserBlockMaxAggregateInputType
+  }
+
+  export type GetUserBlockAggregateType<T extends UserBlockAggregateArgs> = {
+        [P in keyof T & keyof AggregateUserBlock]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateUserBlock[P]>
+      : GetScalarType<T[P], AggregateUserBlock[P]>
+  }
+
+
+
+
+  export type UserBlockGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserBlockWhereInput
+    orderBy?: UserBlockOrderByWithAggregationInput | UserBlockOrderByWithAggregationInput[]
+    by: UserBlockScalarFieldEnum[] | UserBlockScalarFieldEnum
+    having?: UserBlockScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: UserBlockCountAggregateInputType | true
+    _min?: UserBlockMinAggregateInputType
+    _max?: UserBlockMaxAggregateInputType
+  }
+
+  export type UserBlockGroupByOutputType = {
+    id: string
+    blockerId: string
+    blockedId: string
+    createdAt: Date
+    _count: UserBlockCountAggregateOutputType | null
+    _min: UserBlockMinAggregateOutputType | null
+    _max: UserBlockMaxAggregateOutputType | null
+  }
+
+  type GetUserBlockGroupByPayload<T extends UserBlockGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<UserBlockGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof UserBlockGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], UserBlockGroupByOutputType[P]>
+            : GetScalarType<T[P], UserBlockGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type UserBlockSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    blockerId?: boolean
+    blockedId?: boolean
+    createdAt?: boolean
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userBlock"]>
+
+  export type UserBlockSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    blockerId?: boolean
+    blockedId?: boolean
+    createdAt?: boolean
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userBlock"]>
+
+  export type UserBlockSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    blockerId?: boolean
+    blockedId?: boolean
+    createdAt?: boolean
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["userBlock"]>
+
+  export type UserBlockSelectScalar = {
+    id?: boolean
+    blockerId?: boolean
+    blockedId?: boolean
+    createdAt?: boolean
+  }
+
+  export type UserBlockOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "blockerId" | "blockedId" | "createdAt", ExtArgs["result"]["userBlock"]>
+  export type UserBlockInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type UserBlockIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type UserBlockIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    blocked?: boolean | UserDefaultArgs<ExtArgs>
+    blocker?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $UserBlockPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "UserBlock"
+    objects: {
+      blocked: Prisma.$UserPayload<ExtArgs>
+      blocker: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      blockerId: string
+      blockedId: string
+      createdAt: Date
+    }, ExtArgs["result"]["userBlock"]>
+    composites: {}
+  }
+
+  type UserBlockGetPayload<S extends boolean | null | undefined | UserBlockDefaultArgs> = $Result.GetResult<Prisma.$UserBlockPayload, S>
+
+  type UserBlockCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<UserBlockFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: UserBlockCountAggregateInputType | true
+    }
+
+  export interface UserBlockDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['UserBlock'], meta: { name: 'UserBlock' } }
+    /**
+     * Find zero or one UserBlock that matches the filter.
+     * @param {UserBlockFindUniqueArgs} args - Arguments to find a UserBlock
+     * @example
+     * // Get one UserBlock
+     * const userBlock = await prisma.userBlock.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends UserBlockFindUniqueArgs>(args: SelectSubset<T, UserBlockFindUniqueArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one UserBlock that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {UserBlockFindUniqueOrThrowArgs} args - Arguments to find a UserBlock
+     * @example
+     * // Get one UserBlock
+     * const userBlock = await prisma.userBlock.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends UserBlockFindUniqueOrThrowArgs>(args: SelectSubset<T, UserBlockFindUniqueOrThrowArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserBlock that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockFindFirstArgs} args - Arguments to find a UserBlock
+     * @example
+     * // Get one UserBlock
+     * const userBlock = await prisma.userBlock.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends UserBlockFindFirstArgs>(args?: SelectSubset<T, UserBlockFindFirstArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserBlock that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockFindFirstOrThrowArgs} args - Arguments to find a UserBlock
+     * @example
+     * // Get one UserBlock
+     * const userBlock = await prisma.userBlock.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends UserBlockFindFirstOrThrowArgs>(args?: SelectSubset<T, UserBlockFindFirstOrThrowArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more UserBlocks that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all UserBlocks
+     * const userBlocks = await prisma.userBlock.findMany()
+     * 
+     * // Get first 10 UserBlocks
+     * const userBlocks = await prisma.userBlock.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const userBlockWithIdOnly = await prisma.userBlock.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends UserBlockFindManyArgs>(args?: SelectSubset<T, UserBlockFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a UserBlock.
+     * @param {UserBlockCreateArgs} args - Arguments to create a UserBlock.
+     * @example
+     * // Create one UserBlock
+     * const UserBlock = await prisma.userBlock.create({
+     *   data: {
+     *     // ... data to create a UserBlock
+     *   }
+     * })
+     * 
+     */
+    create<T extends UserBlockCreateArgs>(args: SelectSubset<T, UserBlockCreateArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many UserBlocks.
+     * @param {UserBlockCreateManyArgs} args - Arguments to create many UserBlocks.
+     * @example
+     * // Create many UserBlocks
+     * const userBlock = await prisma.userBlock.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends UserBlockCreateManyArgs>(args?: SelectSubset<T, UserBlockCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many UserBlocks and returns the data saved in the database.
+     * @param {UserBlockCreateManyAndReturnArgs} args - Arguments to create many UserBlocks.
+     * @example
+     * // Create many UserBlocks
+     * const userBlock = await prisma.userBlock.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many UserBlocks and only return the `id`
+     * const userBlockWithIdOnly = await prisma.userBlock.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends UserBlockCreateManyAndReturnArgs>(args?: SelectSubset<T, UserBlockCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a UserBlock.
+     * @param {UserBlockDeleteArgs} args - Arguments to delete one UserBlock.
+     * @example
+     * // Delete one UserBlock
+     * const UserBlock = await prisma.userBlock.delete({
+     *   where: {
+     *     // ... filter to delete one UserBlock
+     *   }
+     * })
+     * 
+     */
+    delete<T extends UserBlockDeleteArgs>(args: SelectSubset<T, UserBlockDeleteArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one UserBlock.
+     * @param {UserBlockUpdateArgs} args - Arguments to update one UserBlock.
+     * @example
+     * // Update one UserBlock
+     * const userBlock = await prisma.userBlock.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends UserBlockUpdateArgs>(args: SelectSubset<T, UserBlockUpdateArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more UserBlocks.
+     * @param {UserBlockDeleteManyArgs} args - Arguments to filter UserBlocks to delete.
+     * @example
+     * // Delete a few UserBlocks
+     * const { count } = await prisma.userBlock.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends UserBlockDeleteManyArgs>(args?: SelectSubset<T, UserBlockDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserBlocks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many UserBlocks
+     * const userBlock = await prisma.userBlock.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends UserBlockUpdateManyArgs>(args: SelectSubset<T, UserBlockUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserBlocks and returns the data updated in the database.
+     * @param {UserBlockUpdateManyAndReturnArgs} args - Arguments to update many UserBlocks.
+     * @example
+     * // Update many UserBlocks
+     * const userBlock = await prisma.userBlock.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more UserBlocks and only return the `id`
+     * const userBlockWithIdOnly = await prisma.userBlock.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends UserBlockUpdateManyAndReturnArgs>(args: SelectSubset<T, UserBlockUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one UserBlock.
+     * @param {UserBlockUpsertArgs} args - Arguments to update or create a UserBlock.
+     * @example
+     * // Update or create a UserBlock
+     * const userBlock = await prisma.userBlock.upsert({
+     *   create: {
+     *     // ... data to create a UserBlock
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the UserBlock we want to update
+     *   }
+     * })
+     */
+    upsert<T extends UserBlockUpsertArgs>(args: SelectSubset<T, UserBlockUpsertArgs<ExtArgs>>): Prisma__UserBlockClient<$Result.GetResult<Prisma.$UserBlockPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of UserBlocks.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockCountArgs} args - Arguments to filter UserBlocks to count.
+     * @example
+     * // Count the number of UserBlocks
+     * const count = await prisma.userBlock.count({
+     *   where: {
+     *     // ... the filter for the UserBlocks we want to count
+     *   }
+     * })
+    **/
+    count<T extends UserBlockCountArgs>(
+      args?: Subset<T, UserBlockCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], UserBlockCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a UserBlock.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends UserBlockAggregateArgs>(args: Subset<T, UserBlockAggregateArgs>): Prisma.PrismaPromise<GetUserBlockAggregateType<T>>
+
+    /**
+     * Group by UserBlock.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserBlockGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends UserBlockGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: UserBlockGroupByArgs['orderBy'] }
+        : { orderBy?: UserBlockGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, UserBlockGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserBlockGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the UserBlock model
+   */
+  readonly fields: UserBlockFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for UserBlock.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__UserBlockClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    blocked<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    blocker<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the UserBlock model
+   */
+  interface UserBlockFieldRefs {
+    readonly id: FieldRef<"UserBlock", 'String'>
+    readonly blockerId: FieldRef<"UserBlock", 'String'>
+    readonly blockedId: FieldRef<"UserBlock", 'String'>
+    readonly createdAt: FieldRef<"UserBlock", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * UserBlock findUnique
+   */
+  export type UserBlockFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter, which UserBlock to fetch.
+     */
+    where: UserBlockWhereUniqueInput
+  }
+
+  /**
+   * UserBlock findUniqueOrThrow
+   */
+  export type UserBlockFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter, which UserBlock to fetch.
+     */
+    where: UserBlockWhereUniqueInput
+  }
+
+  /**
+   * UserBlock findFirst
+   */
+  export type UserBlockFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter, which UserBlock to fetch.
+     */
+    where?: UserBlockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserBlocks to fetch.
+     */
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserBlocks.
+     */
+    cursor?: UserBlockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserBlocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserBlocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserBlocks.
+     */
+    distinct?: UserBlockScalarFieldEnum | UserBlockScalarFieldEnum[]
+  }
+
+  /**
+   * UserBlock findFirstOrThrow
+   */
+  export type UserBlockFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter, which UserBlock to fetch.
+     */
+    where?: UserBlockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserBlocks to fetch.
+     */
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserBlocks.
+     */
+    cursor?: UserBlockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserBlocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserBlocks.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserBlocks.
+     */
+    distinct?: UserBlockScalarFieldEnum | UserBlockScalarFieldEnum[]
+  }
+
+  /**
+   * UserBlock findMany
+   */
+  export type UserBlockFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter, which UserBlocks to fetch.
+     */
+    where?: UserBlockWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserBlocks to fetch.
+     */
+    orderBy?: UserBlockOrderByWithRelationInput | UserBlockOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing UserBlocks.
+     */
+    cursor?: UserBlockWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserBlocks from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserBlocks.
+     */
+    skip?: number
+    distinct?: UserBlockScalarFieldEnum | UserBlockScalarFieldEnum[]
+  }
+
+  /**
+   * UserBlock create
+   */
+  export type UserBlockCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * The data needed to create a UserBlock.
+     */
+    data: XOR<UserBlockCreateInput, UserBlockUncheckedCreateInput>
+  }
+
+  /**
+   * UserBlock createMany
+   */
+  export type UserBlockCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many UserBlocks.
+     */
+    data: UserBlockCreateManyInput | UserBlockCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * UserBlock createManyAndReturn
+   */
+  export type UserBlockCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * The data used to create many UserBlocks.
+     */
+    data: UserBlockCreateManyInput | UserBlockCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * UserBlock update
+   */
+  export type UserBlockUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * The data needed to update a UserBlock.
+     */
+    data: XOR<UserBlockUpdateInput, UserBlockUncheckedUpdateInput>
+    /**
+     * Choose, which UserBlock to update.
+     */
+    where: UserBlockWhereUniqueInput
+  }
+
+  /**
+   * UserBlock updateMany
+   */
+  export type UserBlockUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update UserBlocks.
+     */
+    data: XOR<UserBlockUpdateManyMutationInput, UserBlockUncheckedUpdateManyInput>
+    /**
+     * Filter which UserBlocks to update
+     */
+    where?: UserBlockWhereInput
+    /**
+     * Limit how many UserBlocks to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserBlock updateManyAndReturn
+   */
+  export type UserBlockUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * The data used to update UserBlocks.
+     */
+    data: XOR<UserBlockUpdateManyMutationInput, UserBlockUncheckedUpdateManyInput>
+    /**
+     * Filter which UserBlocks to update
+     */
+    where?: UserBlockWhereInput
+    /**
+     * Limit how many UserBlocks to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * UserBlock upsert
+   */
+  export type UserBlockUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * The filter to search for the UserBlock to update in case it exists.
+     */
+    where: UserBlockWhereUniqueInput
+    /**
+     * In case the UserBlock found by the `where` argument doesn't exist, create a new UserBlock with this data.
+     */
+    create: XOR<UserBlockCreateInput, UserBlockUncheckedCreateInput>
+    /**
+     * In case the UserBlock was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<UserBlockUpdateInput, UserBlockUncheckedUpdateInput>
+  }
+
+  /**
+   * UserBlock delete
+   */
+  export type UserBlockDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+    /**
+     * Filter which UserBlock to delete.
+     */
+    where: UserBlockWhereUniqueInput
+  }
+
+  /**
+   * UserBlock deleteMany
+   */
+  export type UserBlockDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserBlocks to delete
+     */
+    where?: UserBlockWhereInput
+    /**
+     * Limit how many UserBlocks to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserBlock without action
+   */
+  export type UserBlockDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserBlock
+     */
+    select?: UserBlockSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserBlock
+     */
+    omit?: UserBlockOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserBlockInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model ChatServer
    */
 
@@ -12361,6 +14954,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     description: string | null
+    image: string | null
     inviteCode: string | null
     createdById: string | null
     createdAt: Date | null
@@ -12371,6 +14965,7 @@ export namespace Prisma {
     id: string | null
     name: string | null
     description: string | null
+    image: string | null
     inviteCode: string | null
     createdById: string | null
     createdAt: Date | null
@@ -12381,6 +14976,7 @@ export namespace Prisma {
     id: number
     name: number
     description: number
+    image: number
     inviteCode: number
     createdById: number
     createdAt: number
@@ -12393,6 +14989,7 @@ export namespace Prisma {
     id?: true
     name?: true
     description?: true
+    image?: true
     inviteCode?: true
     createdById?: true
     createdAt?: true
@@ -12403,6 +15000,7 @@ export namespace Prisma {
     id?: true
     name?: true
     description?: true
+    image?: true
     inviteCode?: true
     createdById?: true
     createdAt?: true
@@ -12413,6 +15011,7 @@ export namespace Prisma {
     id?: true
     name?: true
     description?: true
+    image?: true
     inviteCode?: true
     createdById?: true
     createdAt?: true
@@ -12496,6 +15095,7 @@ export namespace Prisma {
     id: string
     name: string
     description: string | null
+    image: string | null
     inviteCode: string
     createdById: string
     createdAt: Date
@@ -12523,6 +15123,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     description?: boolean
+    image?: boolean
     inviteCode?: boolean
     createdById?: boolean
     createdAt?: boolean
@@ -12538,6 +15139,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     description?: boolean
+    image?: boolean
     inviteCode?: boolean
     createdById?: boolean
     createdAt?: boolean
@@ -12549,6 +15151,7 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     description?: boolean
+    image?: boolean
     inviteCode?: boolean
     createdById?: boolean
     createdAt?: boolean
@@ -12560,13 +15163,14 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     description?: boolean
+    image?: boolean
     inviteCode?: boolean
     createdById?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ChatServerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "description" | "inviteCode" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["chatServer"]>
+  export type ChatServerOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "description" | "image" | "inviteCode" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["chatServer"]>
   export type ChatServerInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     createdBy?: boolean | UserDefaultArgs<ExtArgs>
     channels?: boolean | ChatServer$channelsArgs<ExtArgs>
@@ -12593,6 +15197,7 @@ export namespace Prisma {
       id: string
       name: string
       description: string | null
+      image: string | null
       inviteCode: string
       createdById: string
       createdAt: Date
@@ -13027,6 +15632,7 @@ export namespace Prisma {
     readonly id: FieldRef<"ChatServer", 'String'>
     readonly name: FieldRef<"ChatServer", 'String'>
     readonly description: FieldRef<"ChatServer", 'String'>
+    readonly image: FieldRef<"ChatServer", 'String'>
     readonly inviteCode: FieldRef<"ChatServer", 'String'>
     readonly createdById: FieldRef<"ChatServer", 'String'>
     readonly createdAt: FieldRef<"ChatServer", 'DateTime'>
@@ -14747,6 +17353,7 @@ export namespace Prisma {
     name?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    reads?: boolean | ServerChannel$readsArgs<ExtArgs>
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     messages?: boolean | ServerChannel$messagesArgs<ExtArgs>
     _count?: boolean | ServerChannelCountOutputTypeDefaultArgs<ExtArgs>
@@ -14780,6 +17387,7 @@ export namespace Prisma {
 
   export type ServerChannelOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "serverId" | "name" | "createdAt" | "updatedAt", ExtArgs["result"]["serverChannel"]>
   export type ServerChannelInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    reads?: boolean | ServerChannel$readsArgs<ExtArgs>
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     messages?: boolean | ServerChannel$messagesArgs<ExtArgs>
     _count?: boolean | ServerChannelCountOutputTypeDefaultArgs<ExtArgs>
@@ -14794,6 +17402,7 @@ export namespace Prisma {
   export type $ServerChannelPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "ServerChannel"
     objects: {
+      reads: Prisma.$ServerChannelReadPayload<ExtArgs>[]
       server: Prisma.$ChatServerPayload<ExtArgs>
       messages: Prisma.$ServerMessagePayload<ExtArgs>[]
     }
@@ -15197,6 +17806,7 @@ export namespace Prisma {
    */
   export interface Prisma__ServerChannelClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    reads<T extends ServerChannel$readsArgs<ExtArgs> = {}>(args?: Subset<T, ServerChannel$readsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     server<T extends ChatServerDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ChatServerDefaultArgs<ExtArgs>>): Prisma__ChatServerClient<$Result.GetResult<Prisma.$ChatServerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     messages<T extends ServerChannel$messagesArgs<ExtArgs> = {}>(args?: Subset<T, ServerChannel$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerMessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -15629,6 +18239,30 @@ export namespace Prisma {
   }
 
   /**
+   * ServerChannel.reads
+   */
+  export type ServerChannel$readsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    where?: ServerChannelReadWhereInput
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    cursor?: ServerChannelReadWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ServerChannelReadScalarFieldEnum | ServerChannelReadScalarFieldEnum[]
+  }
+
+  /**
    * ServerChannel.messages
    */
   export type ServerChannel$messagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15672,6 +18306,1059 @@ export namespace Prisma {
 
 
   /**
+   * Model ServerChannelRead
+   */
+
+  export type AggregateServerChannelRead = {
+    _count: ServerChannelReadCountAggregateOutputType | null
+    _min: ServerChannelReadMinAggregateOutputType | null
+    _max: ServerChannelReadMaxAggregateOutputType | null
+  }
+
+  export type ServerChannelReadMinAggregateOutputType = {
+    id: string | null
+    channelId: string | null
+    userId: string | null
+    readAt: Date | null
+  }
+
+  export type ServerChannelReadMaxAggregateOutputType = {
+    id: string | null
+    channelId: string | null
+    userId: string | null
+    readAt: Date | null
+  }
+
+  export type ServerChannelReadCountAggregateOutputType = {
+    id: number
+    channelId: number
+    userId: number
+    readAt: number
+    _all: number
+  }
+
+
+  export type ServerChannelReadMinAggregateInputType = {
+    id?: true
+    channelId?: true
+    userId?: true
+    readAt?: true
+  }
+
+  export type ServerChannelReadMaxAggregateInputType = {
+    id?: true
+    channelId?: true
+    userId?: true
+    readAt?: true
+  }
+
+  export type ServerChannelReadCountAggregateInputType = {
+    id?: true
+    channelId?: true
+    userId?: true
+    readAt?: true
+    _all?: true
+  }
+
+  export type ServerChannelReadAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerChannelRead to aggregate.
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannelReads to fetch.
+     */
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ServerChannelReadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannelReads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannelReads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ServerChannelReads
+    **/
+    _count?: true | ServerChannelReadCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ServerChannelReadMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ServerChannelReadMaxAggregateInputType
+  }
+
+  export type GetServerChannelReadAggregateType<T extends ServerChannelReadAggregateArgs> = {
+        [P in keyof T & keyof AggregateServerChannelRead]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateServerChannelRead[P]>
+      : GetScalarType<T[P], AggregateServerChannelRead[P]>
+  }
+
+
+
+
+  export type ServerChannelReadGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ServerChannelReadWhereInput
+    orderBy?: ServerChannelReadOrderByWithAggregationInput | ServerChannelReadOrderByWithAggregationInput[]
+    by: ServerChannelReadScalarFieldEnum[] | ServerChannelReadScalarFieldEnum
+    having?: ServerChannelReadScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ServerChannelReadCountAggregateInputType | true
+    _min?: ServerChannelReadMinAggregateInputType
+    _max?: ServerChannelReadMaxAggregateInputType
+  }
+
+  export type ServerChannelReadGroupByOutputType = {
+    id: string
+    channelId: string
+    userId: string
+    readAt: Date
+    _count: ServerChannelReadCountAggregateOutputType | null
+    _min: ServerChannelReadMinAggregateOutputType | null
+    _max: ServerChannelReadMaxAggregateOutputType | null
+  }
+
+  type GetServerChannelReadGroupByPayload<T extends ServerChannelReadGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ServerChannelReadGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ServerChannelReadGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ServerChannelReadGroupByOutputType[P]>
+            : GetScalarType<T[P], ServerChannelReadGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ServerChannelReadSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channelId?: boolean
+    userId?: boolean
+    readAt?: boolean
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannelRead"]>
+
+  export type ServerChannelReadSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channelId?: boolean
+    userId?: boolean
+    readAt?: boolean
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannelRead"]>
+
+  export type ServerChannelReadSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channelId?: boolean
+    userId?: boolean
+    readAt?: boolean
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["serverChannelRead"]>
+
+  export type ServerChannelReadSelectScalar = {
+    id?: boolean
+    channelId?: boolean
+    userId?: boolean
+    readAt?: boolean
+  }
+
+  export type ServerChannelReadOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "channelId" | "userId" | "readAt", ExtArgs["result"]["serverChannelRead"]>
+  export type ServerChannelReadInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type ServerChannelReadIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type ServerChannelReadIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channel?: boolean | ServerChannelDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $ServerChannelReadPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ServerChannelRead"
+    objects: {
+      channel: Prisma.$ServerChannelPayload<ExtArgs>
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      channelId: string
+      userId: string
+      readAt: Date
+    }, ExtArgs["result"]["serverChannelRead"]>
+    composites: {}
+  }
+
+  type ServerChannelReadGetPayload<S extends boolean | null | undefined | ServerChannelReadDefaultArgs> = $Result.GetResult<Prisma.$ServerChannelReadPayload, S>
+
+  type ServerChannelReadCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ServerChannelReadFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ServerChannelReadCountAggregateInputType | true
+    }
+
+  export interface ServerChannelReadDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ServerChannelRead'], meta: { name: 'ServerChannelRead' } }
+    /**
+     * Find zero or one ServerChannelRead that matches the filter.
+     * @param {ServerChannelReadFindUniqueArgs} args - Arguments to find a ServerChannelRead
+     * @example
+     * // Get one ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ServerChannelReadFindUniqueArgs>(args: SelectSubset<T, ServerChannelReadFindUniqueArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ServerChannelRead that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ServerChannelReadFindUniqueOrThrowArgs} args - Arguments to find a ServerChannelRead
+     * @example
+     * // Get one ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ServerChannelReadFindUniqueOrThrowArgs>(args: SelectSubset<T, ServerChannelReadFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerChannelRead that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadFindFirstArgs} args - Arguments to find a ServerChannelRead
+     * @example
+     * // Get one ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ServerChannelReadFindFirstArgs>(args?: SelectSubset<T, ServerChannelReadFindFirstArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ServerChannelRead that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadFindFirstOrThrowArgs} args - Arguments to find a ServerChannelRead
+     * @example
+     * // Get one ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ServerChannelReadFindFirstOrThrowArgs>(args?: SelectSubset<T, ServerChannelReadFindFirstOrThrowArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ServerChannelReads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ServerChannelReads
+     * const serverChannelReads = await prisma.serverChannelRead.findMany()
+     * 
+     * // Get first 10 ServerChannelReads
+     * const serverChannelReads = await prisma.serverChannelRead.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const serverChannelReadWithIdOnly = await prisma.serverChannelRead.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ServerChannelReadFindManyArgs>(args?: SelectSubset<T, ServerChannelReadFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ServerChannelRead.
+     * @param {ServerChannelReadCreateArgs} args - Arguments to create a ServerChannelRead.
+     * @example
+     * // Create one ServerChannelRead
+     * const ServerChannelRead = await prisma.serverChannelRead.create({
+     *   data: {
+     *     // ... data to create a ServerChannelRead
+     *   }
+     * })
+     * 
+     */
+    create<T extends ServerChannelReadCreateArgs>(args: SelectSubset<T, ServerChannelReadCreateArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ServerChannelReads.
+     * @param {ServerChannelReadCreateManyArgs} args - Arguments to create many ServerChannelReads.
+     * @example
+     * // Create many ServerChannelReads
+     * const serverChannelRead = await prisma.serverChannelRead.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ServerChannelReadCreateManyArgs>(args?: SelectSubset<T, ServerChannelReadCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ServerChannelReads and returns the data saved in the database.
+     * @param {ServerChannelReadCreateManyAndReturnArgs} args - Arguments to create many ServerChannelReads.
+     * @example
+     * // Create many ServerChannelReads
+     * const serverChannelRead = await prisma.serverChannelRead.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ServerChannelReads and only return the `id`
+     * const serverChannelReadWithIdOnly = await prisma.serverChannelRead.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ServerChannelReadCreateManyAndReturnArgs>(args?: SelectSubset<T, ServerChannelReadCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ServerChannelRead.
+     * @param {ServerChannelReadDeleteArgs} args - Arguments to delete one ServerChannelRead.
+     * @example
+     * // Delete one ServerChannelRead
+     * const ServerChannelRead = await prisma.serverChannelRead.delete({
+     *   where: {
+     *     // ... filter to delete one ServerChannelRead
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ServerChannelReadDeleteArgs>(args: SelectSubset<T, ServerChannelReadDeleteArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ServerChannelRead.
+     * @param {ServerChannelReadUpdateArgs} args - Arguments to update one ServerChannelRead.
+     * @example
+     * // Update one ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ServerChannelReadUpdateArgs>(args: SelectSubset<T, ServerChannelReadUpdateArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ServerChannelReads.
+     * @param {ServerChannelReadDeleteManyArgs} args - Arguments to filter ServerChannelReads to delete.
+     * @example
+     * // Delete a few ServerChannelReads
+     * const { count } = await prisma.serverChannelRead.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ServerChannelReadDeleteManyArgs>(args?: SelectSubset<T, ServerChannelReadDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerChannelReads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ServerChannelReads
+     * const serverChannelRead = await prisma.serverChannelRead.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ServerChannelReadUpdateManyArgs>(args: SelectSubset<T, ServerChannelReadUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ServerChannelReads and returns the data updated in the database.
+     * @param {ServerChannelReadUpdateManyAndReturnArgs} args - Arguments to update many ServerChannelReads.
+     * @example
+     * // Update many ServerChannelReads
+     * const serverChannelRead = await prisma.serverChannelRead.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ServerChannelReads and only return the `id`
+     * const serverChannelReadWithIdOnly = await prisma.serverChannelRead.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ServerChannelReadUpdateManyAndReturnArgs>(args: SelectSubset<T, ServerChannelReadUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ServerChannelRead.
+     * @param {ServerChannelReadUpsertArgs} args - Arguments to update or create a ServerChannelRead.
+     * @example
+     * // Update or create a ServerChannelRead
+     * const serverChannelRead = await prisma.serverChannelRead.upsert({
+     *   create: {
+     *     // ... data to create a ServerChannelRead
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ServerChannelRead we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ServerChannelReadUpsertArgs>(args: SelectSubset<T, ServerChannelReadUpsertArgs<ExtArgs>>): Prisma__ServerChannelReadClient<$Result.GetResult<Prisma.$ServerChannelReadPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ServerChannelReads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadCountArgs} args - Arguments to filter ServerChannelReads to count.
+     * @example
+     * // Count the number of ServerChannelReads
+     * const count = await prisma.serverChannelRead.count({
+     *   where: {
+     *     // ... the filter for the ServerChannelReads we want to count
+     *   }
+     * })
+    **/
+    count<T extends ServerChannelReadCountArgs>(
+      args?: Subset<T, ServerChannelReadCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ServerChannelReadCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ServerChannelRead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ServerChannelReadAggregateArgs>(args: Subset<T, ServerChannelReadAggregateArgs>): Prisma.PrismaPromise<GetServerChannelReadAggregateType<T>>
+
+    /**
+     * Group by ServerChannelRead.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ServerChannelReadGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ServerChannelReadGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ServerChannelReadGroupByArgs['orderBy'] }
+        : { orderBy?: ServerChannelReadGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ServerChannelReadGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetServerChannelReadGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ServerChannelRead model
+   */
+  readonly fields: ServerChannelReadFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ServerChannelRead.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ServerChannelReadClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    channel<T extends ServerChannelDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ServerChannelDefaultArgs<ExtArgs>>): Prisma__ServerChannelClient<$Result.GetResult<Prisma.$ServerChannelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ServerChannelRead model
+   */
+  interface ServerChannelReadFieldRefs {
+    readonly id: FieldRef<"ServerChannelRead", 'String'>
+    readonly channelId: FieldRef<"ServerChannelRead", 'String'>
+    readonly userId: FieldRef<"ServerChannelRead", 'String'>
+    readonly readAt: FieldRef<"ServerChannelRead", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ServerChannelRead findUnique
+   */
+  export type ServerChannelReadFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannelRead to fetch.
+     */
+    where: ServerChannelReadWhereUniqueInput
+  }
+
+  /**
+   * ServerChannelRead findUniqueOrThrow
+   */
+  export type ServerChannelReadFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannelRead to fetch.
+     */
+    where: ServerChannelReadWhereUniqueInput
+  }
+
+  /**
+   * ServerChannelRead findFirst
+   */
+  export type ServerChannelReadFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannelRead to fetch.
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannelReads to fetch.
+     */
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerChannelReads.
+     */
+    cursor?: ServerChannelReadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannelReads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannelReads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerChannelReads.
+     */
+    distinct?: ServerChannelReadScalarFieldEnum | ServerChannelReadScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannelRead findFirstOrThrow
+   */
+  export type ServerChannelReadFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannelRead to fetch.
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannelReads to fetch.
+     */
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ServerChannelReads.
+     */
+    cursor?: ServerChannelReadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannelReads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannelReads.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ServerChannelReads.
+     */
+    distinct?: ServerChannelReadScalarFieldEnum | ServerChannelReadScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannelRead findMany
+   */
+  export type ServerChannelReadFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter, which ServerChannelReads to fetch.
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ServerChannelReads to fetch.
+     */
+    orderBy?: ServerChannelReadOrderByWithRelationInput | ServerChannelReadOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ServerChannelReads.
+     */
+    cursor?: ServerChannelReadWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ServerChannelReads from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ServerChannelReads.
+     */
+    skip?: number
+    distinct?: ServerChannelReadScalarFieldEnum | ServerChannelReadScalarFieldEnum[]
+  }
+
+  /**
+   * ServerChannelRead create
+   */
+  export type ServerChannelReadCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ServerChannelRead.
+     */
+    data: XOR<ServerChannelReadCreateInput, ServerChannelReadUncheckedCreateInput>
+  }
+
+  /**
+   * ServerChannelRead createMany
+   */
+  export type ServerChannelReadCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ServerChannelReads.
+     */
+    data: ServerChannelReadCreateManyInput | ServerChannelReadCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ServerChannelRead createManyAndReturn
+   */
+  export type ServerChannelReadCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * The data used to create many ServerChannelReads.
+     */
+    data: ServerChannelReadCreateManyInput | ServerChannelReadCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannelRead update
+   */
+  export type ServerChannelReadUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ServerChannelRead.
+     */
+    data: XOR<ServerChannelReadUpdateInput, ServerChannelReadUncheckedUpdateInput>
+    /**
+     * Choose, which ServerChannelRead to update.
+     */
+    where: ServerChannelReadWhereUniqueInput
+  }
+
+  /**
+   * ServerChannelRead updateMany
+   */
+  export type ServerChannelReadUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ServerChannelReads.
+     */
+    data: XOR<ServerChannelReadUpdateManyMutationInput, ServerChannelReadUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerChannelReads to update
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * Limit how many ServerChannelReads to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerChannelRead updateManyAndReturn
+   */
+  export type ServerChannelReadUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * The data used to update ServerChannelReads.
+     */
+    data: XOR<ServerChannelReadUpdateManyMutationInput, ServerChannelReadUncheckedUpdateManyInput>
+    /**
+     * Filter which ServerChannelReads to update
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * Limit how many ServerChannelReads to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ServerChannelRead upsert
+   */
+  export type ServerChannelReadUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ServerChannelRead to update in case it exists.
+     */
+    where: ServerChannelReadWhereUniqueInput
+    /**
+     * In case the ServerChannelRead found by the `where` argument doesn't exist, create a new ServerChannelRead with this data.
+     */
+    create: XOR<ServerChannelReadCreateInput, ServerChannelReadUncheckedCreateInput>
+    /**
+     * In case the ServerChannelRead was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ServerChannelReadUpdateInput, ServerChannelReadUncheckedUpdateInput>
+  }
+
+  /**
+   * ServerChannelRead delete
+   */
+  export type ServerChannelReadDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+    /**
+     * Filter which ServerChannelRead to delete.
+     */
+    where: ServerChannelReadWhereUniqueInput
+  }
+
+  /**
+   * ServerChannelRead deleteMany
+   */
+  export type ServerChannelReadDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ServerChannelReads to delete
+     */
+    where?: ServerChannelReadWhereInput
+    /**
+     * Limit how many ServerChannelReads to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ServerChannelRead without action
+   */
+  export type ServerChannelReadDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ServerChannelRead
+     */
+    select?: ServerChannelReadSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ServerChannelRead
+     */
+    omit?: ServerChannelReadOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ServerChannelReadInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model ServerMessage
    */
 
@@ -15685,6 +19372,7 @@ export namespace Prisma {
     id: string | null
     content: string | null
     createdAt: Date | null
+    pinnedAt: Date | null
     channelId: string | null
     serverId: string | null
     senderId: string | null
@@ -15694,6 +19382,7 @@ export namespace Prisma {
     id: string | null
     content: string | null
     createdAt: Date | null
+    pinnedAt: Date | null
     channelId: string | null
     serverId: string | null
     senderId: string | null
@@ -15703,6 +19392,7 @@ export namespace Prisma {
     id: number
     content: number
     createdAt: number
+    pinnedAt: number
     channelId: number
     serverId: number
     senderId: number
@@ -15714,6 +19404,7 @@ export namespace Prisma {
     id?: true
     content?: true
     createdAt?: true
+    pinnedAt?: true
     channelId?: true
     serverId?: true
     senderId?: true
@@ -15723,6 +19414,7 @@ export namespace Prisma {
     id?: true
     content?: true
     createdAt?: true
+    pinnedAt?: true
     channelId?: true
     serverId?: true
     senderId?: true
@@ -15732,6 +19424,7 @@ export namespace Prisma {
     id?: true
     content?: true
     createdAt?: true
+    pinnedAt?: true
     channelId?: true
     serverId?: true
     senderId?: true
@@ -15814,6 +19507,7 @@ export namespace Prisma {
     id: string
     content: string
     createdAt: Date
+    pinnedAt: Date | null
     channelId: string | null
     serverId: string
     senderId: string
@@ -15840,6 +19534,7 @@ export namespace Prisma {
     id?: boolean
     content?: boolean
     createdAt?: boolean
+    pinnedAt?: boolean
     channelId?: boolean
     serverId?: boolean
     senderId?: boolean
@@ -15852,6 +19547,7 @@ export namespace Prisma {
     id?: boolean
     content?: boolean
     createdAt?: boolean
+    pinnedAt?: boolean
     channelId?: boolean
     serverId?: boolean
     senderId?: boolean
@@ -15864,6 +19560,7 @@ export namespace Prisma {
     id?: boolean
     content?: boolean
     createdAt?: boolean
+    pinnedAt?: boolean
     channelId?: boolean
     serverId?: boolean
     senderId?: boolean
@@ -15876,12 +19573,13 @@ export namespace Prisma {
     id?: boolean
     content?: boolean
     createdAt?: boolean
+    pinnedAt?: boolean
     channelId?: boolean
     serverId?: boolean
     senderId?: boolean
   }
 
-  export type ServerMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "createdAt" | "channelId" | "serverId" | "senderId", ExtArgs["result"]["serverMessage"]>
+  export type ServerMessageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "content" | "createdAt" | "pinnedAt" | "channelId" | "serverId" | "senderId", ExtArgs["result"]["serverMessage"]>
   export type ServerMessageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     channel?: boolean | ServerMessage$channelArgs<ExtArgs>
     sender?: boolean | UserDefaultArgs<ExtArgs>
@@ -15909,6 +19607,7 @@ export namespace Prisma {
       id: string
       content: string
       createdAt: Date
+      pinnedAt: Date | null
       channelId: string | null
       serverId: string
       senderId: string
@@ -16341,6 +20040,7 @@ export namespace Prisma {
     readonly id: FieldRef<"ServerMessage", 'String'>
     readonly content: FieldRef<"ServerMessage", 'String'>
     readonly createdAt: FieldRef<"ServerMessage", 'DateTime'>
+    readonly pinnedAt: FieldRef<"ServerMessage", 'DateTime'>
     readonly channelId: FieldRef<"ServerMessage", 'String'>
     readonly serverId: FieldRef<"ServerMessage", 'String'>
     readonly senderId: FieldRef<"ServerMessage", 'String'>
@@ -16839,7 +20539,9 @@ export namespace Prisma {
     emailVerified: 'emailVerified',
     passwordHash: 'passwordHash',
     image: 'image',
-    bio: 'bio'
+    bio: 'bio',
+    statusMessage: 'statusMessage',
+    presenceStatus: 'presenceStatus'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -16901,10 +20603,33 @@ export namespace Prisma {
   export type DirectMessageScalarFieldEnum = (typeof DirectMessageScalarFieldEnum)[keyof typeof DirectMessageScalarFieldEnum]
 
 
+  export const MatchingQueueScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    topic: 'topic',
+    matchedUserId: 'matchedUserId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type MatchingQueueScalarFieldEnum = (typeof MatchingQueueScalarFieldEnum)[keyof typeof MatchingQueueScalarFieldEnum]
+
+
+  export const UserBlockScalarFieldEnum: {
+    id: 'id',
+    blockerId: 'blockerId',
+    blockedId: 'blockedId',
+    createdAt: 'createdAt'
+  };
+
+  export type UserBlockScalarFieldEnum = (typeof UserBlockScalarFieldEnum)[keyof typeof UserBlockScalarFieldEnum]
+
+
   export const ChatServerScalarFieldEnum: {
     id: 'id',
     name: 'name',
     description: 'description',
+    image: 'image',
     inviteCode: 'inviteCode',
     createdById: 'createdById',
     createdAt: 'createdAt',
@@ -16936,10 +20661,21 @@ export namespace Prisma {
   export type ServerChannelScalarFieldEnum = (typeof ServerChannelScalarFieldEnum)[keyof typeof ServerChannelScalarFieldEnum]
 
 
+  export const ServerChannelReadScalarFieldEnum: {
+    id: 'id',
+    channelId: 'channelId',
+    userId: 'userId',
+    readAt: 'readAt'
+  };
+
+  export type ServerChannelReadScalarFieldEnum = (typeof ServerChannelReadScalarFieldEnum)[keyof typeof ServerChannelReadScalarFieldEnum]
+
+
   export const ServerMessageScalarFieldEnum: {
     id: 'id',
     content: 'content',
     createdAt: 'createdAt',
+    pinnedAt: 'pinnedAt',
     channelId: 'channelId',
     serverId: 'serverId',
     senderId: 'senderId'
@@ -17020,6 +20756,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'UserPresenceStatus'
+   */
+  export type EnumUserPresenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserPresenceStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'UserPresenceStatus[]'
+   */
+  export type ListEnumUserPresenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserPresenceStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'FriendRequestStatus'
    */
   export type EnumFriendRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FriendRequestStatus'>
@@ -17044,6 +20794,20 @@ export namespace Prisma {
    * Reference to a field of type 'NotificationType[]'
    */
   export type ListEnumNotificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationType[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'MatchingTopic'
+   */
+  export type EnumMatchingTopicFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchingTopic'>
+    
+
+
+  /**
+   * Reference to a field of type 'MatchingTopic[]'
+   */
+  export type ListEnumMatchingTopicFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MatchingTopic[]'>
     
 
 
@@ -17295,11 +21059,17 @@ export namespace Prisma {
     passwordHash?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
     bio?: StringNullableFilter<"User"> | string | null
+    statusMessage?: StringNullableFilter<"User"> | string | null
+    presenceStatus?: EnumUserPresenceStatusFilter<"User"> | $Enums.UserPresenceStatus
     accounts?: AccountListRelationFilter
+    blockedBy?: UserBlockListRelationFilter
+    blockedUsers?: UserBlockListRelationFilter
+    channelReads?: ServerChannelReadListRelationFilter
     receivedDirectMessages?: DirectMessageListRelationFilter
     createdServers?: ChatServerListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
+    matchingQueue?: XOR<MatchingQueueNullableScalarRelationFilter, MatchingQueueWhereInput> | null
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
     sentServerMessages?: ServerMessageListRelationFilter
@@ -17319,11 +21089,17 @@ export namespace Prisma {
     passwordHash?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
     bio?: SortOrderInput | SortOrder
+    statusMessage?: SortOrderInput | SortOrder
+    presenceStatus?: SortOrder
     accounts?: AccountOrderByRelationAggregateInput
+    blockedBy?: UserBlockOrderByRelationAggregateInput
+    blockedUsers?: UserBlockOrderByRelationAggregateInput
+    channelReads?: ServerChannelReadOrderByRelationAggregateInput
     receivedDirectMessages?: DirectMessageOrderByRelationAggregateInput
     createdServers?: ChatServerOrderByRelationAggregateInput
     friendships?: FriendshipOrderByRelationAggregateInput
     friendOf?: FriendshipOrderByRelationAggregateInput
+    matchingQueue?: MatchingQueueOrderByWithRelationInput
     notifications?: NotificationOrderByRelationAggregateInput
     posts?: PostOrderByRelationAggregateInput
     sentServerMessages?: ServerMessageOrderByRelationAggregateInput
@@ -17346,11 +21122,17 @@ export namespace Prisma {
     passwordHash?: StringNullableFilter<"User"> | string | null
     image?: StringNullableFilter<"User"> | string | null
     bio?: StringNullableFilter<"User"> | string | null
+    statusMessage?: StringNullableFilter<"User"> | string | null
+    presenceStatus?: EnumUserPresenceStatusFilter<"User"> | $Enums.UserPresenceStatus
     accounts?: AccountListRelationFilter
+    blockedBy?: UserBlockListRelationFilter
+    blockedUsers?: UserBlockListRelationFilter
+    channelReads?: ServerChannelReadListRelationFilter
     receivedDirectMessages?: DirectMessageListRelationFilter
     createdServers?: ChatServerListRelationFilter
     friendships?: FriendshipListRelationFilter
     friendOf?: FriendshipListRelationFilter
+    matchingQueue?: XOR<MatchingQueueNullableScalarRelationFilter, MatchingQueueWhereInput> | null
     notifications?: NotificationListRelationFilter
     posts?: PostListRelationFilter
     sentServerMessages?: ServerMessageListRelationFilter
@@ -17370,6 +21152,8 @@ export namespace Prisma {
     passwordHash?: SortOrderInput | SortOrder
     image?: SortOrderInput | SortOrder
     bio?: SortOrderInput | SortOrder
+    statusMessage?: SortOrderInput | SortOrder
+    presenceStatus?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -17387,6 +21171,8 @@ export namespace Prisma {
     passwordHash?: StringNullableWithAggregatesFilter<"User"> | string | null
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
     bio?: StringNullableWithAggregatesFilter<"User"> | string | null
+    statusMessage?: StringNullableWithAggregatesFilter<"User"> | string | null
+    presenceStatus?: EnumUserPresenceStatusWithAggregatesFilter<"User"> | $Enums.UserPresenceStatus
   }
 
   export type VerificationTokenWhereInput = {
@@ -17684,6 +21470,120 @@ export namespace Prisma {
     senderId?: StringWithAggregatesFilter<"DirectMessage"> | string
   }
 
+  export type MatchingQueueWhereInput = {
+    AND?: MatchingQueueWhereInput | MatchingQueueWhereInput[]
+    OR?: MatchingQueueWhereInput[]
+    NOT?: MatchingQueueWhereInput | MatchingQueueWhereInput[]
+    id?: StringFilter<"MatchingQueue"> | string
+    userId?: StringFilter<"MatchingQueue"> | string
+    topic?: EnumMatchingTopicFilter<"MatchingQueue"> | $Enums.MatchingTopic
+    matchedUserId?: StringNullableFilter<"MatchingQueue"> | string | null
+    createdAt?: DateTimeFilter<"MatchingQueue"> | Date | string
+    updatedAt?: DateTimeFilter<"MatchingQueue"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type MatchingQueueOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    topic?: SortOrder
+    matchedUserId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type MatchingQueueWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId?: string
+    AND?: MatchingQueueWhereInput | MatchingQueueWhereInput[]
+    OR?: MatchingQueueWhereInput[]
+    NOT?: MatchingQueueWhereInput | MatchingQueueWhereInput[]
+    topic?: EnumMatchingTopicFilter<"MatchingQueue"> | $Enums.MatchingTopic
+    matchedUserId?: StringNullableFilter<"MatchingQueue"> | string | null
+    createdAt?: DateTimeFilter<"MatchingQueue"> | Date | string
+    updatedAt?: DateTimeFilter<"MatchingQueue"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "userId">
+
+  export type MatchingQueueOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    topic?: SortOrder
+    matchedUserId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: MatchingQueueCountOrderByAggregateInput
+    _max?: MatchingQueueMaxOrderByAggregateInput
+    _min?: MatchingQueueMinOrderByAggregateInput
+  }
+
+  export type MatchingQueueScalarWhereWithAggregatesInput = {
+    AND?: MatchingQueueScalarWhereWithAggregatesInput | MatchingQueueScalarWhereWithAggregatesInput[]
+    OR?: MatchingQueueScalarWhereWithAggregatesInput[]
+    NOT?: MatchingQueueScalarWhereWithAggregatesInput | MatchingQueueScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"MatchingQueue"> | string
+    userId?: StringWithAggregatesFilter<"MatchingQueue"> | string
+    topic?: EnumMatchingTopicWithAggregatesFilter<"MatchingQueue"> | $Enums.MatchingTopic
+    matchedUserId?: StringNullableWithAggregatesFilter<"MatchingQueue"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"MatchingQueue"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"MatchingQueue"> | Date | string
+  }
+
+  export type UserBlockWhereInput = {
+    AND?: UserBlockWhereInput | UserBlockWhereInput[]
+    OR?: UserBlockWhereInput[]
+    NOT?: UserBlockWhereInput | UserBlockWhereInput[]
+    id?: StringFilter<"UserBlock"> | string
+    blockerId?: StringFilter<"UserBlock"> | string
+    blockedId?: StringFilter<"UserBlock"> | string
+    createdAt?: DateTimeFilter<"UserBlock"> | Date | string
+    blocked?: XOR<UserScalarRelationFilter, UserWhereInput>
+    blocker?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type UserBlockOrderByWithRelationInput = {
+    id?: SortOrder
+    blockerId?: SortOrder
+    blockedId?: SortOrder
+    createdAt?: SortOrder
+    blocked?: UserOrderByWithRelationInput
+    blocker?: UserOrderByWithRelationInput
+  }
+
+  export type UserBlockWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    blockerId_blockedId?: UserBlockBlockerIdBlockedIdCompoundUniqueInput
+    AND?: UserBlockWhereInput | UserBlockWhereInput[]
+    OR?: UserBlockWhereInput[]
+    NOT?: UserBlockWhereInput | UserBlockWhereInput[]
+    blockerId?: StringFilter<"UserBlock"> | string
+    blockedId?: StringFilter<"UserBlock"> | string
+    createdAt?: DateTimeFilter<"UserBlock"> | Date | string
+    blocked?: XOR<UserScalarRelationFilter, UserWhereInput>
+    blocker?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "blockerId_blockedId">
+
+  export type UserBlockOrderByWithAggregationInput = {
+    id?: SortOrder
+    blockerId?: SortOrder
+    blockedId?: SortOrder
+    createdAt?: SortOrder
+    _count?: UserBlockCountOrderByAggregateInput
+    _max?: UserBlockMaxOrderByAggregateInput
+    _min?: UserBlockMinOrderByAggregateInput
+  }
+
+  export type UserBlockScalarWhereWithAggregatesInput = {
+    AND?: UserBlockScalarWhereWithAggregatesInput | UserBlockScalarWhereWithAggregatesInput[]
+    OR?: UserBlockScalarWhereWithAggregatesInput[]
+    NOT?: UserBlockScalarWhereWithAggregatesInput | UserBlockScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"UserBlock"> | string
+    blockerId?: StringWithAggregatesFilter<"UserBlock"> | string
+    blockedId?: StringWithAggregatesFilter<"UserBlock"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"UserBlock"> | Date | string
+  }
+
   export type ChatServerWhereInput = {
     AND?: ChatServerWhereInput | ChatServerWhereInput[]
     OR?: ChatServerWhereInput[]
@@ -17691,6 +21591,7 @@ export namespace Prisma {
     id?: StringFilter<"ChatServer"> | string
     name?: StringFilter<"ChatServer"> | string
     description?: StringNullableFilter<"ChatServer"> | string | null
+    image?: StringNullableFilter<"ChatServer"> | string | null
     inviteCode?: StringFilter<"ChatServer"> | string
     createdById?: StringFilter<"ChatServer"> | string
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string
@@ -17705,6 +21606,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     description?: SortOrderInput | SortOrder
+    image?: SortOrderInput | SortOrder
     inviteCode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
@@ -17723,6 +21625,7 @@ export namespace Prisma {
     NOT?: ChatServerWhereInput | ChatServerWhereInput[]
     name?: StringFilter<"ChatServer"> | string
     description?: StringNullableFilter<"ChatServer"> | string | null
+    image?: StringNullableFilter<"ChatServer"> | string | null
     createdById?: StringFilter<"ChatServer"> | string
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string
     updatedAt?: DateTimeFilter<"ChatServer"> | Date | string
@@ -17736,6 +21639,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     description?: SortOrderInput | SortOrder
+    image?: SortOrderInput | SortOrder
     inviteCode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
@@ -17752,6 +21656,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"ChatServer"> | string
     name?: StringWithAggregatesFilter<"ChatServer"> | string
     description?: StringNullableWithAggregatesFilter<"ChatServer"> | string | null
+    image?: StringNullableWithAggregatesFilter<"ChatServer"> | string | null
     inviteCode?: StringWithAggregatesFilter<"ChatServer"> | string
     createdById?: StringWithAggregatesFilter<"ChatServer"> | string
     createdAt?: DateTimeWithAggregatesFilter<"ChatServer"> | Date | string
@@ -17826,6 +21731,7 @@ export namespace Prisma {
     name?: StringFilter<"ServerChannel"> | string
     createdAt?: DateTimeFilter<"ServerChannel"> | Date | string
     updatedAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    reads?: ServerChannelReadListRelationFilter
     server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
     messages?: ServerMessageListRelationFilter
   }
@@ -17836,6 +21742,7 @@ export namespace Prisma {
     name?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    reads?: ServerChannelReadOrderByRelationAggregateInput
     server?: ChatServerOrderByWithRelationInput
     messages?: ServerMessageOrderByRelationAggregateInput
   }
@@ -17850,6 +21757,7 @@ export namespace Prisma {
     name?: StringFilter<"ServerChannel"> | string
     createdAt?: DateTimeFilter<"ServerChannel"> | Date | string
     updatedAt?: DateTimeFilter<"ServerChannel"> | Date | string
+    reads?: ServerChannelReadListRelationFilter
     server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
     messages?: ServerMessageListRelationFilter
   }, "id" | "serverId_name">
@@ -17876,6 +21784,60 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"ServerChannel"> | Date | string
   }
 
+  export type ServerChannelReadWhereInput = {
+    AND?: ServerChannelReadWhereInput | ServerChannelReadWhereInput[]
+    OR?: ServerChannelReadWhereInput[]
+    NOT?: ServerChannelReadWhereInput | ServerChannelReadWhereInput[]
+    id?: StringFilter<"ServerChannelRead"> | string
+    channelId?: StringFilter<"ServerChannelRead"> | string
+    userId?: StringFilter<"ServerChannelRead"> | string
+    readAt?: DateTimeFilter<"ServerChannelRead"> | Date | string
+    channel?: XOR<ServerChannelScalarRelationFilter, ServerChannelWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type ServerChannelReadOrderByWithRelationInput = {
+    id?: SortOrder
+    channelId?: SortOrder
+    userId?: SortOrder
+    readAt?: SortOrder
+    channel?: ServerChannelOrderByWithRelationInput
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type ServerChannelReadWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    channelId_userId?: ServerChannelReadChannelIdUserIdCompoundUniqueInput
+    AND?: ServerChannelReadWhereInput | ServerChannelReadWhereInput[]
+    OR?: ServerChannelReadWhereInput[]
+    NOT?: ServerChannelReadWhereInput | ServerChannelReadWhereInput[]
+    channelId?: StringFilter<"ServerChannelRead"> | string
+    userId?: StringFilter<"ServerChannelRead"> | string
+    readAt?: DateTimeFilter<"ServerChannelRead"> | Date | string
+    channel?: XOR<ServerChannelScalarRelationFilter, ServerChannelWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "channelId_userId">
+
+  export type ServerChannelReadOrderByWithAggregationInput = {
+    id?: SortOrder
+    channelId?: SortOrder
+    userId?: SortOrder
+    readAt?: SortOrder
+    _count?: ServerChannelReadCountOrderByAggregateInput
+    _max?: ServerChannelReadMaxOrderByAggregateInput
+    _min?: ServerChannelReadMinOrderByAggregateInput
+  }
+
+  export type ServerChannelReadScalarWhereWithAggregatesInput = {
+    AND?: ServerChannelReadScalarWhereWithAggregatesInput | ServerChannelReadScalarWhereWithAggregatesInput[]
+    OR?: ServerChannelReadScalarWhereWithAggregatesInput[]
+    NOT?: ServerChannelReadScalarWhereWithAggregatesInput | ServerChannelReadScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ServerChannelRead"> | string
+    channelId?: StringWithAggregatesFilter<"ServerChannelRead"> | string
+    userId?: StringWithAggregatesFilter<"ServerChannelRead"> | string
+    readAt?: DateTimeWithAggregatesFilter<"ServerChannelRead"> | Date | string
+  }
+
   export type ServerMessageWhereInput = {
     AND?: ServerMessageWhereInput | ServerMessageWhereInput[]
     OR?: ServerMessageWhereInput[]
@@ -17883,6 +21845,7 @@ export namespace Prisma {
     id?: StringFilter<"ServerMessage"> | string
     content?: StringFilter<"ServerMessage"> | string
     createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    pinnedAt?: DateTimeNullableFilter<"ServerMessage"> | Date | string | null
     channelId?: StringNullableFilter<"ServerMessage"> | string | null
     serverId?: StringFilter<"ServerMessage"> | string
     senderId?: StringFilter<"ServerMessage"> | string
@@ -17895,6 +21858,7 @@ export namespace Prisma {
     id?: SortOrder
     content?: SortOrder
     createdAt?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     channelId?: SortOrderInput | SortOrder
     serverId?: SortOrder
     senderId?: SortOrder
@@ -17910,6 +21874,7 @@ export namespace Prisma {
     NOT?: ServerMessageWhereInput | ServerMessageWhereInput[]
     content?: StringFilter<"ServerMessage"> | string
     createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    pinnedAt?: DateTimeNullableFilter<"ServerMessage"> | Date | string | null
     channelId?: StringNullableFilter<"ServerMessage"> | string | null
     serverId?: StringFilter<"ServerMessage"> | string
     senderId?: StringFilter<"ServerMessage"> | string
@@ -17922,6 +21887,7 @@ export namespace Prisma {
     id?: SortOrder
     content?: SortOrder
     createdAt?: SortOrder
+    pinnedAt?: SortOrderInput | SortOrder
     channelId?: SortOrderInput | SortOrder
     serverId?: SortOrder
     senderId?: SortOrder
@@ -17937,6 +21903,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"ServerMessage"> | string
     content?: StringWithAggregatesFilter<"ServerMessage"> | string
     createdAt?: DateTimeWithAggregatesFilter<"ServerMessage"> | Date | string
+    pinnedAt?: DateTimeNullableWithAggregatesFilter<"ServerMessage"> | Date | string | null
     channelId?: StringNullableWithAggregatesFilter<"ServerMessage"> | string | null
     serverId?: StringWithAggregatesFilter<"ServerMessage"> | string
     senderId?: StringWithAggregatesFilter<"ServerMessage"> | string
@@ -18162,11 +22129,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -18186,11 +22159,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -18210,11 +22189,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -18234,11 +22219,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -18258,6 +22249,8 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
   }
 
   export type UserUpdateManyMutationInput = {
@@ -18269,6 +22262,8 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -18280,6 +22275,8 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
   }
 
   export type VerificationTokenCreateInput = {
@@ -18565,10 +22562,120 @@ export namespace Prisma {
     senderId?: StringFieldUpdateOperationsInput | string
   }
 
+  export type MatchingQueueCreateInput = {
+    id?: string
+    topic: $Enums.MatchingTopic
+    matchedUserId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutMatchingQueueInput
+  }
+
+  export type MatchingQueueUncheckedCreateInput = {
+    id?: string
+    userId: string
+    topic: $Enums.MatchingTopic
+    matchedUserId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MatchingQueueUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutMatchingQueueNestedInput
+  }
+
+  export type MatchingQueueUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchingQueueCreateManyInput = {
+    id?: string
+    userId: string
+    topic: $Enums.MatchingTopic
+    matchedUserId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MatchingQueueUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchingQueueUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockCreateInput = {
+    id?: string
+    createdAt?: Date | string
+    blocked: UserCreateNestedOneWithoutBlockedByInput
+    blocker: UserCreateNestedOneWithoutBlockedUsersInput
+  }
+
+  export type UserBlockUncheckedCreateInput = {
+    id?: string
+    blockerId: string
+    blockedId: string
+    createdAt?: Date | string
+  }
+
+  export type UserBlockUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    blocked?: UserUpdateOneRequiredWithoutBlockedByNestedInput
+    blocker?: UserUpdateOneRequiredWithoutBlockedUsersNestedInput
+  }
+
+  export type UserBlockUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockerId?: StringFieldUpdateOperationsInput | string
+    blockedId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockCreateManyInput = {
+    id?: string
+    blockerId: string
+    blockedId: string
+    createdAt?: Date | string
+  }
+
+  export type UserBlockUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockerId?: StringFieldUpdateOperationsInput | string
+    blockedId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ChatServerCreateInput = {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -18582,6 +22689,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdById: string
     createdAt?: Date | string
@@ -18595,6 +22703,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18608,6 +22717,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18621,6 +22731,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdById: string
     createdAt?: Date | string
@@ -18631,6 +22742,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18640,6 +22752,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18705,6 +22818,7 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadCreateNestedManyWithoutChannelInput
     server: ChatServerCreateNestedOneWithoutChannelsInput
     messages?: ServerMessageCreateNestedManyWithoutChannelInput
   }
@@ -18715,6 +22829,7 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadUncheckedCreateNestedManyWithoutChannelInput
     messages?: ServerMessageUncheckedCreateNestedManyWithoutChannelInput
   }
 
@@ -18723,6 +22838,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUpdateManyWithoutChannelNestedInput
     server?: ChatServerUpdateOneRequiredWithoutChannelsNestedInput
     messages?: ServerMessageUpdateManyWithoutChannelNestedInput
   }
@@ -18733,6 +22849,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUncheckedUpdateManyWithoutChannelNestedInput
     messages?: ServerMessageUncheckedUpdateManyWithoutChannelNestedInput
   }
 
@@ -18759,10 +22876,58 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ServerChannelReadCreateInput = {
+    id?: string
+    readAt?: Date | string
+    channel: ServerChannelCreateNestedOneWithoutReadsInput
+    user: UserCreateNestedOneWithoutChannelReadsInput
+  }
+
+  export type ServerChannelReadUncheckedCreateInput = {
+    id?: string
+    channelId: string
+    userId: string
+    readAt?: Date | string
+  }
+
+  export type ServerChannelReadUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channel?: ServerChannelUpdateOneRequiredWithoutReadsNestedInput
+    user?: UserUpdateOneRequiredWithoutChannelReadsNestedInput
+  }
+
+  export type ServerChannelReadUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channelId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelReadCreateManyInput = {
+    id?: string
+    channelId: string
+    userId: string
+    readAt?: Date | string
+  }
+
+  export type ServerChannelReadUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelReadUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channelId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ServerMessageCreateInput = {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channel?: ServerChannelCreateNestedOneWithoutMessagesInput
     sender: UserCreateNestedOneWithoutSentServerMessagesInput
     server: ChatServerCreateNestedOneWithoutMessagesInput
@@ -18772,6 +22937,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     serverId: string
     senderId: string
@@ -18781,6 +22947,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
     sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
     server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
@@ -18790,6 +22957,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     serverId?: StringFieldUpdateOperationsInput | string
     senderId?: StringFieldUpdateOperationsInput | string
@@ -18799,6 +22967,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     serverId: string
     senderId: string
@@ -18808,12 +22977,14 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type ServerMessageUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     serverId?: StringFieldUpdateOperationsInput | string
     senderId?: StringFieldUpdateOperationsInput | string
@@ -19101,10 +23272,29 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type EnumUserPresenceStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.UserPresenceStatus | EnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumUserPresenceStatusFilter<$PrismaModel> | $Enums.UserPresenceStatus
+  }
+
   export type AccountListRelationFilter = {
     every?: AccountWhereInput
     some?: AccountWhereInput
     none?: AccountWhereInput
+  }
+
+  export type UserBlockListRelationFilter = {
+    every?: UserBlockWhereInput
+    some?: UserBlockWhereInput
+    none?: UserBlockWhereInput
+  }
+
+  export type ServerChannelReadListRelationFilter = {
+    every?: ServerChannelReadWhereInput
+    some?: ServerChannelReadWhereInput
+    none?: ServerChannelReadWhereInput
   }
 
   export type DirectMessageListRelationFilter = {
@@ -19123,6 +23313,11 @@ export namespace Prisma {
     every?: FriendshipWhereInput
     some?: FriendshipWhereInput
     none?: FriendshipWhereInput
+  }
+
+  export type MatchingQueueNullableScalarRelationFilter = {
+    is?: MatchingQueueWhereInput | null
+    isNot?: MatchingQueueWhereInput | null
   }
 
   export type NotificationListRelationFilter = {
@@ -19162,6 +23357,14 @@ export namespace Prisma {
   }
 
   export type AccountOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type UserBlockOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ServerChannelReadOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -19210,6 +23413,8 @@ export namespace Prisma {
     passwordHash?: SortOrder
     image?: SortOrder
     bio?: SortOrder
+    statusMessage?: SortOrder
+    presenceStatus?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -19221,6 +23426,8 @@ export namespace Prisma {
     passwordHash?: SortOrder
     image?: SortOrder
     bio?: SortOrder
+    statusMessage?: SortOrder
+    presenceStatus?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -19232,6 +23439,8 @@ export namespace Prisma {
     passwordHash?: SortOrder
     image?: SortOrder
     bio?: SortOrder
+    statusMessage?: SortOrder
+    presenceStatus?: SortOrder
   }
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -19246,6 +23455,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type EnumUserPresenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.UserPresenceStatus | EnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumUserPresenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.UserPresenceStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
+    _max?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
   }
 
   export type VerificationTokenIdentifierTokenCompoundUniqueInput = {
@@ -19425,6 +23644,76 @@ export namespace Prisma {
     senderId?: SortOrder
   }
 
+  export type EnumMatchingTopicFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchingTopic | EnumMatchingTopicFieldRefInput<$PrismaModel>
+    in?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    not?: NestedEnumMatchingTopicFilter<$PrismaModel> | $Enums.MatchingTopic
+  }
+
+  export type MatchingQueueCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    topic?: SortOrder
+    matchedUserId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type MatchingQueueMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    topic?: SortOrder
+    matchedUserId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type MatchingQueueMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    topic?: SortOrder
+    matchedUserId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumMatchingTopicWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchingTopic | EnumMatchingTopicFieldRefInput<$PrismaModel>
+    in?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    not?: NestedEnumMatchingTopicWithAggregatesFilter<$PrismaModel> | $Enums.MatchingTopic
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumMatchingTopicFilter<$PrismaModel>
+    _max?: NestedEnumMatchingTopicFilter<$PrismaModel>
+  }
+
+  export type UserBlockBlockerIdBlockedIdCompoundUniqueInput = {
+    blockerId: string
+    blockedId: string
+  }
+
+  export type UserBlockCountOrderByAggregateInput = {
+    id?: SortOrder
+    blockerId?: SortOrder
+    blockedId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type UserBlockMaxOrderByAggregateInput = {
+    id?: SortOrder
+    blockerId?: SortOrder
+    blockedId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type UserBlockMinOrderByAggregateInput = {
+    id?: SortOrder
+    blockerId?: SortOrder
+    blockedId?: SortOrder
+    createdAt?: SortOrder
+  }
+
   export type ServerChannelListRelationFilter = {
     every?: ServerChannelWhereInput
     some?: ServerChannelWhereInput
@@ -19439,6 +23728,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     description?: SortOrder
+    image?: SortOrder
     inviteCode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
@@ -19449,6 +23739,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     description?: SortOrder
+    image?: SortOrder
     inviteCode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
@@ -19459,6 +23750,7 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     description?: SortOrder
+    image?: SortOrder
     inviteCode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
@@ -19545,6 +23837,37 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type ServerChannelScalarRelationFilter = {
+    is?: ServerChannelWhereInput
+    isNot?: ServerChannelWhereInput
+  }
+
+  export type ServerChannelReadChannelIdUserIdCompoundUniqueInput = {
+    channelId: string
+    userId: string
+  }
+
+  export type ServerChannelReadCountOrderByAggregateInput = {
+    id?: SortOrder
+    channelId?: SortOrder
+    userId?: SortOrder
+    readAt?: SortOrder
+  }
+
+  export type ServerChannelReadMaxOrderByAggregateInput = {
+    id?: SortOrder
+    channelId?: SortOrder
+    userId?: SortOrder
+    readAt?: SortOrder
+  }
+
+  export type ServerChannelReadMinOrderByAggregateInput = {
+    id?: SortOrder
+    channelId?: SortOrder
+    userId?: SortOrder
+    readAt?: SortOrder
+  }
+
   export type ServerChannelNullableScalarRelationFilter = {
     is?: ServerChannelWhereInput | null
     isNot?: ServerChannelWhereInput | null
@@ -19554,6 +23877,7 @@ export namespace Prisma {
     id?: SortOrder
     content?: SortOrder
     createdAt?: SortOrder
+    pinnedAt?: SortOrder
     channelId?: SortOrder
     serverId?: SortOrder
     senderId?: SortOrder
@@ -19563,6 +23887,7 @@ export namespace Prisma {
     id?: SortOrder
     content?: SortOrder
     createdAt?: SortOrder
+    pinnedAt?: SortOrder
     channelId?: SortOrder
     serverId?: SortOrder
     senderId?: SortOrder
@@ -19572,6 +23897,7 @@ export namespace Prisma {
     id?: SortOrder
     content?: SortOrder
     createdAt?: SortOrder
+    pinnedAt?: SortOrder
     channelId?: SortOrder
     serverId?: SortOrder
     senderId?: SortOrder
@@ -19654,6 +23980,27 @@ export namespace Prisma {
     connect?: AccountWhereUniqueInput | AccountWhereUniqueInput[]
   }
 
+  export type UserBlockCreateNestedManyWithoutBlockedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput> | UserBlockCreateWithoutBlockedInput[] | UserBlockUncheckedCreateWithoutBlockedInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockedInput | UserBlockCreateOrConnectWithoutBlockedInput[]
+    createMany?: UserBlockCreateManyBlockedInputEnvelope
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+  }
+
+  export type UserBlockCreateNestedManyWithoutBlockerInput = {
+    create?: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput> | UserBlockCreateWithoutBlockerInput[] | UserBlockUncheckedCreateWithoutBlockerInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockerInput | UserBlockCreateOrConnectWithoutBlockerInput[]
+    createMany?: UserBlockCreateManyBlockerInputEnvelope
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+  }
+
+  export type ServerChannelReadCreateNestedManyWithoutUserInput = {
+    create?: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput> | ServerChannelReadCreateWithoutUserInput[] | ServerChannelReadUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutUserInput | ServerChannelReadCreateOrConnectWithoutUserInput[]
+    createMany?: ServerChannelReadCreateManyUserInputEnvelope
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+  }
+
   export type DirectMessageCreateNestedManyWithoutReceiverInput = {
     create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
     connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
@@ -19680,6 +24027,12 @@ export namespace Prisma {
     connectOrCreate?: FriendshipCreateOrConnectWithoutFriendInput | FriendshipCreateOrConnectWithoutFriendInput[]
     createMany?: FriendshipCreateManyFriendInputEnvelope
     connect?: FriendshipWhereUniqueInput | FriendshipWhereUniqueInput[]
+  }
+
+  export type MatchingQueueCreateNestedOneWithoutUserInput = {
+    create?: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput
+    connect?: MatchingQueueWhereUniqueInput
   }
 
   export type NotificationCreateNestedManyWithoutUserInput = {
@@ -19745,6 +24098,27 @@ export namespace Prisma {
     connect?: AccountWhereUniqueInput | AccountWhereUniqueInput[]
   }
 
+  export type UserBlockUncheckedCreateNestedManyWithoutBlockedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput> | UserBlockCreateWithoutBlockedInput[] | UserBlockUncheckedCreateWithoutBlockedInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockedInput | UserBlockCreateOrConnectWithoutBlockedInput[]
+    createMany?: UserBlockCreateManyBlockedInputEnvelope
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+  }
+
+  export type UserBlockUncheckedCreateNestedManyWithoutBlockerInput = {
+    create?: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput> | UserBlockCreateWithoutBlockerInput[] | UserBlockUncheckedCreateWithoutBlockerInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockerInput | UserBlockCreateOrConnectWithoutBlockerInput[]
+    createMany?: UserBlockCreateManyBlockerInputEnvelope
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+  }
+
+  export type ServerChannelReadUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput> | ServerChannelReadCreateWithoutUserInput[] | ServerChannelReadUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutUserInput | ServerChannelReadCreateOrConnectWithoutUserInput[]
+    createMany?: ServerChannelReadCreateManyUserInputEnvelope
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+  }
+
   export type DirectMessageUncheckedCreateNestedManyWithoutReceiverInput = {
     create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
     connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
@@ -19771,6 +24145,12 @@ export namespace Prisma {
     connectOrCreate?: FriendshipCreateOrConnectWithoutFriendInput | FriendshipCreateOrConnectWithoutFriendInput[]
     createMany?: FriendshipCreateManyFriendInputEnvelope
     connect?: FriendshipWhereUniqueInput | FriendshipWhereUniqueInput[]
+  }
+
+  export type MatchingQueueUncheckedCreateNestedOneWithoutUserInput = {
+    create?: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput
+    connect?: MatchingQueueWhereUniqueInput
   }
 
   export type NotificationUncheckedCreateNestedManyWithoutUserInput = {
@@ -19833,6 +24213,10 @@ export namespace Prisma {
     set?: Date | string | null
   }
 
+  export type EnumUserPresenceStatusFieldUpdateOperationsInput = {
+    set?: $Enums.UserPresenceStatus
+  }
+
   export type AccountUpdateManyWithoutUserNestedInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -19845,6 +24229,48 @@ export namespace Prisma {
     update?: AccountUpdateWithWhereUniqueWithoutUserInput | AccountUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: AccountUpdateManyWithWhereWithoutUserInput | AccountUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: AccountScalarWhereInput | AccountScalarWhereInput[]
+  }
+
+  export type UserBlockUpdateManyWithoutBlockedNestedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput> | UserBlockCreateWithoutBlockedInput[] | UserBlockUncheckedCreateWithoutBlockedInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockedInput | UserBlockCreateOrConnectWithoutBlockedInput[]
+    upsert?: UserBlockUpsertWithWhereUniqueWithoutBlockedInput | UserBlockUpsertWithWhereUniqueWithoutBlockedInput[]
+    createMany?: UserBlockCreateManyBlockedInputEnvelope
+    set?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    disconnect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    delete?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    update?: UserBlockUpdateWithWhereUniqueWithoutBlockedInput | UserBlockUpdateWithWhereUniqueWithoutBlockedInput[]
+    updateMany?: UserBlockUpdateManyWithWhereWithoutBlockedInput | UserBlockUpdateManyWithWhereWithoutBlockedInput[]
+    deleteMany?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+  }
+
+  export type UserBlockUpdateManyWithoutBlockerNestedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput> | UserBlockCreateWithoutBlockerInput[] | UserBlockUncheckedCreateWithoutBlockerInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockerInput | UserBlockCreateOrConnectWithoutBlockerInput[]
+    upsert?: UserBlockUpsertWithWhereUniqueWithoutBlockerInput | UserBlockUpsertWithWhereUniqueWithoutBlockerInput[]
+    createMany?: UserBlockCreateManyBlockerInputEnvelope
+    set?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    disconnect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    delete?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    update?: UserBlockUpdateWithWhereUniqueWithoutBlockerInput | UserBlockUpdateWithWhereUniqueWithoutBlockerInput[]
+    updateMany?: UserBlockUpdateManyWithWhereWithoutBlockerInput | UserBlockUpdateManyWithWhereWithoutBlockerInput[]
+    deleteMany?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+  }
+
+  export type ServerChannelReadUpdateManyWithoutUserNestedInput = {
+    create?: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput> | ServerChannelReadCreateWithoutUserInput[] | ServerChannelReadUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutUserInput | ServerChannelReadCreateOrConnectWithoutUserInput[]
+    upsert?: ServerChannelReadUpsertWithWhereUniqueWithoutUserInput | ServerChannelReadUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: ServerChannelReadCreateManyUserInputEnvelope
+    set?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    disconnect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    delete?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    update?: ServerChannelReadUpdateWithWhereUniqueWithoutUserInput | ServerChannelReadUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: ServerChannelReadUpdateManyWithWhereWithoutUserInput | ServerChannelReadUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
   }
 
   export type DirectMessageUpdateManyWithoutReceiverNestedInput = {
@@ -19901,6 +24327,16 @@ export namespace Prisma {
     update?: FriendshipUpdateWithWhereUniqueWithoutFriendInput | FriendshipUpdateWithWhereUniqueWithoutFriendInput[]
     updateMany?: FriendshipUpdateManyWithWhereWithoutFriendInput | FriendshipUpdateManyWithWhereWithoutFriendInput[]
     deleteMany?: FriendshipScalarWhereInput | FriendshipScalarWhereInput[]
+  }
+
+  export type MatchingQueueUpdateOneWithoutUserNestedInput = {
+    create?: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput
+    upsert?: MatchingQueueUpsertWithoutUserInput
+    disconnect?: MatchingQueueWhereInput | boolean
+    delete?: MatchingQueueWhereInput | boolean
+    connect?: MatchingQueueWhereUniqueInput
+    update?: XOR<XOR<MatchingQueueUpdateToOneWithWhereWithoutUserInput, MatchingQueueUpdateWithoutUserInput>, MatchingQueueUncheckedUpdateWithoutUserInput>
   }
 
   export type NotificationUpdateManyWithoutUserNestedInput = {
@@ -20029,6 +24465,48 @@ export namespace Prisma {
     deleteMany?: AccountScalarWhereInput | AccountScalarWhereInput[]
   }
 
+  export type UserBlockUncheckedUpdateManyWithoutBlockedNestedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput> | UserBlockCreateWithoutBlockedInput[] | UserBlockUncheckedCreateWithoutBlockedInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockedInput | UserBlockCreateOrConnectWithoutBlockedInput[]
+    upsert?: UserBlockUpsertWithWhereUniqueWithoutBlockedInput | UserBlockUpsertWithWhereUniqueWithoutBlockedInput[]
+    createMany?: UserBlockCreateManyBlockedInputEnvelope
+    set?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    disconnect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    delete?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    update?: UserBlockUpdateWithWhereUniqueWithoutBlockedInput | UserBlockUpdateWithWhereUniqueWithoutBlockedInput[]
+    updateMany?: UserBlockUpdateManyWithWhereWithoutBlockedInput | UserBlockUpdateManyWithWhereWithoutBlockedInput[]
+    deleteMany?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+  }
+
+  export type UserBlockUncheckedUpdateManyWithoutBlockerNestedInput = {
+    create?: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput> | UserBlockCreateWithoutBlockerInput[] | UserBlockUncheckedCreateWithoutBlockerInput[]
+    connectOrCreate?: UserBlockCreateOrConnectWithoutBlockerInput | UserBlockCreateOrConnectWithoutBlockerInput[]
+    upsert?: UserBlockUpsertWithWhereUniqueWithoutBlockerInput | UserBlockUpsertWithWhereUniqueWithoutBlockerInput[]
+    createMany?: UserBlockCreateManyBlockerInputEnvelope
+    set?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    disconnect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    delete?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    connect?: UserBlockWhereUniqueInput | UserBlockWhereUniqueInput[]
+    update?: UserBlockUpdateWithWhereUniqueWithoutBlockerInput | UserBlockUpdateWithWhereUniqueWithoutBlockerInput[]
+    updateMany?: UserBlockUpdateManyWithWhereWithoutBlockerInput | UserBlockUpdateManyWithWhereWithoutBlockerInput[]
+    deleteMany?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+  }
+
+  export type ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput> | ServerChannelReadCreateWithoutUserInput[] | ServerChannelReadUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutUserInput | ServerChannelReadCreateOrConnectWithoutUserInput[]
+    upsert?: ServerChannelReadUpsertWithWhereUniqueWithoutUserInput | ServerChannelReadUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: ServerChannelReadCreateManyUserInputEnvelope
+    set?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    disconnect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    delete?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    update?: ServerChannelReadUpdateWithWhereUniqueWithoutUserInput | ServerChannelReadUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: ServerChannelReadUpdateManyWithWhereWithoutUserInput | ServerChannelReadUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
+  }
+
   export type DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput = {
     create?: XOR<DirectMessageCreateWithoutReceiverInput, DirectMessageUncheckedCreateWithoutReceiverInput> | DirectMessageCreateWithoutReceiverInput[] | DirectMessageUncheckedCreateWithoutReceiverInput[]
     connectOrCreate?: DirectMessageCreateOrConnectWithoutReceiverInput | DirectMessageCreateOrConnectWithoutReceiverInput[]
@@ -20083,6 +24561,16 @@ export namespace Prisma {
     update?: FriendshipUpdateWithWhereUniqueWithoutFriendInput | FriendshipUpdateWithWhereUniqueWithoutFriendInput[]
     updateMany?: FriendshipUpdateManyWithWhereWithoutFriendInput | FriendshipUpdateManyWithWhereWithoutFriendInput[]
     deleteMany?: FriendshipScalarWhereInput | FriendshipScalarWhereInput[]
+  }
+
+  export type MatchingQueueUncheckedUpdateOneWithoutUserNestedInput = {
+    create?: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+    connectOrCreate?: MatchingQueueCreateOrConnectWithoutUserInput
+    upsert?: MatchingQueueUpsertWithoutUserInput
+    disconnect?: MatchingQueueWhereInput | boolean
+    delete?: MatchingQueueWhereInput | boolean
+    connect?: MatchingQueueWhereUniqueInput
+    update?: XOR<XOR<MatchingQueueUpdateToOneWithWhereWithoutUserInput, MatchingQueueUpdateWithoutUserInput>, MatchingQueueUncheckedUpdateWithoutUserInput>
   }
 
   export type NotificationUncheckedUpdateManyWithoutUserNestedInput = {
@@ -20361,6 +24849,52 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSentDirectMessagesInput, UserUpdateWithoutSentDirectMessagesInput>, UserUncheckedUpdateWithoutSentDirectMessagesInput>
   }
 
+  export type UserCreateNestedOneWithoutMatchingQueueInput = {
+    create?: XOR<UserCreateWithoutMatchingQueueInput, UserUncheckedCreateWithoutMatchingQueueInput>
+    connectOrCreate?: UserCreateOrConnectWithoutMatchingQueueInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumMatchingTopicFieldUpdateOperationsInput = {
+    set?: $Enums.MatchingTopic
+  }
+
+  export type UserUpdateOneRequiredWithoutMatchingQueueNestedInput = {
+    create?: XOR<UserCreateWithoutMatchingQueueInput, UserUncheckedCreateWithoutMatchingQueueInput>
+    connectOrCreate?: UserCreateOrConnectWithoutMatchingQueueInput
+    upsert?: UserUpsertWithoutMatchingQueueInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutMatchingQueueInput, UserUpdateWithoutMatchingQueueInput>, UserUncheckedUpdateWithoutMatchingQueueInput>
+  }
+
+  export type UserCreateNestedOneWithoutBlockedByInput = {
+    create?: XOR<UserCreateWithoutBlockedByInput, UserUncheckedCreateWithoutBlockedByInput>
+    connectOrCreate?: UserCreateOrConnectWithoutBlockedByInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutBlockedUsersInput = {
+    create?: XOR<UserCreateWithoutBlockedUsersInput, UserUncheckedCreateWithoutBlockedUsersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutBlockedUsersInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutBlockedByNestedInput = {
+    create?: XOR<UserCreateWithoutBlockedByInput, UserUncheckedCreateWithoutBlockedByInput>
+    connectOrCreate?: UserCreateOrConnectWithoutBlockedByInput
+    upsert?: UserUpsertWithoutBlockedByInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutBlockedByInput, UserUpdateWithoutBlockedByInput>, UserUncheckedUpdateWithoutBlockedByInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutBlockedUsersNestedInput = {
+    create?: XOR<UserCreateWithoutBlockedUsersInput, UserUncheckedCreateWithoutBlockedUsersInput>
+    connectOrCreate?: UserCreateOrConnectWithoutBlockedUsersInput
+    upsert?: UserUpsertWithoutBlockedUsersInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutBlockedUsersInput, UserUpdateWithoutBlockedUsersInput>, UserUncheckedUpdateWithoutBlockedUsersInput>
+  }
+
   export type UserCreateNestedOneWithoutCreatedServersInput = {
     create?: XOR<UserCreateWithoutCreatedServersInput, UserUncheckedCreateWithoutCreatedServersInput>
     connectOrCreate?: UserCreateOrConnectWithoutCreatedServersInput
@@ -20533,6 +25067,13 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutServerMembershipsInput, UserUpdateWithoutServerMembershipsInput>, UserUncheckedUpdateWithoutServerMembershipsInput>
   }
 
+  export type ServerChannelReadCreateNestedManyWithoutChannelInput = {
+    create?: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput> | ServerChannelReadCreateWithoutChannelInput[] | ServerChannelReadUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutChannelInput | ServerChannelReadCreateOrConnectWithoutChannelInput[]
+    createMany?: ServerChannelReadCreateManyChannelInputEnvelope
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+  }
+
   export type ChatServerCreateNestedOneWithoutChannelsInput = {
     create?: XOR<ChatServerCreateWithoutChannelsInput, ChatServerUncheckedCreateWithoutChannelsInput>
     connectOrCreate?: ChatServerCreateOrConnectWithoutChannelsInput
@@ -20546,11 +25087,32 @@ export namespace Prisma {
     connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
   }
 
+  export type ServerChannelReadUncheckedCreateNestedManyWithoutChannelInput = {
+    create?: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput> | ServerChannelReadCreateWithoutChannelInput[] | ServerChannelReadUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutChannelInput | ServerChannelReadCreateOrConnectWithoutChannelInput[]
+    createMany?: ServerChannelReadCreateManyChannelInputEnvelope
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+  }
+
   export type ServerMessageUncheckedCreateNestedManyWithoutChannelInput = {
     create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
     connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
     createMany?: ServerMessageCreateManyChannelInputEnvelope
     connect?: ServerMessageWhereUniqueInput | ServerMessageWhereUniqueInput[]
+  }
+
+  export type ServerChannelReadUpdateManyWithoutChannelNestedInput = {
+    create?: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput> | ServerChannelReadCreateWithoutChannelInput[] | ServerChannelReadUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutChannelInput | ServerChannelReadCreateOrConnectWithoutChannelInput[]
+    upsert?: ServerChannelReadUpsertWithWhereUniqueWithoutChannelInput | ServerChannelReadUpsertWithWhereUniqueWithoutChannelInput[]
+    createMany?: ServerChannelReadCreateManyChannelInputEnvelope
+    set?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    disconnect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    delete?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    update?: ServerChannelReadUpdateWithWhereUniqueWithoutChannelInput | ServerChannelReadUpdateWithWhereUniqueWithoutChannelInput[]
+    updateMany?: ServerChannelReadUpdateManyWithWhereWithoutChannelInput | ServerChannelReadUpdateManyWithWhereWithoutChannelInput[]
+    deleteMany?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
   }
 
   export type ChatServerUpdateOneRequiredWithoutChannelsNestedInput = {
@@ -20575,6 +25137,20 @@ export namespace Prisma {
     deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
   }
 
+  export type ServerChannelReadUncheckedUpdateManyWithoutChannelNestedInput = {
+    create?: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput> | ServerChannelReadCreateWithoutChannelInput[] | ServerChannelReadUncheckedCreateWithoutChannelInput[]
+    connectOrCreate?: ServerChannelReadCreateOrConnectWithoutChannelInput | ServerChannelReadCreateOrConnectWithoutChannelInput[]
+    upsert?: ServerChannelReadUpsertWithWhereUniqueWithoutChannelInput | ServerChannelReadUpsertWithWhereUniqueWithoutChannelInput[]
+    createMany?: ServerChannelReadCreateManyChannelInputEnvelope
+    set?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    disconnect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    delete?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    connect?: ServerChannelReadWhereUniqueInput | ServerChannelReadWhereUniqueInput[]
+    update?: ServerChannelReadUpdateWithWhereUniqueWithoutChannelInput | ServerChannelReadUpdateWithWhereUniqueWithoutChannelInput[]
+    updateMany?: ServerChannelReadUpdateManyWithWhereWithoutChannelInput | ServerChannelReadUpdateManyWithWhereWithoutChannelInput[]
+    deleteMany?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
+  }
+
   export type ServerMessageUncheckedUpdateManyWithoutChannelNestedInput = {
     create?: XOR<ServerMessageCreateWithoutChannelInput, ServerMessageUncheckedCreateWithoutChannelInput> | ServerMessageCreateWithoutChannelInput[] | ServerMessageUncheckedCreateWithoutChannelInput[]
     connectOrCreate?: ServerMessageCreateOrConnectWithoutChannelInput | ServerMessageCreateOrConnectWithoutChannelInput[]
@@ -20587,6 +25163,34 @@ export namespace Prisma {
     update?: ServerMessageUpdateWithWhereUniqueWithoutChannelInput | ServerMessageUpdateWithWhereUniqueWithoutChannelInput[]
     updateMany?: ServerMessageUpdateManyWithWhereWithoutChannelInput | ServerMessageUpdateManyWithWhereWithoutChannelInput[]
     deleteMany?: ServerMessageScalarWhereInput | ServerMessageScalarWhereInput[]
+  }
+
+  export type ServerChannelCreateNestedOneWithoutReadsInput = {
+    create?: XOR<ServerChannelCreateWithoutReadsInput, ServerChannelUncheckedCreateWithoutReadsInput>
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutReadsInput
+    connect?: ServerChannelWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutChannelReadsInput = {
+    create?: XOR<UserCreateWithoutChannelReadsInput, UserUncheckedCreateWithoutChannelReadsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChannelReadsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ServerChannelUpdateOneRequiredWithoutReadsNestedInput = {
+    create?: XOR<ServerChannelCreateWithoutReadsInput, ServerChannelUncheckedCreateWithoutReadsInput>
+    connectOrCreate?: ServerChannelCreateOrConnectWithoutReadsInput
+    upsert?: ServerChannelUpsertWithoutReadsInput
+    connect?: ServerChannelWhereUniqueInput
+    update?: XOR<XOR<ServerChannelUpdateToOneWithWhereWithoutReadsInput, ServerChannelUpdateWithoutReadsInput>, ServerChannelUncheckedUpdateWithoutReadsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutChannelReadsNestedInput = {
+    create?: XOR<UserCreateWithoutChannelReadsInput, UserUncheckedCreateWithoutChannelReadsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChannelReadsInput
+    upsert?: UserUpsertWithoutChannelReadsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutChannelReadsInput, UserUpdateWithoutChannelReadsInput>, UserUncheckedUpdateWithoutChannelReadsInput>
   }
 
   export type ServerChannelCreateNestedOneWithoutMessagesInput = {
@@ -20807,6 +25411,13 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedEnumUserPresenceStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.UserPresenceStatus | EnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumUserPresenceStatusFilter<$PrismaModel> | $Enums.UserPresenceStatus
+  }
+
   export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -20819,6 +25430,16 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumUserPresenceStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.UserPresenceStatus | EnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.UserPresenceStatus[] | ListEnumUserPresenceStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumUserPresenceStatusWithAggregatesFilter<$PrismaModel> | $Enums.UserPresenceStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
+    _max?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
   }
 
   export type NestedEnumFriendRequestStatusFilter<$PrismaModel = never> = {
@@ -20855,6 +25476,23 @@ export namespace Prisma {
     _max?: NestedEnumNotificationTypeFilter<$PrismaModel>
   }
 
+  export type NestedEnumMatchingTopicFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchingTopic | EnumMatchingTopicFieldRefInput<$PrismaModel>
+    in?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    not?: NestedEnumMatchingTopicFilter<$PrismaModel> | $Enums.MatchingTopic
+  }
+
+  export type NestedEnumMatchingTopicWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.MatchingTopic | EnumMatchingTopicFieldRefInput<$PrismaModel>
+    in?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    notIn?: $Enums.MatchingTopic[] | ListEnumMatchingTopicFieldRefInput<$PrismaModel>
+    not?: NestedEnumMatchingTopicWithAggregatesFilter<$PrismaModel> | $Enums.MatchingTopic
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumMatchingTopicFilter<$PrismaModel>
+    _max?: NestedEnumMatchingTopicFilter<$PrismaModel>
+  }
+
   export type NestedEnumServerMemberRoleFilter<$PrismaModel = never> = {
     equals?: $Enums.ServerMemberRole | EnumServerMemberRoleFieldRefInput<$PrismaModel>
     in?: $Enums.ServerMemberRole[] | ListEnumServerMemberRoleFieldRefInput<$PrismaModel>
@@ -20881,11 +25519,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
@@ -20904,11 +25548,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -20943,11 +25593,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
@@ -20966,11 +25622,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -20989,10 +25651,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -21012,10 +25680,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -21051,10 +25725,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -21074,10 +25754,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -21097,11 +25783,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -21120,11 +25812,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -21159,11 +25857,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -21182,11 +25886,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -21236,6 +25946,72 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type UserBlockCreateWithoutBlockedInput = {
+    id?: string
+    createdAt?: Date | string
+    blocker: UserCreateNestedOneWithoutBlockedUsersInput
+  }
+
+  export type UserBlockUncheckedCreateWithoutBlockedInput = {
+    id?: string
+    blockerId: string
+    createdAt?: Date | string
+  }
+
+  export type UserBlockCreateOrConnectWithoutBlockedInput = {
+    where: UserBlockWhereUniqueInput
+    create: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput>
+  }
+
+  export type UserBlockCreateManyBlockedInputEnvelope = {
+    data: UserBlockCreateManyBlockedInput | UserBlockCreateManyBlockedInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserBlockCreateWithoutBlockerInput = {
+    id?: string
+    createdAt?: Date | string
+    blocked: UserCreateNestedOneWithoutBlockedByInput
+  }
+
+  export type UserBlockUncheckedCreateWithoutBlockerInput = {
+    id?: string
+    blockedId: string
+    createdAt?: Date | string
+  }
+
+  export type UserBlockCreateOrConnectWithoutBlockerInput = {
+    where: UserBlockWhereUniqueInput
+    create: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput>
+  }
+
+  export type UserBlockCreateManyBlockerInputEnvelope = {
+    data: UserBlockCreateManyBlockerInput | UserBlockCreateManyBlockerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ServerChannelReadCreateWithoutUserInput = {
+    id?: string
+    readAt?: Date | string
+    channel: ServerChannelCreateNestedOneWithoutReadsInput
+  }
+
+  export type ServerChannelReadUncheckedCreateWithoutUserInput = {
+    id?: string
+    channelId: string
+    readAt?: Date | string
+  }
+
+  export type ServerChannelReadCreateOrConnectWithoutUserInput = {
+    where: ServerChannelReadWhereUniqueInput
+    create: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput>
+  }
+
+  export type ServerChannelReadCreateManyUserInputEnvelope = {
+    data: ServerChannelReadCreateManyUserInput | ServerChannelReadCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type DirectMessageCreateWithoutReceiverInput = {
     id?: string
     content: string
@@ -21266,6 +26042,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21278,6 +26055,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -21340,6 +26118,27 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type MatchingQueueCreateWithoutUserInput = {
+    id?: string
+    topic: $Enums.MatchingTopic
+    matchedUserId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MatchingQueueUncheckedCreateWithoutUserInput = {
+    id?: string
+    topic: $Enums.MatchingTopic
+    matchedUserId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type MatchingQueueCreateOrConnectWithoutUserInput = {
+    where: MatchingQueueWhereUniqueInput
+    create: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+  }
+
   export type NotificationCreateWithoutUserInput = {
     id?: string
     type: $Enums.NotificationType
@@ -21395,6 +26194,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channel?: ServerChannelCreateNestedOneWithoutMessagesInput
     server: ChatServerCreateNestedOneWithoutMessagesInput
   }
@@ -21403,6 +26203,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     serverId: string
   }
@@ -21580,6 +26381,74 @@ export namespace Prisma {
     refresh_token_expires_in?: IntNullableFilter<"Account"> | number | null
   }
 
+  export type UserBlockUpsertWithWhereUniqueWithoutBlockedInput = {
+    where: UserBlockWhereUniqueInput
+    update: XOR<UserBlockUpdateWithoutBlockedInput, UserBlockUncheckedUpdateWithoutBlockedInput>
+    create: XOR<UserBlockCreateWithoutBlockedInput, UserBlockUncheckedCreateWithoutBlockedInput>
+  }
+
+  export type UserBlockUpdateWithWhereUniqueWithoutBlockedInput = {
+    where: UserBlockWhereUniqueInput
+    data: XOR<UserBlockUpdateWithoutBlockedInput, UserBlockUncheckedUpdateWithoutBlockedInput>
+  }
+
+  export type UserBlockUpdateManyWithWhereWithoutBlockedInput = {
+    where: UserBlockScalarWhereInput
+    data: XOR<UserBlockUpdateManyMutationInput, UserBlockUncheckedUpdateManyWithoutBlockedInput>
+  }
+
+  export type UserBlockScalarWhereInput = {
+    AND?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+    OR?: UserBlockScalarWhereInput[]
+    NOT?: UserBlockScalarWhereInput | UserBlockScalarWhereInput[]
+    id?: StringFilter<"UserBlock"> | string
+    blockerId?: StringFilter<"UserBlock"> | string
+    blockedId?: StringFilter<"UserBlock"> | string
+    createdAt?: DateTimeFilter<"UserBlock"> | Date | string
+  }
+
+  export type UserBlockUpsertWithWhereUniqueWithoutBlockerInput = {
+    where: UserBlockWhereUniqueInput
+    update: XOR<UserBlockUpdateWithoutBlockerInput, UserBlockUncheckedUpdateWithoutBlockerInput>
+    create: XOR<UserBlockCreateWithoutBlockerInput, UserBlockUncheckedCreateWithoutBlockerInput>
+  }
+
+  export type UserBlockUpdateWithWhereUniqueWithoutBlockerInput = {
+    where: UserBlockWhereUniqueInput
+    data: XOR<UserBlockUpdateWithoutBlockerInput, UserBlockUncheckedUpdateWithoutBlockerInput>
+  }
+
+  export type UserBlockUpdateManyWithWhereWithoutBlockerInput = {
+    where: UserBlockScalarWhereInput
+    data: XOR<UserBlockUpdateManyMutationInput, UserBlockUncheckedUpdateManyWithoutBlockerInput>
+  }
+
+  export type ServerChannelReadUpsertWithWhereUniqueWithoutUserInput = {
+    where: ServerChannelReadWhereUniqueInput
+    update: XOR<ServerChannelReadUpdateWithoutUserInput, ServerChannelReadUncheckedUpdateWithoutUserInput>
+    create: XOR<ServerChannelReadCreateWithoutUserInput, ServerChannelReadUncheckedCreateWithoutUserInput>
+  }
+
+  export type ServerChannelReadUpdateWithWhereUniqueWithoutUserInput = {
+    where: ServerChannelReadWhereUniqueInput
+    data: XOR<ServerChannelReadUpdateWithoutUserInput, ServerChannelReadUncheckedUpdateWithoutUserInput>
+  }
+
+  export type ServerChannelReadUpdateManyWithWhereWithoutUserInput = {
+    where: ServerChannelReadScalarWhereInput
+    data: XOR<ServerChannelReadUpdateManyMutationInput, ServerChannelReadUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type ServerChannelReadScalarWhereInput = {
+    AND?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
+    OR?: ServerChannelReadScalarWhereInput[]
+    NOT?: ServerChannelReadScalarWhereInput | ServerChannelReadScalarWhereInput[]
+    id?: StringFilter<"ServerChannelRead"> | string
+    channelId?: StringFilter<"ServerChannelRead"> | string
+    userId?: StringFilter<"ServerChannelRead"> | string
+    readAt?: DateTimeFilter<"ServerChannelRead"> | Date | string
+  }
+
   export type DirectMessageUpsertWithWhereUniqueWithoutReceiverInput = {
     where: DirectMessageWhereUniqueInput
     update: XOR<DirectMessageUpdateWithoutReceiverInput, DirectMessageUncheckedUpdateWithoutReceiverInput>
@@ -21631,6 +26500,7 @@ export namespace Prisma {
     id?: StringFilter<"ChatServer"> | string
     name?: StringFilter<"ChatServer"> | string
     description?: StringNullableFilter<"ChatServer"> | string | null
+    image?: StringNullableFilter<"ChatServer"> | string | null
     inviteCode?: StringFilter<"ChatServer"> | string
     createdById?: StringFilter<"ChatServer"> | string
     createdAt?: DateTimeFilter<"ChatServer"> | Date | string
@@ -21677,6 +26547,33 @@ export namespace Prisma {
   export type FriendshipUpdateManyWithWhereWithoutFriendInput = {
     where: FriendshipScalarWhereInput
     data: XOR<FriendshipUpdateManyMutationInput, FriendshipUncheckedUpdateManyWithoutFriendInput>
+  }
+
+  export type MatchingQueueUpsertWithoutUserInput = {
+    update: XOR<MatchingQueueUpdateWithoutUserInput, MatchingQueueUncheckedUpdateWithoutUserInput>
+    create: XOR<MatchingQueueCreateWithoutUserInput, MatchingQueueUncheckedCreateWithoutUserInput>
+    where?: MatchingQueueWhereInput
+  }
+
+  export type MatchingQueueUpdateToOneWithWhereWithoutUserInput = {
+    where?: MatchingQueueWhereInput
+    data: XOR<MatchingQueueUpdateWithoutUserInput, MatchingQueueUncheckedUpdateWithoutUserInput>
+  }
+
+  export type MatchingQueueUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type MatchingQueueUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    topic?: EnumMatchingTopicFieldUpdateOperationsInput | $Enums.MatchingTopic
+    matchedUserId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type NotificationUpsertWithWhereUniqueWithoutUserInput = {
@@ -21758,6 +26655,7 @@ export namespace Prisma {
     id?: StringFilter<"ServerMessage"> | string
     content?: StringFilter<"ServerMessage"> | string
     createdAt?: DateTimeFilter<"ServerMessage"> | Date | string
+    pinnedAt?: DateTimeNullableFilter<"ServerMessage"> | Date | string | null
     channelId?: StringNullableFilter<"ServerMessage"> | string | null
     serverId?: StringFilter<"ServerMessage"> | string
     senderId?: StringFilter<"ServerMessage"> | string
@@ -21913,11 +26811,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -21936,11 +26840,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -21964,11 +26874,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -21987,11 +26903,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22042,11 +26964,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22065,11 +26993,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22099,11 +27033,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22122,11 +27062,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22145,10 +27091,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -22168,10 +27120,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22196,10 +27154,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -22219,10 +27183,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22258,10 +27228,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22281,10 +27257,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22315,10 +27297,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22338,10 +27326,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22384,11 +27378,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
@@ -22407,11 +27407,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22475,11 +27481,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
@@ -22498,11 +27510,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22521,10 +27539,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -22544,10 +27568,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22572,11 +27602,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -22595,11 +27631,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22634,10 +27676,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22657,10 +27705,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22691,11 +27745,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22714,7 +27774,144 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutMatchingQueueInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutMatchingQueueInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutMatchingQueueInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutMatchingQueueInput, UserUncheckedCreateWithoutMatchingQueueInput>
+  }
+
+  export type UserUpsertWithoutMatchingQueueInput = {
+    update: XOR<UserUpdateWithoutMatchingQueueInput, UserUncheckedUpdateWithoutMatchingQueueInput>
+    create: XOR<UserCreateWithoutMatchingQueueInput, UserUncheckedCreateWithoutMatchingQueueInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutMatchingQueueInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutMatchingQueueInput, UserUncheckedUpdateWithoutMatchingQueueInput>
+  }
+
+  export type UserUpdateWithoutMatchingQueueInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutMatchingQueueInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
@@ -22722,6 +27919,271 @@ export namespace Prisma {
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutBlockedByInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutBlockedByInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutBlockedByInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutBlockedByInput, UserUncheckedCreateWithoutBlockedByInput>
+  }
+
+  export type UserCreateWithoutBlockedUsersInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutBlockedUsersInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutBlockedUsersInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutBlockedUsersInput, UserUncheckedCreateWithoutBlockedUsersInput>
+  }
+
+  export type UserUpsertWithoutBlockedByInput = {
+    update: XOR<UserUpdateWithoutBlockedByInput, UserUncheckedUpdateWithoutBlockedByInput>
+    create: XOR<UserCreateWithoutBlockedByInput, UserUncheckedCreateWithoutBlockedByInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutBlockedByInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutBlockedByInput, UserUncheckedUpdateWithoutBlockedByInput>
+  }
+
+  export type UserUpdateWithoutBlockedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutBlockedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUpsertWithoutBlockedUsersInput = {
+    update: XOR<UserUpdateWithoutBlockedUsersInput, UserUncheckedUpdateWithoutBlockedUsersInput>
+    create: XOR<UserCreateWithoutBlockedUsersInput, UserUncheckedCreateWithoutBlockedUsersInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutBlockedUsersInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutBlockedUsersInput, UserUncheckedUpdateWithoutBlockedUsersInput>
+  }
+
+  export type UserUpdateWithoutBlockedUsersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutBlockedUsersInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
     receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
     serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
     sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
@@ -22737,10 +28199,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -22760,10 +28228,16 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -22784,6 +28258,7 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadCreateNestedManyWithoutChannelInput
     messages?: ServerMessageCreateNestedManyWithoutChannelInput
   }
 
@@ -22792,6 +28267,7 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadUncheckedCreateNestedManyWithoutChannelInput
     messages?: ServerMessageUncheckedCreateNestedManyWithoutChannelInput
   }
 
@@ -22833,6 +28309,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channel?: ServerChannelCreateNestedOneWithoutMessagesInput
     sender: UserCreateNestedOneWithoutSentServerMessagesInput
   }
@@ -22841,6 +28318,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     senderId: string
   }
@@ -22875,10 +28353,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -22898,10 +28382,16 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -22975,6 +28465,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -22987,6 +28478,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdById: string
     createdAt?: Date | string
@@ -23009,11 +28501,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
@@ -23032,11 +28530,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -23066,6 +28570,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23078,6 +28583,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23106,11 +28612,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
@@ -23129,11 +28641,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -23143,10 +28661,33 @@ export namespace Prisma {
     sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
   }
 
+  export type ServerChannelReadCreateWithoutChannelInput = {
+    id?: string
+    readAt?: Date | string
+    user: UserCreateNestedOneWithoutChannelReadsInput
+  }
+
+  export type ServerChannelReadUncheckedCreateWithoutChannelInput = {
+    id?: string
+    userId: string
+    readAt?: Date | string
+  }
+
+  export type ServerChannelReadCreateOrConnectWithoutChannelInput = {
+    where: ServerChannelReadWhereUniqueInput
+    create: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput>
+  }
+
+  export type ServerChannelReadCreateManyChannelInputEnvelope = {
+    data: ServerChannelReadCreateManyChannelInput | ServerChannelReadCreateManyChannelInput[]
+    skipDuplicates?: boolean
+  }
+
   export type ChatServerCreateWithoutChannelsInput = {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23159,6 +28700,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdById: string
     createdAt?: Date | string
@@ -23176,6 +28718,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     sender: UserCreateNestedOneWithoutSentServerMessagesInput
     server: ChatServerCreateNestedOneWithoutMessagesInput
   }
@@ -23184,6 +28727,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     serverId: string
     senderId: string
   }
@@ -23196,6 +28740,22 @@ export namespace Prisma {
   export type ServerMessageCreateManyChannelInputEnvelope = {
     data: ServerMessageCreateManyChannelInput | ServerMessageCreateManyChannelInput[]
     skipDuplicates?: boolean
+  }
+
+  export type ServerChannelReadUpsertWithWhereUniqueWithoutChannelInput = {
+    where: ServerChannelReadWhereUniqueInput
+    update: XOR<ServerChannelReadUpdateWithoutChannelInput, ServerChannelReadUncheckedUpdateWithoutChannelInput>
+    create: XOR<ServerChannelReadCreateWithoutChannelInput, ServerChannelReadUncheckedCreateWithoutChannelInput>
+  }
+
+  export type ServerChannelReadUpdateWithWhereUniqueWithoutChannelInput = {
+    where: ServerChannelReadWhereUniqueInput
+    data: XOR<ServerChannelReadUpdateWithoutChannelInput, ServerChannelReadUncheckedUpdateWithoutChannelInput>
+  }
+
+  export type ServerChannelReadUpdateManyWithWhereWithoutChannelInput = {
+    where: ServerChannelReadScalarWhereInput
+    data: XOR<ServerChannelReadUpdateManyMutationInput, ServerChannelReadUncheckedUpdateManyWithoutChannelInput>
   }
 
   export type ChatServerUpsertWithoutChannelsInput = {
@@ -23213,6 +28773,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23225,6 +28786,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23249,11 +28811,196 @@ export namespace Prisma {
     data: XOR<ServerMessageUpdateManyMutationInput, ServerMessageUncheckedUpdateManyWithoutChannelInput>
   }
 
+  export type ServerChannelCreateWithoutReadsInput = {
+    id?: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    server: ChatServerCreateNestedOneWithoutChannelsInput
+    messages?: ServerMessageCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelUncheckedCreateWithoutReadsInput = {
+    id?: string
+    serverId: string
+    name: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    messages?: ServerMessageUncheckedCreateNestedManyWithoutChannelInput
+  }
+
+  export type ServerChannelCreateOrConnectWithoutReadsInput = {
+    where: ServerChannelWhereUniqueInput
+    create: XOR<ServerChannelCreateWithoutReadsInput, ServerChannelUncheckedCreateWithoutReadsInput>
+  }
+
+  export type UserCreateWithoutChannelReadsInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    posts?: PostCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestCreateNestedManyWithoutSenderInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutChannelReadsInput = {
+    id?: string
+    userId: string
+    name?: string | null
+    email?: string | null
+    emailVerified?: Date | string | null
+    passwordHash?: string | null
+    image?: string | null
+    bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
+    createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
+    friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
+    friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
+    sentServerMessages?: ServerMessageUncheckedCreateNestedManyWithoutSenderInput
+    sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutReceiverInput
+    serverMemberships?: ServerMemberUncheckedCreateNestedManyWithoutUserInput
+    sentFriendRequests?: FriendRequestUncheckedCreateNestedManyWithoutSenderInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutChannelReadsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutChannelReadsInput, UserUncheckedCreateWithoutChannelReadsInput>
+  }
+
+  export type ServerChannelUpsertWithoutReadsInput = {
+    update: XOR<ServerChannelUpdateWithoutReadsInput, ServerChannelUncheckedUpdateWithoutReadsInput>
+    create: XOR<ServerChannelCreateWithoutReadsInput, ServerChannelUncheckedCreateWithoutReadsInput>
+    where?: ServerChannelWhereInput
+  }
+
+  export type ServerChannelUpdateToOneWithWhereWithoutReadsInput = {
+    where?: ServerChannelWhereInput
+    data: XOR<ServerChannelUpdateWithoutReadsInput, ServerChannelUncheckedUpdateWithoutReadsInput>
+  }
+
+  export type ServerChannelUpdateWithoutReadsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    server?: ChatServerUpdateOneRequiredWithoutChannelsNestedInput
+    messages?: ServerMessageUpdateManyWithoutChannelNestedInput
+  }
+
+  export type ServerChannelUncheckedUpdateWithoutReadsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    serverId?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: ServerMessageUncheckedUpdateManyWithoutChannelNestedInput
+  }
+
+  export type UserUpsertWithoutChannelReadsInput = {
+    update: XOR<UserUpdateWithoutChannelReadsInput, UserUncheckedUpdateWithoutChannelReadsInput>
+    create: XOR<UserCreateWithoutChannelReadsInput, UserUncheckedCreateWithoutChannelReadsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutChannelReadsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutChannelReadsInput, UserUncheckedUpdateWithoutChannelReadsInput>
+  }
+
+  export type UserUpdateWithoutChannelReadsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    posts?: PostUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutChannelReadsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
+    createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
+    friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
+    friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
+    sentServerMessages?: ServerMessageUncheckedUpdateManyWithoutSenderNestedInput
+    sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedFriendRequests?: FriendRequestUncheckedUpdateManyWithoutReceiverNestedInput
+    serverMemberships?: ServerMemberUncheckedUpdateManyWithoutUserNestedInput
+    sentFriendRequests?: FriendRequestUncheckedUpdateManyWithoutSenderNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
   export type ServerChannelCreateWithoutMessagesInput = {
     id?: string
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadCreateNestedManyWithoutChannelInput
     server: ChatServerCreateNestedOneWithoutChannelsInput
   }
 
@@ -23263,6 +29010,7 @@ export namespace Prisma {
     name: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    reads?: ServerChannelReadUncheckedCreateNestedManyWithoutChannelInput
   }
 
   export type ServerChannelCreateOrConnectWithoutMessagesInput = {
@@ -23279,11 +29027,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipCreateNestedManyWithoutUserInput
     friendOf?: FriendshipCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueCreateNestedOneWithoutUserInput
     notifications?: NotificationCreateNestedManyWithoutUserInput
     posts?: PostCreateNestedManyWithoutCreatedByInput
     sentDirectMessages?: DirectMessageCreateNestedManyWithoutSenderInput
@@ -23302,11 +29056,17 @@ export namespace Prisma {
     passwordHash?: string | null
     image?: string | null
     bio?: string | null
+    statusMessage?: string | null
+    presenceStatus?: $Enums.UserPresenceStatus
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
+    blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
+    channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
     receivedDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutReceiverInput
     createdServers?: ChatServerUncheckedCreateNestedManyWithoutCreatedByInput
     friendships?: FriendshipUncheckedCreateNestedManyWithoutUserInput
     friendOf?: FriendshipUncheckedCreateNestedManyWithoutFriendInput
+    matchingQueue?: MatchingQueueUncheckedCreateNestedOneWithoutUserInput
     notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
     posts?: PostUncheckedCreateNestedManyWithoutCreatedByInput
     sentDirectMessages?: DirectMessageUncheckedCreateNestedManyWithoutSenderInput
@@ -23325,6 +29085,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23337,6 +29098,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdById: string
     createdAt?: Date | string
@@ -23366,6 +29128,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUpdateManyWithoutChannelNestedInput
     server?: ChatServerUpdateOneRequiredWithoutChannelsNestedInput
   }
 
@@ -23375,6 +29138,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUncheckedUpdateManyWithoutChannelNestedInput
   }
 
   export type UserUpsertWithoutSentServerMessagesInput = {
@@ -23397,11 +29161,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUpdateOneWithoutUserNestedInput
     notifications?: NotificationUpdateManyWithoutUserNestedInput
     posts?: PostUpdateManyWithoutCreatedByNestedInput
     sentDirectMessages?: DirectMessageUpdateManyWithoutSenderNestedInput
@@ -23420,11 +29190,17 @@ export namespace Prisma {
     passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     image?: NullableStringFieldUpdateOperationsInput | string | null
     bio?: NullableStringFieldUpdateOperationsInput | string | null
+    statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
+    blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
+    channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
     receivedDirectMessages?: DirectMessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdServers?: ChatServerUncheckedUpdateManyWithoutCreatedByNestedInput
     friendships?: FriendshipUncheckedUpdateManyWithoutUserNestedInput
     friendOf?: FriendshipUncheckedUpdateManyWithoutFriendNestedInput
+    matchingQueue?: MatchingQueueUncheckedUpdateOneWithoutUserNestedInput
     notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     posts?: PostUncheckedUpdateManyWithoutCreatedByNestedInput
     sentDirectMessages?: DirectMessageUncheckedUpdateManyWithoutSenderNestedInput
@@ -23449,6 +29225,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23461,6 +29238,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23484,6 +29262,24 @@ export namespace Prisma {
     refresh_token_expires_in?: number | null
   }
 
+  export type UserBlockCreateManyBlockedInput = {
+    id?: string
+    blockerId: string
+    createdAt?: Date | string
+  }
+
+  export type UserBlockCreateManyBlockerInput = {
+    id?: string
+    blockedId: string
+    createdAt?: Date | string
+  }
+
+  export type ServerChannelReadCreateManyUserInput = {
+    id?: string
+    channelId: string
+    readAt?: Date | string
+  }
+
   export type DirectMessageCreateManyReceiverInput = {
     id?: string
     content: string
@@ -23496,6 +29292,7 @@ export namespace Prisma {
     id?: string
     name: string
     description?: string | null
+    image?: string | null
     inviteCode?: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -23533,6 +29330,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     serverId: string
   }
@@ -23619,6 +29417,60 @@ export namespace Prisma {
     refresh_token_expires_in?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
+  export type UserBlockUpdateWithoutBlockedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    blocker?: UserUpdateOneRequiredWithoutBlockedUsersNestedInput
+  }
+
+  export type UserBlockUncheckedUpdateWithoutBlockedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockerId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockUncheckedUpdateManyWithoutBlockedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockerId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockUpdateWithoutBlockerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    blocked?: UserUpdateOneRequiredWithoutBlockedByNestedInput
+  }
+
+  export type UserBlockUncheckedUpdateWithoutBlockerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockedId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserBlockUncheckedUpdateManyWithoutBlockerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    blockedId?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelReadUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    channel?: ServerChannelUpdateOneRequiredWithoutReadsNestedInput
+  }
+
+  export type ServerChannelReadUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channelId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelReadUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    channelId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type DirectMessageUpdateWithoutReceiverInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
@@ -23647,6 +29499,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23659,6 +29512,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23671,6 +29525,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
     inviteCode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -23763,6 +29618,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
     server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
   }
@@ -23771,6 +29627,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     serverId?: StringFieldUpdateOperationsInput | string
   }
@@ -23779,6 +29636,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     serverId?: StringFieldUpdateOperationsInput | string
   }
@@ -23952,6 +29810,7 @@ export namespace Prisma {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     channelId?: string | null
     senderId: string
   }
@@ -23961,6 +29820,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUpdateManyWithoutChannelNestedInput
     messages?: ServerMessageUpdateManyWithoutChannelNestedInput
   }
 
@@ -23969,6 +29829,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reads?: ServerChannelReadUncheckedUpdateManyWithoutChannelNestedInput
     messages?: ServerMessageUncheckedUpdateManyWithoutChannelNestedInput
   }
 
@@ -24004,6 +29865,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channel?: ServerChannelUpdateOneWithoutMessagesNestedInput
     sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
   }
@@ -24012,6 +29874,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
   }
@@ -24020,22 +29883,49 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     channelId?: NullableStringFieldUpdateOperationsInput | string | null
     senderId?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ServerChannelReadCreateManyChannelInput = {
+    id?: string
+    userId: string
+    readAt?: Date | string
   }
 
   export type ServerMessageCreateManyChannelInput = {
     id?: string
     content: string
     createdAt?: Date | string
+    pinnedAt?: Date | string | null
     serverId: string
     senderId: string
+  }
+
+  export type ServerChannelReadUpdateWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutChannelReadsNestedInput
+  }
+
+  export type ServerChannelReadUncheckedUpdateWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ServerChannelReadUncheckedUpdateManyWithoutChannelInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    readAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ServerMessageUpdateWithoutChannelInput = {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sender?: UserUpdateOneRequiredWithoutSentServerMessagesNestedInput
     server?: ChatServerUpdateOneRequiredWithoutMessagesNestedInput
   }
@@ -24044,6 +29934,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serverId?: StringFieldUpdateOperationsInput | string
     senderId?: StringFieldUpdateOperationsInput | string
   }
@@ -24052,6 +29943,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     content?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pinnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     serverId?: StringFieldUpdateOperationsInput | string
     senderId?: StringFieldUpdateOperationsInput | string
   }

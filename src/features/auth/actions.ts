@@ -6,11 +6,23 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signIn } from "~/features/auth";
+import {
+  clearPendingVerificationEmail,
+  getPendingVerificationEmailSession,
+  rememberVerificationEmailSent,
+  VERIFICATION_EMAIL_RESEND_COOLDOWN_SECONDS,
+} from "~/features/auth/lib/verification-email-session";
 import { createAndSendVerificationToken } from "~/features/auth/lib/verification-token";
 import { db } from "~/server/db";
 
 export type AuthFormState = {
   error?: string;
+};
+
+export type ResendVerificationEmailState = {
+  error?: string;
+  message?: string;
+  remainingSeconds?: number;
 };
 
 const userIdSchema = z
@@ -63,10 +75,27 @@ export async function signInWithCredentials(
   });
 
   if (user && !user.emailVerified) {
-    return {
-      error:
-        "メールアドレスの確認が完了していません。確認メールのリンクを開いてください。",
-    };
+    const isValidPassword = user.passwordHash
+      ? await bcrypt.compare(parsed.data.password, user.passwordHash)
+      : false;
+
+    if (!isValidPassword) {
+      return {
+        error: "メールアドレスまたはパスワードが正しくありません",
+      };
+    }
+
+    try {
+      await createAndSendVerificationToken(normalizedEmail);
+      await rememberVerificationEmailSent(normalizedEmail);
+    } catch {
+      return {
+        error:
+          "確認メールの送信に失敗しました。時間をおいてもう一度お試しください",
+      };
+    }
+
+    redirect("/auth/verify-email/sent");
   }
 
   try {
@@ -155,6 +184,7 @@ export async function signUp(
 
   try {
     await createAndSendVerificationToken(normalizedEmail);
+    await rememberVerificationEmailSent(normalizedEmail);
   } catch {
     return {
       error: "確認メールの送信に失敗しました。もう一度お試しください",
@@ -162,4 +192,59 @@ export async function signUp(
   }
 
   redirect("/auth/verify-email/sent");
+}
+
+export async function resendVerificationEmail(
+  _prevState: ResendVerificationEmailState | null,
+  _formData: FormData,
+): Promise<ResendVerificationEmailState> {
+  const pendingSession = await getPendingVerificationEmailSession();
+
+  if (!pendingSession.email) {
+    return {
+      error: "再送するメールアドレスが見つかりません。もう一度登録してください",
+    };
+  }
+
+  if (pendingSession.remainingSeconds > 0) {
+    return {
+      error: "まだ再送できません",
+      remainingSeconds: pendingSession.remainingSeconds,
+    };
+  }
+
+  const user = await db.user.findUnique({
+    where: { email: pendingSession.email },
+  });
+
+  if (!user) {
+    await clearPendingVerificationEmail();
+
+    return {
+      error: "登録情報が見つかりません。もう一度登録してください",
+    };
+  }
+
+  if (user.emailVerified) {
+    await clearPendingVerificationEmail();
+
+    return {
+      message: "メールアドレスはすでに確認済みです。ログインしてください",
+    };
+  }
+
+  try {
+    await createAndSendVerificationToken(pendingSession.email);
+    await rememberVerificationEmailSent(pendingSession.email);
+  } catch {
+    return {
+      error:
+        "確認メールの再送に失敗しました。時間をおいてもう一度お試しください",
+    };
+  }
+
+  return {
+    message: "確認メールを再送しました",
+    remainingSeconds: VERIFICATION_EMAIL_RESEND_COOLDOWN_SECONDS,
+  };
 }

@@ -27,7 +27,7 @@ export function ServerCreate() {
       setMessage(null);
       setServerName("");
       await utils.server.getOverview.invalidate();
-      router.push(`/servers?serverId=${server.id}`);
+      router.push(`/?serverId=${server.id}`);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });

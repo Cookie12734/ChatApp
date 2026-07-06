@@ -3,6 +3,12 @@ import { createTransport } from "nodemailer";
 import { env } from "~/env";
 
 function getBaseUrl() {
+  if (process.env.AUTH_URL) {
+    return process.env.AUTH_URL.replace(/\/$/, "");
+  }
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL.replace(/\/$/, "");
+  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -17,14 +23,24 @@ export async function sendSignupVerificationEmail(to: string, token: string) {
   const url = buildVerificationUrl(token);
 
   if (!env.EMAIL_SERVER) {
+    if (env.NODE_ENV === "production") {
+      throw new Error("EMAIL_SERVER is not configured");
+    }
+
     console.log(`\n[connect] メール確認リンク (${to}):\n${url}\n`);
     return;
   }
 
+  if (!env.EMAIL_FROM) {
+    throw new Error("EMAIL_FROM is not configured");
+  }
+
   const transport = createTransport(env.EMAIL_SERVER);
+  await transport.verify();
+
   const result = await transport.sendMail({
     to,
-    from: env.EMAIL_FROM ?? "noreply@localhost",
+    from: env.EMAIL_FROM,
     subject: "connect - メールアドレスの確認",
     text: `connectへようこそ。\n\n以下のリンクを開いてメールアドレスを確認してください。\n\n${url}\n\nこのリンクは24時間有効です。`,
     html: `
@@ -42,9 +58,9 @@ export async function sendSignupVerificationEmail(to: string, token: string) {
   });
 
   const failed = result.rejected.concat(result.pending).filter(Boolean);
-  if (failed.length) {
+  if (failed.length || result.accepted.length === 0) {
     throw new Error(
-      `メールの送信に失敗しました: ${failed.map(String).join(", ")}`,
+      `メールの送信に失敗しました: ${failed.map(String).join(", ") || "accepted recipient is empty"}`,
     );
   }
 }

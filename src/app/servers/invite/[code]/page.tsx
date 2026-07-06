@@ -35,5 +35,5 @@ export default async function ServerInvitePage({
     skipDuplicates: true,
   });
 
-  redirect("/servers");
+  redirect(`/?serverId=${server.id}`);
 }

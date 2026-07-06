@@ -3,6 +3,12 @@
 import { Camera, Save, UserRound } from "lucide-react";
 import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 
+import {
+  getPresenceDisplayLabel,
+  getPresenceDotClassName,
+  presenceOptions,
+  type PresenceStatus,
+} from "~/features/profile/presence";
 import { api } from "~/trpc/react";
 
 function getErrorMessage(error: unknown) {
@@ -20,6 +26,9 @@ export function ProfileForm() {
   const [image, setImage] = useState("");
   const [imageFailed, setImageFailed] = useState(false);
   const [bio, setBio] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [presenceStatus, setPresenceStatus] =
+    useState<PresenceStatus>("ONLINE");
   const [message, setMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -30,6 +39,8 @@ export function ProfileForm() {
     setImage(profile.data.image ?? "");
     setImageFailed(false);
     setBio(profile.data.bio ?? "");
+    setStatusMessage(profile.data.statusMessage ?? "");
+    setPresenceStatus(profile.data.presenceStatus);
   }, [profile.data]);
 
   const initial = useMemo(() => {
@@ -43,7 +54,10 @@ export function ProfileForm() {
   const updateProfile = api.profile.updateMine.useMutation({
     onSuccess: async () => {
       setMessage("プロフィールを保存しました");
-      await utils.profile.getMine.invalidate();
+      await Promise.all([
+        utils.profile.getMine.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
@@ -77,7 +91,10 @@ export function ProfileForm() {
       setImage(result.image);
       setImageFailed(false);
       setMessage("アイコンをアップロードしました");
-      await utils.profile.getMine.invalidate();
+      await Promise.all([
+        utils.profile.getMine.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     } catch (error) {
       setMessage(getErrorMessage(error));
     } finally {
@@ -109,7 +126,12 @@ export function ProfileForm() {
         onSubmit={(event) => {
           event.preventDefault();
           setMessage(null);
-          updateProfile.mutate({ name, image, bio });
+          updateProfile.mutate({
+            bio,
+            name,
+            presenceStatus,
+            statusMessage,
+          });
         }}
       >
         <div className="space-y-5">
@@ -124,14 +146,12 @@ export function ProfileForm() {
                 <input
                   className="sr-only"
                   type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  accept="image/png,image/jpeg"
                   disabled={isUploading}
                   onChange={uploadIcon}
                 />
               </label>
-              <span className="text-sm text-[#68716b]">
-                PNG / JPG / WebP / GIF、2MBまで
-              </span>
+              <span className="text-sm text-[#68716b]">PNG / JPG、5MBまで</span>
             </div>
           </label>
 
@@ -147,6 +167,41 @@ export function ProfileForm() {
               required
               maxLength={50}
             />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+              <span>ステータス</span>
+              <span className="font-normal text-[#68716b]">
+                {statusMessage.length}/80
+              </span>
+            </span>
+            <input
+              value={statusMessage}
+              onChange={(event) => setStatusMessage(event.target.value)}
+              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              placeholder="いまの気分や作業状況"
+              maxLength={80}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-[#53615a]">
+              オンライン状態
+            </span>
+            <select
+              value={presenceStatus}
+              onChange={(event) =>
+                setPresenceStatus(event.target.value as PresenceStatus)
+              }
+              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            >
+              {presenceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label className="block">
@@ -167,7 +222,14 @@ export function ProfileForm() {
         </div>
 
         {message && (
-          <p className="mt-4 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+          <p
+            className={`mt-4 rounded-md border px-3 py-2 text-sm ${
+              message.includes("保存しました") ||
+              message.includes("アップロードしました")
+                ? "border-sky-200 bg-sky-50 text-sky-900"
+                : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+            }`}
+          >
             {message}
           </p>
         )}
@@ -176,7 +238,7 @@ export function ProfileForm() {
           <button
             type="submit"
             disabled={updateProfile.isPending}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 py-2 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
             {updateProfile.isPending ? "保存中..." : "保存"}
@@ -208,8 +270,21 @@ export function ProfileForm() {
               <p className="font-mono text-sm text-[#68716b]">
                 @{profile.data?.userId}
               </p>
+              <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-[#68716b]">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${getPresenceDotClassName(
+                    presenceStatus,
+                  )}`}
+                />
+                {getPresenceDisplayLabel(presenceStatus)}
+              </p>
             </div>
           </div>
+          {statusMessage.trim() && (
+            <p className="mt-3 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+              {statusMessage.trim()}
+            </p>
+          )}
           <div className="mt-4 rounded-md border border-[#18221f]/10 bg-white p-3 text-sm leading-6 text-[#53615a]">
             {bio.trim() || (
               <span className="inline-flex items-center gap-2 text-[#68716b]">

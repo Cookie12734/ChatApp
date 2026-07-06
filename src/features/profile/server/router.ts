@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { presenceStatuses } from "~/features/profile/presence";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const profileInput = z.object({
@@ -8,12 +9,17 @@ const profileInput = z.object({
     .trim()
     .min(1, "名前を入力してください")
     .max(50, "名前は50文字以内で入力してください"),
-  image: z.string().trim().max(500).optional(),
   bio: z
     .string()
     .trim()
     .max(160, "自己紹介は160文字以内で入力してください")
     .optional(),
+  statusMessage: z
+    .string()
+    .trim()
+    .max(80, "ステータスは80文字以内で入力してください")
+    .optional(),
+  presenceStatus: z.enum(presenceStatuses).optional(),
 });
 
 function normalizeOptionalText(value: string | undefined) {
@@ -36,6 +42,8 @@ export const profileRouter = createTRPCRouter({
         name: true,
         image: true,
         bio: true,
+        statusMessage: true,
+        presenceStatus: true,
       },
     });
   }),
@@ -47,8 +55,11 @@ export const profileRouter = createTRPCRouter({
         where: { id: ctx.session.user.id },
         data: {
           name: input.name.trim(),
-          image: normalizeOptionalText(input.image),
           bio: normalizeOptionalText(input.bio),
+          statusMessage: normalizeOptionalText(input.statusMessage),
+          ...(input.presenceStatus
+            ? { presenceStatus: input.presenceStatus }
+            : {}),
         },
         select: {
           id: true,
@@ -56,6 +67,8 @@ export const profileRouter = createTRPCRouter({
           name: true,
           image: true,
           bio: true,
+          statusMessage: true,
+          presenceStatus: true,
         },
       });
     }),

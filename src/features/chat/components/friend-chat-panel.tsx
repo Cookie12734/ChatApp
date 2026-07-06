@@ -2,30 +2,44 @@
 
 import {
   Check,
+  ChevronDown,
   Hash,
   Inbox,
   LogOut,
   MessageCircle,
   Pencil,
+  Pin,
   Plus,
   Search,
   Send,
   Settings,
+  Shuffle,
   Trash2,
-  UserRound,
   Users,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
 import { type RealtimeChannel } from "@supabase/supabase-js";
 
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
 } from "~/lib/supabase/realtime";
+import { FriendPanel } from "~/features/friend/components/friend-panel";
+import {
+  getPresenceDisplayLabel,
+  getPresenceDotClassName,
+} from "~/features/profile/presence";
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
+import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
@@ -43,6 +57,21 @@ type TypingBroadcastPayload = {
   userId: string;
   userName: string;
 };
+type FriendChatPanelProps = {
+  initialServerId?: string;
+};
+type EditingMessage =
+  | { content: string; kind: "direct"; messageId: string }
+  | { content: string; kind: "server"; messageId: string };
+type MessageContextMenu =
+  | { kind: "direct"; messageId: string; x: number; y: number }
+  | { kind: "server"; messageId: string; x: number; y: number };
+const matchingTopics = [
+  { label: "雑談", value: "CASUAL" },
+  { label: "ゲーム", value: "GAME" },
+  { label: "悩み事", value: "WORRIES" },
+] as const;
+type MatchingTopic = (typeof matchingTopics)[number]["value"];
 
 function getErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
@@ -142,13 +171,22 @@ function FriendListItem({
   );
 }
 
-export function FriendChatPanel() {
+export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const utils = api.useUtils();
-  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+  const [selectedServerId, setSelectedServerId] = useState<string | null>(
+    initialServerId ?? null,
+  );
   const [selectedServerChannelId, setSelectedServerChannelId] = useState<
     string | null
   >(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [isFriendsOpen, setIsFriendsOpen] = useState(false);
+  const [isMatchingOpen, setIsMatchingOpen] = useState(false);
+  const [matchingTopic, setMatchingTopic] = useState<MatchingTopic>("CASUAL");
+  const [matchingState, setMatchingState] = useState<"idle" | "waiting">(
+    "idle",
+  );
+  const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [serverDraft, setServerDraft] = useState("");
   const [newChannelName, setNewChannelName] = useState("");
@@ -160,6 +198,18 @@ export function FriendChatPanel() {
     x: number;
     y: number;
   } | null>(null);
+  const [messageContextMenu, setMessageContextMenu] =
+    useState<MessageContextMenu | null>(null);
+  const [editingMessage, setEditingMessage] = useState<EditingMessage | null>(
+    null,
+  );
+  const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
+  const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
+  const [serverNameDraft, setServerNameDraft] = useState("");
+  const [serverIconFile, setServerIconFile] = useState<File | null>(null);
+  const [serverSettingsMessage, setServerSettingsMessage] = useState<
+    string | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
@@ -176,7 +226,11 @@ export function FriendChatPanel() {
   const realtimeClient = useMemo(() => getSupabaseRealtimeClient(), []);
 
   const friends = api.chat.getFriends.useQuery(undefined, {
-    refetchInterval: realtimeClient ? false : 5000,
+    refetchInterval:
+      matchingState === "waiting" || !realtimeClient ? 5000 : false,
+  });
+  const matchingStatus = api.chat.getMatchingStatus.useQuery(undefined, {
+    refetchInterval: matchingState === "waiting" ? 3000 : false,
   });
   const serverOverview = api.server.getOverview.useQuery(undefined, {
     refetchInterval: 15000,
@@ -188,6 +242,7 @@ export function FriendChatPanel() {
       ) ?? null
     );
   }, [serverOverview.data?.memberships, selectedServerId]);
+  const currentServerUser = serverOverview.data?.currentUser ?? null;
   const selectedServerChannel = useMemo(() => {
     if (!selectedServer) return null;
 
@@ -209,6 +264,9 @@ export function FriendChatPanel() {
       ),
     );
   }, [selectedServer]);
+  const selectedServerBackHref = selectedServer
+    ? `/?serverId=${encodeURIComponent(selectedServer.server.id)}`
+    : "/";
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
@@ -228,6 +286,15 @@ export function FriendChatPanel() {
   );
 
   useEffect(() => {
+    setSelectedServerId(initialServerId ?? null);
+    if (initialServerId) {
+      setSelectedFriendId(null);
+    }
+  }, [initialServerId]);
+
+  useEffect(() => {
+    if (selectedServerId || isFriendsOpen || isMatchingOpen) return;
+
     const data = friends.data;
     if (!data?.length) {
       setSelectedFriendId(null);
@@ -240,7 +307,13 @@ export function FriendChatPanel() {
     ) {
       setSelectedFriendId(data[0]?.friend.id ?? null);
     }
-  }, [friends.data, selectedFriendId]);
+  }, [
+    friends.data,
+    isFriendsOpen,
+    isMatchingOpen,
+    selectedFriendId,
+    selectedServerId,
+  ]);
 
   const conversation = api.chat.getConversation.useQuery(
     { friendId: selectedFriendId ?? "" },
@@ -315,10 +388,44 @@ export function FriendChatPanel() {
   }, [channelContextMenu]);
 
   useEffect(() => {
+    if (!messageContextMenu) return;
+
+    const closeMenu = () => setMessageContextMenu(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    };
+
+    window.addEventListener("click", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("click", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [messageContextMenu]);
+
+  useEffect(() => {
+    setMessageContextMenu(null);
+    setEditingMessage(null);
+  }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
+
+  useEffect(() => {
     if (conversation.data) {
       void utils.chat.getFriends.invalidate();
     }
   }, [conversation.data, utils.chat.getFriends]);
+
+  useEffect(() => {
+    if (serverConversation.data) {
+      void utils.server.getOverview.invalidate();
+    }
+  }, [serverConversation.data, utils.server.getOverview]);
 
   useEffect(() => {
     if (!realtimeClient || !friends.data?.length) {
@@ -462,6 +569,20 @@ export function FriendChatPanel() {
     [currentUserId, currentUserName, selectedFriendId],
   );
 
+  const openDirectFriend = useCallback((friendId: string) => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setIsFriendsOpen(false);
+    setIsMatchingOpen(false);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setSelectedFriendId(friendId);
+    setServerMessage(null);
+  }, []);
+
   const handleDraftChange = (value: string) => {
     setDraft(value);
 
@@ -489,6 +610,77 @@ export function FriendChatPanel() {
       broadcastTyping(false);
     }, 1600);
   };
+
+  const cancelMatching = api.chat.cancelMatching.useMutation({
+    onSuccess: async () => {
+      await utils.chat.getMatchingStatus.invalidate();
+    },
+    onError: (error) => setMatchingMessage(getErrorMessage(error)),
+  });
+
+  const matchRandom = api.chat.matchRandom.useMutation({
+    onSuccess: async (result) => {
+      if (result.status === "matched") {
+        openDirectFriend(result.friend.id);
+        setMatchingState("idle");
+        setMatchingMessage(
+          `${getDisplayName(result.friend)}さんとマッチしました`,
+        );
+        await Promise.all([
+          utils.chat.getFriends.invalidate(),
+          utils.chat.getConversation.invalidate({ friendId: result.friend.id }),
+        ]);
+        return;
+      }
+
+      setMatchingState("waiting");
+      setMatchingMessage("同じ話題の相手を探しています...");
+      await utils.chat.getMatchingStatus.invalidate();
+    },
+    onError: (error) => setMatchingMessage(getErrorMessage(error)),
+  });
+
+  useEffect(() => {
+    const status = matchingStatus.data;
+    if (!status) {
+      return;
+    }
+
+    if (status.status === "waiting" && matchingState === "idle") {
+      setMatchingTopic(status.topic);
+      setMatchingState("waiting");
+      setIsMatchingOpen(true);
+      setMatchingMessage("同じ話題の相手を探しています...");
+      return;
+    }
+
+    if (status.status === "idle" && matchingState === "waiting") {
+      setMatchingState("idle");
+      setMatchingMessage(null);
+      return;
+    }
+
+    if (status.status !== "matched") {
+      return;
+    }
+
+    const friend = status.friend;
+    openDirectFriend(friend.id);
+    setMatchingState("idle");
+    setMatchingMessage(`${getDisplayName(friend)}さんとマッチしました`);
+    void Promise.all([
+      utils.chat.getFriends.invalidate(),
+      utils.chat.getConversation.invalidate({ friendId: friend.id }),
+    ]);
+    cancelMatching.mutate();
+  }, [
+    cancelMatching,
+    matchingState,
+    matchingStatus.data,
+    openDirectFriend,
+    utils.chat.getConversation,
+    utils.chat.getFriends,
+  ]);
 
   const sendMessage = api.chat.sendMessage.useMutation({
     onSuccess: async (createdMessage, variables) => {
@@ -578,14 +770,126 @@ export function FriendChatPanel() {
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
-  const selectFriend = (friendId: string) => {
+  const updateDirectMessage = api.chat.updateMessage.useMutation({
+    onSuccess: async () => {
+      setEditingMessage(null);
+      setMessageContextMenu(null);
+      setMessage(null);
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+
+  const deleteDirectMessage = api.chat.deleteMessage.useMutation({
+    onSuccess: async () => {
+      setMessageContextMenu(null);
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+
+  const updateServerMessage = api.server.updateMessage.useMutation({
+    onSuccess: async () => {
+      setEditingMessage(null);
+      setMessageContextMenu(null);
+      setServerMessage(null);
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const toggleServerMessagePin = api.server.toggleMessagePin.useMutation({
+    onSuccess: async () => {
+      setMessageContextMenu(null);
+      setServerMessage(null);
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const deleteServerMessage = api.server.deleteMessage.useMutation({
+    onSuccess: async () => {
+      setMessageContextMenu(null);
+      await Promise.all([
+        utils.server.getConversation.invalidate({
+          channelId: selectedServerChannel?.id,
+          serverId: selectedServerId ?? "",
+        }),
+        utils.server.getOverview.invalidate(),
+      ]);
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const leaveServer = api.server.leave.useMutation({
+    onSuccess: async () => {
+      setSelectedServerId(null);
+      setSelectedServerChannelId(null);
+      setIsFriendsOpen(false);
+      setIsMatchingOpen(false);
+      setIsServerSettingsOpen(false);
+      setServerMessage(null);
+      setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerMessage(getErrorMessage(error)),
+  });
+
+  const updateServer = api.server.update.useMutation({
+    onSuccess: async () => {
+      setServerIconFile(null);
+      setServerSettingsMessage("サーバー設定を保存しました");
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
+  });
+
+  const selectHome = () => {
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
+    setIsFriendsOpen(false);
+    setIsMatchingOpen(false);
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
+    setServerMessage(null);
+    setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+  };
+
+  const selectFriend = (friendId: string) => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setIsFriendsOpen(false);
+    setIsMatchingOpen(false);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setSelectedFriendId(friendId);
     setServerMessage(null);
   };
@@ -593,11 +897,15 @@ export function FriendChatPanel() {
   const selectServer = (membership: ChatServerMembership) => {
     setSelectedServerId(membership.server.id);
     setSelectedServerChannelId(membership.server.channels[0]?.id ?? null);
+    setIsFriendsOpen(false);
+    setIsMatchingOpen(false);
+    setSelectedFriendId(null);
     setEditingChannelId(null);
     setEditingChannelName("");
     setNewChannelName("");
     setIsNewChannelFormOpen(false);
     setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
     setServerMessage(null);
     setMessage(null);
   };
@@ -623,6 +931,118 @@ export function FriendChatPanel() {
     setChannelContextMenu(null);
     setEditingChannelId(channel.id);
     setEditingChannelName(channel.name);
+  };
+
+  const handleStartMatching = () => {
+    setMatchingMessage(null);
+    matchRandom.mutate({ topic: matchingTopic });
+  };
+
+  const openMatching = () => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setIsFriendsOpen(false);
+    setSelectedFriendId(null);
+    setIsMatchingOpen(true);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
+    setServerMessage(null);
+    setMessage(null);
+  };
+
+  const openFriends = () => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setSelectedFriendId(null);
+    setIsFriendsOpen(true);
+    setIsMatchingOpen(false);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
+    setServerMessage(null);
+    setMessage(null);
+  };
+
+  const openDirectMessages = () => {
+    setSelectedServerId(null);
+    setSelectedServerChannelId(null);
+    setIsFriendsOpen(false);
+    setIsMatchingOpen(false);
+    setEditingChannelId(null);
+    setEditingChannelName("");
+    setNewChannelName("");
+    setIsNewChannelFormOpen(false);
+    setChannelContextMenu(null);
+    setIsServerMenuOpen(false);
+    setServerMessage(null);
+    setMessage(null);
+    setSelectedFriendId(friends.data?.[0]?.friend.id ?? null);
+  };
+
+  const handleCancelMatching = () => {
+    setMatchingState("idle");
+    setMatchingMessage(null);
+    cancelMatching.mutate();
+  };
+
+  const openServerSettings = () => {
+    if (!selectedServer) return;
+
+    setServerNameDraft(selectedServer.server.name);
+    setServerIconFile(null);
+    setServerSettingsMessage(null);
+    setIsServerMenuOpen(false);
+    setIsServerSettingsOpen(true);
+  };
+
+  const handleServerSettingsSubmit = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    if (!selectedServer?.server.id || !serverNameDraft.trim()) return;
+
+    try {
+      if (serverIconFile) {
+        const formData = new FormData();
+        formData.append("icon", serverIconFile);
+        const response = await fetch(
+          `/api/servers/${selectedServer.server.id}/icon`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => null)) as {
+            message?: string;
+          } | null;
+          throw new Error(data?.message ?? "アイコンの保存に失敗しました");
+        }
+      }
+
+      updateServer.mutate({
+        description: selectedServer.server.description ?? undefined,
+        name: serverNameDraft,
+        serverId: selectedServer.server.id,
+      });
+    } catch (error) {
+      setServerSettingsMessage(getErrorMessage(error));
+    }
+  };
+
+  const handleDeleteServer = () => {
+    if (!selectedServer?.server.id) return;
+    if (!window.confirm("このサーバーを削除しますか？")) return;
+
+    leaveServer.mutate({ serverId: selectedServer.server.id });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -687,90 +1107,207 @@ export function FriendChatPanel() {
     });
   };
 
+  const openDirectMessageMenu = (
+    event: MouseEvent<HTMLElement>,
+    chatMessage: { id: string; senderId: string },
+  ) => {
+    if (chatMessage.senderId !== conversation.data?.currentUserId) return;
+
+    event.preventDefault();
+    setChannelContextMenu(null);
+    setMessageContextMenu({
+      kind: "direct",
+      messageId: chatMessage.id,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 136)),
+    });
+  };
+
+  const openServerMessageMenu = (
+    event: MouseEvent<HTMLElement>,
+    chatMessage: { id: string; senderId: string },
+  ) => {
+    const isMine =
+      chatMessage.senderId === serverConversation.data?.currentUser.id;
+    if (!isMine && !isSelectedServerOwner) return;
+
+    event.preventDefault();
+    setChannelContextMenu(null);
+    setMessageContextMenu({
+      kind: "server",
+      messageId: chatMessage.id,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 144)),
+    });
+  };
+
+  const startEditingMessage = (
+    kind: EditingMessage["kind"],
+    chatMessage: { content: string; id: string },
+  ) => {
+    setMessageContextMenu(null);
+    setEditingMessage({
+      content: chatMessage.content,
+      kind,
+      messageId: chatMessage.id,
+    });
+  };
+
+  const handleMessageEditSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingMessage?.content.trim()) return;
+
+    if (editingMessage.kind === "direct") {
+      updateDirectMessage.mutate({
+        content: editingMessage.content,
+        messageId: editingMessage.messageId,
+      });
+      return;
+    }
+
+    if (!selectedServer?.server.id) return;
+    updateServerMessage.mutate({
+      content: editingMessage.content,
+      messageId: editingMessage.messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleToggleServerMessagePin = (messageId: string) => {
+    if (!selectedServer?.server.id) return;
+
+    toggleServerMessagePin.mutate({
+      messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleDeleteDirectMessage = (messageId: string) => {
+    setMessageContextMenu(null);
+    if (!window.confirm("このメッセージを削除しますか？")) return;
+    deleteDirectMessage.mutate({ messageId });
+  };
+
+  const handleDeleteServerMessage = (messageId: string) => {
+    if (!selectedServer?.server.id) return;
+    setMessageContextMenu(null);
+    if (!window.confirm("このメッセージを削除しますか？")) return;
+
+    deleteServerMessage.mutate({
+      messageId,
+      serverId: selectedServer.server.id,
+    });
+  };
+
+  const handleLeaveServer = () => {
+    if (!selectedServer?.server.id) return;
+    const action =
+      selectedServer.role === "OWNER"
+        ? "サーバーを削除して退出しますか？"
+        : "このサーバーから退出しますか？";
+    if (!window.confirm(action)) return;
+
+    leaveServer.mutate({ serverId: selectedServer.server.id });
+  };
+
   const serverConversationData = serverConversation.data ?? null;
   const serverMessages = serverConversationData?.messages ?? [];
   const directConversation = conversation.data ?? null;
   const directMessages = directConversation?.messages ?? [];
+  const serverMessageContextTarget =
+    messageContextMenu?.kind === "server"
+      ? serverMessages.find(
+          (chatMessage) => chatMessage.id === messageContextMenu.messageId,
+        )
+      : null;
+  const directMessageContextTarget =
+    messageContextMenu?.kind === "direct"
+      ? directMessages.find(
+          (chatMessage) => chatMessage.id === messageContextMenu.messageId,
+        )
+      : null;
+  const messageContextTarget =
+    serverMessageContextTarget ?? directMessageContextTarget;
+  const isDirectContextMessageMine =
+    directMessageContextTarget?.senderId === directConversation?.currentUserId;
+  const isServerContextMessageMine =
+    serverMessageContextTarget?.senderId ===
+    serverConversationData?.currentUser.id;
+  const canEditContextMessage = [
+    isDirectContextMessageMine,
+    isServerContextMessageMine,
+  ].some(Boolean);
+  const canDeleteContextMessage = [
+    isDirectContextMessageMine,
+    isServerContextMessageMine,
+    Boolean(serverMessageContextTarget && isSelectedServerOwner),
+  ].some(Boolean);
 
   return (
-    <main className="flex min-h-screen overflow-hidden bg-[#f6f0e4] text-[#18221f]">
-      <aside className="flex w-[72px] shrink-0 flex-col items-center gap-3 bg-[#18221f] px-3 py-4">
-        <Link
-          href="/"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] transition hover:rounded-xl"
-          aria-label="connect"
-        >
-          <Image
-            src="/connect-icon.png"
-            alt=""
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-xl object-cover"
-            priority
-          />
-        </Link>
-        <div className="h-px w-8 bg-[#f6f0e4]/25" />
-        <Link
-          href="/friends"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
-          aria-label="フレンド"
-        >
-          <Users className="h-5 w-5" aria-hidden="true" />
-        </Link>
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
-          {serverOverview.data?.memberships.map((membership) => (
-            <button
-              key={membership.id}
-              type="button"
-              onClick={() => selectServer(membership)}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition hover:rounded-xl ${
-                membership.server.id === selectedServerId
-                  ? "bg-[#d8efee] text-[#114744]"
-                  : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
-              }`}
-              aria-label={`${membership.server.name}を開く`}
-              title={membership.server.name}
-            >
-              {membership.server.name.slice(0, 2).toUpperCase()}
-            </button>
-          ))}
-          <Link
-            href="/servers/new"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
-            aria-label="サーバーを作成"
-            title="サーバーを作成"
-          >
-            <Plus className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        </div>
-        <div className="mt-auto flex flex-col gap-3">
-          <Link
-            href="/profile"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="プロフィール"
-          >
-            <UserRound className="h-5 w-5" aria-hidden="true" />
-          </Link>
-          <Link
-            href="/api/auth/signout"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="ログアウト"
-          >
-            <LogOut className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        </div>
-      </aside>
-
-      <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0]">
+    <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
+      <ServerRail
+        memberships={serverOverview.data?.memberships}
+        onSelectHome={selectHome}
+        onSelectServer={selectServer}
+        selectedServerId={selectedServerId}
+      />
+      <aside
+        className={`${
+          selectedServer || selectedFriendId || isFriendsOpen || isMatchingOpen
+            ? "hidden md:flex"
+            : "flex"
+        } w-[calc(100vw-4rem)] max-w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px]`}
+      >
         {selectedServer ? (
           <>
-            <div className="border-b border-[#18221f]/15 px-4 py-4 shadow-sm">
-              <h2 className="truncate text-lg font-semibold">
-                {selectedServer.server.name}
-              </h2>
-              <p className="mt-1 text-xs text-[#68716b]">
-                {selectedServer.server.members.length} メンバー
-              </p>
+            <div className="relative border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsServerMenuOpen((isOpen) => !isOpen)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-[#fff8ed]"
+                aria-expanded={isServerMenuOpen}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-lg font-semibold">
+                    {selectedServer.server.name}
+                  </span>
+                  <span className="mt-1 block text-xs text-[#68716b]">
+                    {selectedServer.server.members.length} メンバー
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-[#68716b] transition ${
+                    isServerMenuOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+              {isServerMenuOpen && (
+                <div className="absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm shadow-xl">
+                  {isSelectedServerOwner && (
+                    <button
+                      type="button"
+                      onClick={openServerSettings}
+                      className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition hover:bg-[#e4f2dc]"
+                    >
+                      <Settings className="h-4 w-4" aria-hidden="true" />
+                      サーバー設定
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsServerMenuOpen(false);
+                      handleLeaveServer();
+                    }}
+                    disabled={leaveServer.isPending}
+                    className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-50"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+                    {selectedServer.role === "OWNER" ? "削除して退出" : "退出"}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
@@ -868,7 +1405,7 @@ export function FriendChatPanel() {
                             !editingChannelName.trim() ||
                             updateChannel.isPending
                           }
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-not-allowed disabled:opacity-45"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-600 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-45"
                           aria-label="保存"
                           title="保存"
                         >
@@ -905,6 +1442,7 @@ export function FriendChatPanel() {
                         type="button"
                         onClick={() => {
                           setSelectedServerChannelId(channel.id);
+                          setIsServerMenuOpen(false);
                           setServerMessage(null);
                         }}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -913,6 +1451,11 @@ export function FriendChatPanel() {
                         <span className="truncate text-sm font-medium">
                           {channel.name}
                         </span>
+                        {channel.unreadCount > 0 && (
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#cc5f2f] px-1 text-[11px] font-semibold text-white">
+                            {channel.unreadCount}
+                          </span>
+                        )}
                       </button>
                     </div>
                   );
@@ -921,12 +1464,36 @@ export function FriendChatPanel() {
             </div>
 
             <div className="mt-auto border-t border-[#18221f]/15 px-4 py-3">
-              <p className="text-xs font-semibold text-[#68716b] uppercase">
-                あなたの権限
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                {selectedServer.role === "OWNER" ? "管理者" : "メンバー"}
-              </p>
+              {currentServerUser && (
+                <Link
+                  href={`/profile?from=${encodeURIComponent(
+                    selectedServerBackHref,
+                  )}`}
+                  className="flex items-center gap-3 rounded-md px-1 py-1 transition hover:bg-[#fff8ed]"
+                >
+                  <span className="relative shrink-0">
+                    <Avatar
+                      user={currentServerUser}
+                      className="h-10 w-10 rounded-full border border-black/10"
+                    />
+                    <span
+                      className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] ${getPresenceDotClassName(
+                        currentServerUser.presenceStatus,
+                      )}`}
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold">
+                      {getDisplayName(currentServerUser)}
+                    </span>
+                    <span className="block truncate text-xs text-[#68716b]">
+                      {getPresenceDisplayLabel(
+                        currentServerUser.presenceStatus,
+                      )}
+                    </span>
+                  </span>
+                </Link>
+              )}
             </div>
           </>
         ) : (
@@ -936,25 +1503,50 @@ export function FriendChatPanel() {
                 <Search className="h-4 w-4" aria-hidden="true" />
                 <input
                   className="min-w-0 flex-1 bg-transparent text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
-                  placeholder="会話を探す"
+                  placeholder="フレンドを検索"
                 />
               </label>
             </div>
 
             <div className="space-y-1 px-2 py-3">
-              <Link
-                href="/friends"
-                className="flex h-10 items-center gap-3 rounded-md px-2 text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+              <button
+                type="button"
+                onClick={openFriends}
+                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                  isFriendsOpen
+                    ? "bg-[#18221f] text-[#f6f0e4]"
+                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                }`}
               >
                 <Users className="h-5 w-5" aria-hidden="true" />
                 <span className="text-sm font-medium">フレンド</span>
-              </Link>
-              <div className="flex h-10 items-center gap-3 rounded-md bg-[#18221f] px-2 text-[#f6f0e4]">
+              </button>
+              <button
+                type="button"
+                onClick={openDirectMessages}
+                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                  !isFriendsOpen && !isMatchingOpen
+                    ? "bg-[#18221f] text-[#f6f0e4]"
+                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                }`}
+              >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
                 <span className="text-sm font-medium">
                   ダイレクトメッセージ
                 </span>
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={openMatching}
+                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                  isMatchingOpen
+                    ? "bg-[#18221f] text-[#f6f0e4]"
+                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                }`}
+              >
+                <Shuffle className="h-5 w-5" aria-hidden="true" />
+                <span className="text-sm font-medium">マッチング</span>
+              </button>
             </div>
 
             <div className="flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide text-[#68716b] uppercase">
@@ -997,10 +1589,27 @@ export function FriendChatPanel() {
       <section className="flex min-w-0 flex-1 flex-col bg-[#fff8ed]">
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#18221f]/15 bg-[#e4f2dc] px-4 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
-            <Hash
-              className="h-5 w-5 shrink-0 text-[#68716b]"
-              aria-hidden="true"
-            />
+            {selectedServer ? (
+              <Hash
+                className="h-5 w-5 shrink-0 text-[#68716b]"
+                aria-hidden="true"
+              />
+            ) : isFriendsOpen ? (
+              <Users
+                className="h-5 w-5 shrink-0 text-[#68716b]"
+                aria-hidden="true"
+              />
+            ) : isMatchingOpen ? (
+              <Shuffle
+                className="h-5 w-5 shrink-0 text-[#68716b]"
+                aria-hidden="true"
+              />
+            ) : (
+              <MessageCircle
+                className="h-5 w-5 shrink-0 text-[#68716b]"
+                aria-hidden="true"
+              />
+            )}
             {selectedServer ? (
               <div className="min-w-0">
                 <h1 className="truncate font-semibold">
@@ -1025,17 +1634,23 @@ export function FriendChatPanel() {
                   </p>
                 </div>
               </>
+            ) : isFriendsOpen ? (
+              <h1 className="font-semibold">フレンド</h1>
+            ) : isMatchingOpen ? (
+              <h1 className="font-semibold">マッチング</h1>
             ) : (
               <h1 className="font-semibold">ダイレクトメッセージ</h1>
             )}
           </div>
-          <Link
-            href="/profile"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="設定"
-          >
-            <Settings className="h-5 w-5" aria-hidden="true" />
-          </Link>
+          <ProfileSettingsDialog>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+              aria-label="設定"
+            >
+              <Settings className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </ProfileSettingsDialog>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -1083,10 +1698,16 @@ export function FriendChatPanel() {
                         const author = isMine
                           ? { userId: "me", name: "あなた", image: null }
                           : chatMessage.sender;
+                        const isEditing =
+                          editingMessage?.kind === "server" &&
+                          editingMessage.messageId === chatMessage.id;
 
                         return (
                           <article
                             key={chatMessage.id}
+                            onContextMenu={(event) =>
+                              openServerMessageMenu(event, chatMessage)
+                            }
                             className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
                               isMine ? "flex-row-reverse" : ""
                             }`}
@@ -1111,16 +1732,68 @@ export function FriendChatPanel() {
                                 <time className="text-xs text-[#68716b]">
                                   {formatTime(chatMessage.createdAt)}
                                 </time>
+                                {chatMessage.pinnedAt && (
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
+                                    <Pin
+                                      className="h-3 w-3"
+                                      aria-hidden="true"
+                                    />
+                                    ピン留め
+                                  </span>
+                                )}
                               </div>
-                              <p
-                                className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                  isMine
-                                    ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                    : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                }`}
-                              >
-                                {chatMessage.content}
-                              </p>
+                              {isEditing ? (
+                                <form
+                                  onSubmit={handleMessageEditSubmit}
+                                  className="space-y-2"
+                                >
+                                  <textarea
+                                    value={editingMessage.content}
+                                    onChange={(event) =>
+                                      setEditingMessage({
+                                        ...editingMessage,
+                                        content: event.target.value,
+                                      })
+                                    }
+                                    className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                    maxLength={1000}
+                                    autoFocus
+                                  />
+                                  <div
+                                    className={`flex gap-2 ${
+                                      isMine ? "justify-end" : ""
+                                    }`}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMessage(null)}
+                                      className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                    >
+                                      キャンセル
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        !editingMessage.content.trim() ||
+                                        updateServerMessage.isPending
+                                      }
+                                      className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                    >
+                                      保存
+                                    </button>
+                                  </div>
+                                </form>
+                              ) : (
+                                <p
+                                  className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                    isMine
+                                      ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                      : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                  }`}
+                                >
+                                  {chatMessage.content}
+                                </p>
+                              )}
                             </div>
                           </article>
                         );
@@ -1131,106 +1804,178 @@ export function FriendChatPanel() {
                 </>
               ) : (
                 <>
-                  {!selectedFriendId && !friends.isLoading && (
+                  {isFriendsOpen && <FriendPanel />}
+
+                  {isMatchingOpen && (
                     <div className="flex h-full items-center justify-center">
                       <div className="max-w-sm text-center">
-                        <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
-                        <h2 className="text-xl font-semibold">
-                          DMを選択してください
-                        </h2>
+                        <Shuffle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
+                        <h2 className="text-xl font-semibold">マッチング</h2>
                         <p className="mt-2 text-sm leading-6 text-[#53615a]">
-                          フレンド一覧から相手を選ぶと、会話を始められます。
+                          話したいことを選んで、同じ話題の相手を探せます。
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {conversation.isLoading && selectedFriendId && (
-                    <div className="space-y-4">
-                      {[0, 1, 2].map((item) => (
-                        <div key={item} className="flex gap-3">
-                          <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
-                          <div className="space-y-2">
-                            <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
-                            <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
-                          </div>
+                  {!isMatchingOpen &&
+                    !isFriendsOpen &&
+                    !selectedFriendId &&
+                    !friends.isLoading && (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="max-w-sm text-center">
+                          <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
+                          <h2 className="text-xl font-semibold">
+                            DMを選択してください
+                          </h2>
+                          <p className="mt-2 text-sm leading-6 text-[#53615a]">
+                            フレンド一覧から相手を選ぶと、会話を始められます。
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {directConversation && directMessages.length === 0 && (
-                    <div className="flex min-h-full items-end pb-8">
-                      <div>
-                        <Avatar
-                          user={directConversation.friend}
-                          className="mb-4 h-20 w-20 rounded-full border border-black/10"
-                        />
-                        <h2 className="text-3xl font-semibold">
-                          {getDisplayName(directConversation.friend)}
-                        </h2>
-                        <p className="mt-2 text-[#53615a]">
-                          @{directConversation.friend.userId}{" "}
-                          とのDMの始まりです。
-                        </p>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {directConversation && directMessages.length > 0 && (
-                    <div className="space-y-1">
-                      {directMessages.map((chatMessage) => {
-                        const isMine =
-                          chatMessage.senderId ===
-                          directConversation.currentUserId;
-                        const author = isMine
-                          ? { userId: "me", name: "あなた", image: null }
-                          : directConversation.friend;
+                  {!isFriendsOpen &&
+                    conversation.isLoading &&
+                    selectedFriendId && (
+                      <div className="space-y-4">
+                        {[0, 1, 2].map((item) => (
+                          <div key={item} className="flex gap-3">
+                            <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
+                              <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                        return (
-                          <article
-                            key={chatMessage.id}
-                            className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
-                              isMine ? "flex-row-reverse" : ""
-                            }`}
-                          >
-                            <Avatar
-                              user={author}
-                              className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
-                            />
-                            <div
-                              className={`max-w-[min(760px,82%)] min-w-0 ${
-                                isMine ? "text-right" : ""
+                  {!isFriendsOpen &&
+                    directConversation &&
+                    directMessages.length === 0 && (
+                      <div className="flex min-h-full items-end pb-8">
+                        <div>
+                          <Avatar
+                            user={directConversation.friend}
+                            className="mb-4 h-20 w-20 rounded-full border border-black/10"
+                          />
+                          <h2 className="text-3xl font-semibold">
+                            {getDisplayName(directConversation.friend)}
+                          </h2>
+                          <p className="mt-2 text-[#53615a]">
+                            @{directConversation.friend.userId}{" "}
+                            とのDMの始まりです。
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                  {!isFriendsOpen &&
+                    directConversation &&
+                    directMessages.length > 0 && (
+                      <div className="space-y-1">
+                        {directMessages.map((chatMessage) => {
+                          const isMine =
+                            chatMessage.senderId ===
+                            directConversation.currentUserId;
+                          const author = isMine
+                            ? { userId: "me", name: "あなた", image: null }
+                            : directConversation.friend;
+                          const isEditing =
+                            editingMessage?.kind === "direct" &&
+                            editingMessage.messageId === chatMessage.id;
+
+                          return (
+                            <article
+                              key={chatMessage.id}
+                              onContextMenu={(event) =>
+                                openDirectMessageMenu(event, chatMessage)
+                              }
+                              className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
+                                isMine ? "flex-row-reverse" : ""
                               }`}
                             >
+                              <Avatar
+                                user={author}
+                                className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
+                              />
                               <div
-                                className={`mb-1 flex items-baseline gap-2 ${
-                                  isMine ? "justify-end" : ""
+                                className={`max-w-[min(760px,82%)] min-w-0 ${
+                                  isMine ? "text-right" : ""
                                 }`}
                               >
-                                <span className="text-sm font-semibold text-[#18221f]">
-                                  {getDisplayName(author)}
-                                </span>
-                                <time className="text-xs text-[#68716b]">
-                                  {formatTime(chatMessage.createdAt)}
-                                </time>
+                                <div
+                                  className={`mb-1 flex items-baseline gap-2 ${
+                                    isMine ? "justify-end" : ""
+                                  }`}
+                                >
+                                  <span className="text-sm font-semibold text-[#18221f]">
+                                    {getDisplayName(author)}
+                                  </span>
+                                  <time className="text-xs text-[#68716b]">
+                                    {formatTime(chatMessage.createdAt)}
+                                  </time>
+                                </div>
+                                {isEditing ? (
+                                  <form
+                                    onSubmit={handleMessageEditSubmit}
+                                    className="space-y-2"
+                                  >
+                                    <textarea
+                                      value={editingMessage.content}
+                                      onChange={(event) =>
+                                        setEditingMessage({
+                                          ...editingMessage,
+                                          content: event.target.value,
+                                        })
+                                      }
+                                      className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                      maxLength={1000}
+                                      autoFocus
+                                    />
+                                    <div
+                                      className={`flex gap-2 ${
+                                        isMine ? "justify-end" : ""
+                                      }`}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMessage(null)}
+                                        className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                      >
+                                        キャンセル
+                                      </button>
+                                      <button
+                                        type="submit"
+                                        disabled={
+                                          !editingMessage.content.trim() ||
+                                          updateDirectMessage.isPending
+                                        }
+                                        className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                      >
+                                        保存
+                                      </button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <p
+                                    className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
+                                      isMine
+                                        ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
+                                        : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
+                                    }`}
+                                  >
+                                    {chatMessage.content}
+                                  </p>
+                                )}
                               </div>
-                              <p
-                                className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                  isMine
-                                    ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                    : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                }`}
-                              >
-                                {chatMessage.content}
-                              </p>
-                            </div>
-                          </article>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
+                            </article>
+                          );
+                        })}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
                 </>
               )}
             </div>
@@ -1278,53 +2023,121 @@ export function FriendChatPanel() {
                     </button>
                   </form>
                 </>
-              ) : (
+              ) : isFriendsOpen ? null : (
                 <>
-                  {message && (
-                    <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
-                      {message}
-                    </p>
-                  )}
-                  <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
-                    {typingUserName ? `${typingUserName} が入力中...` : null}
-                  </div>
-                  <form
-                    onSubmit={handleSubmit}
-                    className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
-                  >
-                    <textarea
-                      value={draft}
-                      onChange={(event) =>
-                        handleDraftChange(event.target.value)
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
+                  {isMatchingOpen ? (
+                    <>
+                      {matchingMessage && (
+                        <p className="mb-2 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+                          {matchingMessage}
+                        </p>
+                      )}
+                      <form
+                        onSubmit={(event) => {
                           event.preventDefault();
-                          event.currentTarget.form?.requestSubmit();
-                        }
-                      }}
-                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
-                      placeholder={
-                        selectedFriend
-                          ? `${getDisplayName(selectedFriend)} へメッセージを送信`
-                          : "フレンドを選択してください"
-                      }
-                      disabled={!selectedFriendId || sendMessage.isPending}
-                      maxLength={1000}
-                    />
-                    <button
-                      type="submit"
-                      disabled={
-                        !selectedFriendId ||
-                        !draft.trim() ||
-                        sendMessage.isPending
-                      }
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="送信"
-                    >
-                      <Send className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                  </form>
+                          handleStartMatching();
+                        }}
+                        className="flex flex-col gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee] sm:flex-row sm:items-center"
+                      >
+                        <select
+                          value={matchingTopic}
+                          onChange={(event) =>
+                            setMatchingTopic(
+                              event.target.value as MatchingTopic,
+                            )
+                          }
+                          disabled={matchingState === "waiting"}
+                          className="min-h-11 flex-1 rounded-md border border-[#18221f]/15 bg-[#fff8ed] px-3 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none disabled:opacity-50"
+                          aria-label="話したいこと"
+                        >
+                          {matchingTopics.map((topic) => (
+                            <option key={topic.value} value={topic.value}>
+                              {topic.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={
+                              matchRandom.isPending ||
+                              matchingState === "waiting"
+                            }
+                            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+                          >
+                            <Shuffle className="h-5 w-5" aria-hidden="true" />
+                            {matchingState === "waiting"
+                              ? "待機中"
+                              : matchRandom.isPending
+                                ? "検索中"
+                                : "マッチング"}
+                          </button>
+                          {matchingState === "waiting" && (
+                            <button
+                              type="button"
+                              onClick={handleCancelMatching}
+                              disabled={cancelMatching.isPending}
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#f1e4d0] hover:text-[#18221f] disabled:opacity-50"
+                              aria-label="マッチングをキャンセル"
+                              title="キャンセル"
+                            >
+                              <X className="h-4 w-4" aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      {message && (
+                        <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+                          {message}
+                        </p>
+                      )}
+                      <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
+                        {typingUserName
+                          ? `${typingUserName} が入力中...`
+                          : null}
+                      </div>
+                      <form
+                        onSubmit={handleSubmit}
+                        className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
+                      >
+                        <textarea
+                          value={draft}
+                          onChange={(event) =>
+                            handleDraftChange(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" && !event.shiftKey) {
+                              event.preventDefault();
+                              event.currentTarget.form?.requestSubmit();
+                            }
+                          }}
+                          className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                          placeholder={
+                            selectedFriend
+                              ? `${getDisplayName(selectedFriend)} へメッセージを送信`
+                              : "フレンドを選択してください"
+                          }
+                          disabled={!selectedFriendId || sendMessage.isPending}
+                          maxLength={1000}
+                        />
+                        <button
+                          type="submit"
+                          disabled={
+                            !selectedFriendId ||
+                            !draft.trim() ||
+                            sendMessage.isPending
+                          }
+                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="送信"
+                        >
+                          <Send className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      </form>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -1336,30 +2149,146 @@ export function FriendChatPanel() {
                 メンバー
               </h2>
               <div className="space-y-2">
-                {selectedServerMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
-                  >
-                    <Avatar
-                      user={member.user}
-                      className="h-9 w-9 shrink-0 rounded-full border border-black/10"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">
-                        {getDisplayName(member.user)}
-                      </p>
-                      <p className="truncate text-xs text-[#68716b]">
-                        {member.role === "OWNER" ? "管理者" : "メンバー"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                {selectedServerMembers.map((member) => {
+                  const isCurrentUser =
+                    member.user.id === currentServerUser?.id;
+                  const profileHref = isCurrentUser
+                    ? `/profile?from=${encodeURIComponent(
+                        selectedServerBackHref,
+                      )}`
+                    : `/profile/${member.user.userId}?from=${encodeURIComponent(
+                        selectedServerBackHref,
+                      )}`;
+
+                  return (
+                    <Link
+                      key={member.id}
+                      href={profileHref}
+                      className="flex items-center gap-3 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
+                    >
+                      <span className="relative shrink-0">
+                        <Avatar
+                          user={member.user}
+                          className="h-9 w-9 rounded-full border border-black/10"
+                        />
+                        <span
+                          className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
+                            member.user.presenceStatus,
+                          )}`}
+                        />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">
+                          {getDisplayName(member.user)}
+                        </p>
+                        <p className="truncate text-xs text-[#68716b]">
+                          {getPresenceDisplayLabel(member.user.presenceStatus)}{" "}
+                          ・{member.role === "OWNER" ? "管理者" : "メンバー"}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </aside>
           )}
         </div>
       </section>
+
+      <Dialog
+        open={isServerSettingsOpen}
+        onOpenChange={(isOpen) => {
+          setIsServerSettingsOpen(isOpen);
+          if (!isOpen) {
+            setServerIconFile(null);
+            setServerSettingsMessage(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-lg">
+          <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+            <DialogTitle>サーバー設定</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleServerSettingsSubmit} className="space-y-5 p-5">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
+                {selectedServer?.server.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedServer.server.image}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  selectedServer?.server.name.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <label className="min-w-0 flex-1">
+                <span className="mb-1 block text-sm font-semibold">
+                  サーバーアイコン
+                </span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={(event) =>
+                    setServerIconFile(event.target.files?.[0] ?? null)
+                  }
+                  className="block w-full text-sm text-[#53615a] file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-[#18221f] file:px-3 file:font-semibold file:text-[#f6f0e4]"
+                />
+                {serverIconFile && (
+                  <span className="mt-1 block truncate text-xs text-[#68716b]">
+                    {serverIconFile.name}
+                  </span>
+                )}
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold">
+                サーバー名
+              </span>
+              <input
+                value={serverNameDraft}
+                onChange={(event) => setServerNameDraft(event.target.value)}
+                className="min-h-11 w-full rounded-md border border-[#18221f]/15 bg-white px-3 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                maxLength={50}
+                required
+              />
+            </label>
+
+            {serverSettingsMessage && (
+              <p
+                className={`rounded-md border px-3 py-2 text-sm ${
+                  serverSettingsMessage.includes("保存しました")
+                    ? "border-sky-200 bg-sky-50 text-sky-900"
+                    : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+                }`}
+              >
+                {serverSettingsMessage}
+              </p>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                onClick={handleDeleteServer}
+                disabled={leaveServer.isPending}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+                サーバー削除
+              </button>
+              <button
+                type="submit"
+                disabled={!serverNameDraft.trim() || updateServer.isPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-green-600 px-4 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
+              >
+                保存
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {channelContextMenu && channelContextTarget && selectedServer && (
         <div
@@ -1390,6 +2319,68 @@ export function FriendChatPanel() {
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             削除
           </button>
+        </div>
+      )}
+
+      {messageContextMenu && messageContextTarget && (
+        <div
+          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          style={{ left: messageContextMenu.x, top: messageContextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+          role="menu"
+        >
+          {serverMessageContextTarget && isSelectedServerOwner && (
+            <button
+              type="button"
+              onClick={() =>
+                handleToggleServerMessagePin(serverMessageContextTarget.id)
+              }
+              disabled={toggleServerMessagePin.isPending}
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc] disabled:opacity-45"
+              role="menuitem"
+            >
+              <Pin className="h-4 w-4" aria-hidden="true" />
+              {serverMessageContextTarget.pinnedAt
+                ? "ピン留め解除"
+                : "ピン留め"}
+            </button>
+          )}
+          {canEditContextMessage && (
+            <button
+              type="button"
+              onClick={() =>
+                startEditingMessage(
+                  messageContextMenu.kind,
+                  messageContextTarget,
+                )
+              }
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+              role="menuitem"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              編集
+            </button>
+          )}
+          {canDeleteContextMessage && (
+            <button
+              type="button"
+              onClick={() =>
+                messageContextMenu.kind === "server"
+                  ? handleDeleteServerMessage(messageContextTarget.id)
+                  : handleDeleteDirectMessage(messageContextTarget.id)
+              }
+              disabled={
+                messageContextMenu.kind === "server"
+                  ? deleteServerMessage.isPending
+                  : deleteDirectMessage.isPending
+              }
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-not-allowed disabled:opacity-45"
+              role="menuitem"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              削除
+            </button>
+          )}
         </div>
       )}
     </main>

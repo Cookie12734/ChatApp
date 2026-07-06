@@ -6,7 +6,7 @@ import { db } from "~/server/db";
 
 export const runtime = "nodejs";
 
-const maxFileSize = 5 * 1024 * 1024;
+const maxFileSize = 2 * 1024 * 1024;
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error
@@ -14,13 +14,34 @@ function getErrorMessage(error: unknown) {
     : "アイコンのアップロードに失敗しました";
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ serverId: string }> },
+) {
   const session = await auth();
 
   if (!session?.user) {
     return NextResponse.json(
       { message: "ログインが必要です" },
       { status: 401 },
+    );
+  }
+
+  const { serverId } = await params;
+  const membership = await db.serverMember.findUnique({
+    where: {
+      serverId_userId: {
+        serverId,
+        userId: session.user.id,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (membership?.role !== "OWNER") {
+    return NextResponse.json(
+      { message: "サーバーアイコンを変更できるのは管理者だけです" },
+      { status: 403 },
     );
   }
 
@@ -37,8 +58,8 @@ export async function POST(request: Request) {
   try {
     const image = await readStaticImageDataUrl(file, maxFileSize);
 
-    await db.user.update({
-      where: { id: session.user.id },
+    await db.chatServer.update({
+      where: { id: serverId },
       data: { image },
     });
 
