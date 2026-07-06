@@ -1,4 +1,3 @@
-import { postRouter } from "~/features/post/server/router";
 import { chatRouter } from "~/features/chat/server/router";
 import { friendRouter } from "~/features/friend/server/router";
 import { profileRouter } from "~/features/profile/server/router";
@@ -13,7 +12,6 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   chat: chatRouter,
   friend: friendRouter,
-  post: postRouter,
   profile: profileRouter,
   server: serverRouter,
 });
@@ -25,7 +23,7 @@ export type AppRouter = typeof appRouter;
  * Create a server-side caller for the tRPC API.
  * @example
  * const trpc = createCaller(createContext);
- * const res = await trpc.post.all();
- *       ^? Post[]
+ * const res = await trpc.profile.getMine();
+ *       ^? User profile
  */
 export const createCaller = createCallerFactory(appRouter);
