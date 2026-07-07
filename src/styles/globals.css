@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -131,4 +132,143 @@
   html {
     @apply font-sans;
   }
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings:
+    "kern" 1,
+    "palt" 1;
+}
+
+::selection {
+  background: rgb(37 97 87 / 18%);
+}
+
+.bg-\[\#f6f0e4\] {
+  background-color: #f4f5f2 !important;
+}
+
+.bg-\[\#fff8ed\] {
+  background-color: #ffffff !important;
+}
+
+.bg-\[\#f1e4d0\] {
+  background-color: #e9eeeb !important;
+}
+
+.bg-\[\#e4f2dc\] {
+  background-color: #e8f3ee !important;
+}
+
+.bg-\[\#d8efee\] {
+  background-color: #dbe8e6 !important;
+}
+
+.bg-\[\#18221f\] {
+  background-color: #151a18 !important;
+}
+
+.bg-\[\#2f3c37\] {
+  background-color: #28312d !important;
+}
+
+.bg-\[\#cc5f2f\] {
+  background-color: #b85f3f !important;
+}
+
+.text-\[\#18221f\] {
+  color: #151a18 !important;
+}
+
+.text-\[\#f6f0e4\] {
+  color: #f7f6f1 !important;
+}
+
+.text-\[\#53615a\] {
+  color: #5d6862 !important;
+}
+
+.text-\[\#68716b\] {
+  color: #68736d !important;
+}
+
+.text-\[\#114744\] {
+  color: #256157 !important;
+}
+
+.text-\[\#cc5f2f\] {
+  color: #b85f3f !important;
+}
+
+.text-\[\#9f4122\] {
+  color: #8d4b36 !important;
+}
+
+.placeholder\:text-\[\#9aa49e\]::placeholder {
+  color: #8a958f !important;
+}
+
+.border-\[\#18221f\]\/15,
+.border-\[\#18221f\]\/20,
+.border-\[\#18221f\]\/10 {
+  border-color: rgb(21 26 24 / 12%) !important;
+}
+
+.border-\[\#cc5f2f\]\/25 {
+  border-color: rgb(184 95 63 / 26%) !important;
+}
+
+.focus\:ring-\[\#d8efee\]:focus {
+  --tw-ring-color: rgb(37 97 87 / 18%) !important;
+}
+
+.focus\:border-\[\#114744\]:focus {
+  border-color: #256157 !important;
+}
+
+.hover\:bg-\[\#fff8ed\]:hover {
+  background-color: #f7f8f5 !important;
+}
+
+.hover\:bg-\[\#f6f0e4\]:hover {
+  background-color: #eef1ed !important;
+}
+
+.hover\:bg-\[\#f1e4d0\]:hover {
+  background-color: #dfe6e1 !important;
+}
+
+.hover\:bg-\[\#e4f2dc\]:hover,
+.hover\:bg-\[\#eef7f6\]:hover {
+  background-color: #edf6f2 !important;
+}
+
+.hover\:bg-\[\#d8efee\]:hover {
+  background-color: #dbe8e6 !important;
+}
+
+.hover\:bg-\[\#2f3c37\]:hover {
+  background-color: #28312d !important;
+}
+
+.hover\:bg-\[\#ffd8c6\]:hover {
+  background-color: #f5d4c5 !important;
+}
+
+.hover\:text-\[\#18221f\]:hover {
+  color: #151a18 !important;
+}
+
+.hover\:text-\[\#114744\]:hover {
+  color: #256157 !important;
+}
+
+.shadow-\[10px_10px_0_\#d8efee\],
+.shadow-\[8px_8px_0_\#d8efee\],
+.shadow-\[12px_12px_0_\#d9e7d0\],
+.shadow-\[6px_6px_0_\#d8efee\],
+.shadow-\[5px_5px_0_\#d8efee\] {
+  box-shadow: 0 16px 38px rgb(21 26 24 / 8%) !important;
 }
