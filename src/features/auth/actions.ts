@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signIn } from "~/features/auth";
+import { findUserByNormalizedEmail } from "~/features/auth/lib/email-user";
 import {
   clearPendingVerificationEmail,
   getPendingVerificationEmailSession,
@@ -68,11 +69,14 @@ export async function signInWithCredentials(
     };
   }
 
-  const normalizedEmail = parsed.data.email.trim();
+  const { isAmbiguous, normalizedEmail, user } =
+    await findUserByNormalizedEmail(parsed.data.email);
 
-  const user = await db.user.findUnique({
-    where: { email: normalizedEmail },
-  });
+  if (isAmbiguous) {
+    return {
+      error: "メールアドレスまたはパスワードが正しくありません",
+    };
+  }
 
   if (user && !user.emailVerified) {
     const isValidPassword = user.passwordHash
@@ -86,6 +90,13 @@ export async function signInWithCredentials(
     }
 
     try {
+      if (user.email !== normalizedEmail) {
+        await db.user.update({
+          where: { id: user.id },
+          data: { email: normalizedEmail },
+        });
+      }
+
       await createAndSendVerificationToken(normalizedEmail);
       await rememberVerificationEmailSent(normalizedEmail);
     } catch {
@@ -136,15 +147,15 @@ export async function signUp(
   }
 
   const { userId, name, email, password } = parsed.data;
-  const normalizedEmail = email.trim();
+  const {
+    isAmbiguous,
+    normalizedEmail,
+    user: existing,
+  } = await findUserByNormalizedEmail(email);
   const normalizedUserId = userId.trim();
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const existing = await db.user.findUnique({
-    where: { email: normalizedEmail },
-  });
-
-  if (existing?.emailVerified) {
+  if (isAmbiguous || existing?.emailVerified) {
     return {
       error: "このメールアドレスはすでに登録されています",
     };
@@ -153,7 +164,7 @@ export async function signUp(
   const existingUserId = await db.user.findFirst({
     where: {
       userId: normalizedUserId,
-      NOT: { email: normalizedEmail },
+      ...(existing ? { NOT: { id: existing.id } } : {}),
     },
   });
 
@@ -163,8 +174,9 @@ export async function signUp(
 
   if (existing) {
     await db.user.update({
-      where: { email: normalizedEmail },
+      where: { id: existing.id },
       data: {
+        email: normalizedEmail,
         userId: normalizedUserId,
         name: name.trim(),
         passwordHash,
@@ -206,6 +218,9 @@ export async function resendVerificationEmail(
     };
   }
 
+  const { isAmbiguous, normalizedEmail, user } =
+    await findUserByNormalizedEmail(pendingSession.email);
+
   if (pendingSession.remainingSeconds > 0) {
     return {
       error: "まだ再送できません",
@@ -213,11 +228,7 @@ export async function resendVerificationEmail(
     };
   }
 
-  const user = await db.user.findUnique({
-    where: { email: pendingSession.email },
-  });
-
-  if (!user) {
+  if (isAmbiguous || !user) {
     await clearPendingVerificationEmail();
 
     return {
@@ -234,8 +245,15 @@ export async function resendVerificationEmail(
   }
 
   try {
-    await createAndSendVerificationToken(pendingSession.email);
-    await rememberVerificationEmailSent(pendingSession.email);
+    if (user.email !== normalizedEmail) {
+      await db.user.update({
+        where: { id: user.id },
+        data: { email: normalizedEmail },
+      });
+    }
+
+    await createAndSendVerificationToken(normalizedEmail);
+    await rememberVerificationEmailSent(normalizedEmail);
   } catch {
     return {
       error:

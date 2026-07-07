@@ -1,24 +1,27 @@
 import crypto from "crypto";
 
+import { normalizeEmailAddress } from "~/features/auth/lib/email-normalization";
 import { buildVerificationUrl } from "~/features/auth/lib/email";
 import { sendSignupVerificationEmail } from "~/features/auth/lib/email";
+import { findUserByNormalizedEmail } from "~/features/auth/lib/email-user";
 import { db } from "~/server/db";
 
 const TOKEN_EXPIRY_HOURS = 24;
 
 export async function createAndSendVerificationToken(email: string) {
+  const normalizedEmail = normalizeEmailAddress(email);
   const token = crypto.randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
 
   await db.verificationToken.deleteMany({
-    where: { identifier: email },
+    where: { identifier: normalizedEmail },
   });
 
   await db.verificationToken.create({
-    data: { identifier: email, token, expires },
+    data: { identifier: normalizedEmail, token, expires },
   });
 
-  await sendSignupVerificationEmail(email, token);
+  await sendSignupVerificationEmail(normalizedEmail, token);
 }
 
 export async function getDevelopmentVerificationUrl(email: string) {
@@ -27,7 +30,7 @@ export async function getDevelopmentVerificationUrl(email: string) {
   }
 
   const verificationToken = await db.verificationToken.findFirst({
-    where: { identifier: email },
+    where: { identifier: normalizeEmailAddress(email) },
     orderBy: { expires: "desc" },
     select: { token: true },
   });
@@ -51,17 +54,16 @@ export async function verifyEmailToken(token: string) {
     return { success: false as const, reason: "expired" as const };
   }
 
-  const user = await db.user.findUnique({
-    where: { email: verificationToken.identifier },
-  });
+  const { isAmbiguous, normalizedEmail, user } =
+    await findUserByNormalizedEmail(verificationToken.identifier);
 
-  if (!user) {
+  if (isAmbiguous || !user) {
     return { success: false as const, reason: "invalid" as const };
   }
 
   await db.user.update({
-    where: { email: verificationToken.identifier },
-    data: { emailVerified: new Date() },
+    where: { id: user.id },
+    data: { email: normalizedEmail, emailVerified: new Date() },
   });
 
   await db.verificationToken.delete({ where: { token } });

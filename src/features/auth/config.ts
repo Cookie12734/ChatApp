@@ -7,6 +7,8 @@ import { type Adapter, type AdapterUser } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 
+import { normalizeEmailAddress } from "~/features/auth/lib/email-normalization";
+import { findUserByNormalizedEmail } from "~/features/auth/lib/email-user";
 import {
   getOAuthUserIdCandidate,
   withOAuthUserIdSuffix,
@@ -48,28 +50,65 @@ async function createUniqueOAuthUserId(seed: string | null | undefined) {
   return withOAuthUserIdSuffix("user", randomUUID());
 }
 
+type AdapterUserRecord = {
+  email: string | null;
+  emailVerified: Date | null;
+  id: string;
+  image: string | null;
+  name: string | null;
+};
+
+function toAdapterUser(user: AdapterUserRecord) {
+  if (!user.email) {
+    throw new Error("Adapter user is missing an email address.");
+  }
+
+  return {
+    email: user.email,
+    emailVerified: user.emailVerified,
+    id: user.id,
+    image: user.image,
+    name: user.name,
+  } satisfies AdapterUser;
+}
+
 const adapter = {
   ...PrismaAdapter(db),
   async createUser({ id: _id, ...user }: AdapterUser) {
+    const email = normalizeEmailAddress(user.email);
     const created = await db.user.create({
       data: {
-        email: user.email,
+        email,
         emailVerified: user.emailVerified ?? null,
         image: user.image ?? null,
         name: user.name ?? null,
-        userId: await createUniqueOAuthUserId(
-          user.email?.split("@")[0] ?? user.name,
-        ),
+        userId: await createUniqueOAuthUserId(email.split("@")[0] ?? user.name),
       },
     });
 
-    return {
-      email: user.email,
-      emailVerified: created.emailVerified,
-      id: created.id,
-      image: created.image,
-      name: created.name,
-    } satisfies AdapterUser;
+    return toAdapterUser(created);
+  },
+  async getUserByEmail(email: string) {
+    const { isAmbiguous, user } = await findUserByNormalizedEmail(email);
+
+    if (isAmbiguous) {
+      throw new Error("Multiple users match the normalized email address.");
+    }
+
+    return user ? toAdapterUser(user) : null;
+  },
+  async updateUser({ id, ...user }) {
+    const updated = await db.user.update({
+      where: { id },
+      data: {
+        ...user,
+        ...(user.email === undefined
+          ? {}
+          : { email: normalizeEmailAddress(user.email) }),
+      },
+    });
+
+    return toAdapterUser(updated);
   },
 } satisfies Adapter;
 
@@ -91,11 +130,10 @@ export const authConfig = {
           return null;
         }
 
-        const user = await db.user.findUnique({
-          where: { email: email.trim() },
-        });
+        const { isAmbiguous, normalizedEmail, user } =
+          await findUserByNormalizedEmail(email);
 
-        if (!user?.passwordHash || !user.emailVerified) {
+        if (isAmbiguous || !user?.passwordHash || !user.emailVerified) {
           return null;
         }
 
@@ -104,11 +142,19 @@ export const authConfig = {
           return null;
         }
 
+        const authenticatedUser =
+          user.email === normalizedEmail
+            ? user
+            : await db.user.update({
+                where: { id: user.id },
+                data: { email: normalizedEmail },
+              });
+
         return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
+          id: authenticatedUser.id,
+          name: authenticatedUser.name,
+          email: authenticatedUser.email,
+          image: authenticatedUser.image,
         };
       },
     }),
