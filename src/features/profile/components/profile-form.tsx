@@ -55,6 +55,7 @@ export function ProfileForm() {
     onSuccess: async () => {
       setMessage("プロフィールを保存しました");
       await Promise.all([
+        utils.profile.getByUserId.invalidate(),
         utils.profile.getMine.invalidate(),
         utils.server.getOverview.invalidate(),
       ]);
@@ -92,6 +93,7 @@ export function ProfileForm() {
       setImageFailed(false);
       setMessage("アイコンをアップロードしました");
       await Promise.all([
+        utils.profile.getByUserId.invalidate(),
         utils.profile.getMine.invalidate(),
         utils.server.getOverview.invalidate(),
       ]);

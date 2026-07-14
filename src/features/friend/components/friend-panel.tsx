@@ -10,9 +10,9 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
+import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { api } from "~/trpc/react";
 
 function getErrorMessage(error: unknown) {
@@ -237,20 +237,23 @@ export function FriendPanel() {
                   key={friendship.id}
                   className="flex items-center justify-between gap-3 rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
                 >
-                  <Link
-                    href={`/profile/${friendship.friend.userId}`}
-                    className="flex min-w-0 items-center gap-3 transition hover:text-[#114744]"
-                  >
-                    <UserPlus className="h-4 w-4 shrink-0 text-[#cc5f2f]" />
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">
-                        {friendship.friend.name ?? friendship.friend.userId}
+                  <UserProfileDialog userId={friendship.friend.userId}>
+                    <button
+                      type="button"
+                      className="flex min-h-11 min-w-0 items-center gap-3 text-left transition hover:text-[#114744] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                      aria-label={`${friendship.friend.name ?? friendship.friend.userId}のプロフィールを開く`}
+                    >
+                      <UserPlus className="h-4 w-4 shrink-0 text-[#cc5f2f]" />
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">
+                          {friendship.friend.name ?? friendship.friend.userId}
+                        </span>
+                        <span className="block truncate font-mono text-sm text-[#68716b]">
+                          {friendship.friend.userId}
+                        </span>
                       </span>
-                      <span className="block truncate font-mono text-sm text-[#68716b]">
-                        {friendship.friend.userId}
-                      </span>
-                    </span>
-                  </Link>
+                    </button>
+                  </UserProfileDialog>
                   <button
                     type="button"
                     onClick={() => {

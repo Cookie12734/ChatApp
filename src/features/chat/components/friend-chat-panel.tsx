@@ -42,6 +42,7 @@ import {
   getPresenceDotClassName,
 } from "~/features/profile/presence";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
+import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { type RouterOutputs, api } from "~/trpc/react";
 
@@ -92,6 +93,15 @@ function getDisplayName(user: { name?: string | null; userId: string }) {
   }
 
   return name;
+}
+
+function getServerDisplayName(member: {
+  nickname?: string | null;
+  user: { name?: string | null; userId: string };
+}) {
+  const nickname = member.nickname?.trim();
+
+  return nickname ?? getDisplayName(member.user);
 }
 
 function getInitial(user: { name?: string | null; userId: string }) {
@@ -261,8 +271,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (!selectedServer) return [];
 
     return [...selectedServer.server.members].sort((memberA, memberB) =>
-      getDisplayName(memberA.user).localeCompare(
-        getDisplayName(memberB.user),
+      getServerDisplayName(memberA).localeCompare(
+        getServerDisplayName(memberB),
         "ja",
       ),
     );
@@ -1541,7 +1551,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold">
-                      {getDisplayName(currentServerUser)}
+                      {selectedServer.nickname?.trim() ??
+                        getDisplayName(currentServerUser)}
                     </span>
                     <span className="block truncate text-xs text-[#68716b]">
                       {getPresenceDisplayLabel(
@@ -1753,8 +1764,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           chatMessage.senderId ===
                           serverConversationData.currentUser.id;
                         const author = isMine
-                          ? { userId: "me", name: "あなた", image: null }
-                          : chatMessage.sender;
+                          ? {
+                              ...serverConversationData.currentUser,
+                              name:
+                                selectedServer.nickname?.trim() ??
+                                serverConversationData.currentUser.name,
+                            }
+                          : {
+                              ...chatMessage.sender,
+                              name:
+                                chatMessage.sender.serverMemberships[0]
+                                  ?.nickname ?? chatMessage.sender.name,
+                            };
                         const isEditing =
                           editingMessage?.kind === "server" &&
                           editingMessage.messageId === chatMessage.id;
@@ -2209,46 +2230,46 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 {selectedServerMembers.map((member) => {
                   const isCurrentUser =
                     member.user.id === currentServerUser?.id;
-                  const profileHref = isCurrentUser
-                    ? `/profile?from=${encodeURIComponent(
-                        selectedServerBackHref,
-                      )}`
-                    : `/profile/${member.user.userId}?from=${encodeURIComponent(
-                        selectedServerBackHref,
-                      )}`;
 
                   return (
                     <div
                       key={member.id}
                       className="flex items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
                     >
-                      <Link
-                        href={profileHref}
-                        className="flex min-w-0 flex-1 items-center gap-3"
+                      <UserProfileDialog
+                        userId={member.user.userId}
+                        serverId={selectedServer.server.id}
                       >
-                        <span className="relative shrink-0">
-                          <Avatar
-                            user={member.user}
-                            className="h-9 w-9 rounded-full border border-black/10"
-                          />
-                          <span
-                            className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
-                              member.user.presenceStatus,
-                            )}`}
-                          />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">
-                            {getDisplayName(member.user)}
-                          </p>
-                          <p className="truncate text-xs text-[#68716b]">
-                            {getPresenceDisplayLabel(
-                              member.user.presenceStatus,
-                            )}{" "}
-                            ・{member.role === "OWNER" ? "管理者" : "メンバー"}
-                          </p>
-                        </div>
-                      </Link>
+                        <button
+                          type="button"
+                          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                          aria-label={`${getServerDisplayName(member)}のプロフィールを開く`}
+                        >
+                          <span className="relative shrink-0">
+                            <Avatar
+                              user={member.user}
+                              className="h-9 w-9 rounded-full border border-black/10"
+                            />
+                            <span
+                              className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
+                                member.user.presenceStatus,
+                              )}`}
+                            />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold">
+                              {getServerDisplayName(member)}
+                            </span>
+                            <span className="block truncate text-xs text-[#68716b]">
+                              {getPresenceDisplayLabel(
+                                member.user.presenceStatus,
+                              )}{" "}
+                              ・
+                              {member.role === "OWNER" ? "管理者" : "メンバー"}
+                            </span>
+                          </span>
+                        </button>
+                      </UserProfileDialog>
                       {isSelectedServerOwner && !isCurrentUser && (
                         <div className="flex shrink-0 items-center gap-1">
                           <button
@@ -2286,7 +2307,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onClick={() =>
                               handleRemoveServerMember(
                                 member.id,
-                                getDisplayName(member.user),
+                                getServerDisplayName(member),
                               )
                             }
                             disabled={removeServerMember.isPending}
