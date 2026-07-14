@@ -60,6 +60,19 @@ const memberRoleInput = memberIdInput.extend({
   role: z.enum(["MEMBER", "OWNER"]),
 });
 
+const serverProfileInput = serverIdInput.extend({
+  nickname: z
+    .string()
+    .trim()
+    .max(32, "サーバー内の表示名は32文字以内で入力してください")
+    .optional(),
+  bio: z
+    .string()
+    .trim()
+    .max(160, "サーバー内の自己紹介は160文字以内で入力してください")
+    .optional(),
+});
+
 const conversationInput = serverIdInput.extend({
   channelId: z.string().min(1).optional(),
 });
@@ -83,6 +96,16 @@ function normalizeDescription(description: string | undefined) {
   }
 
   return description;
+}
+
+function normalizeOptionalText(value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed;
 }
 
 function getServerMessageWhere({
@@ -337,7 +360,16 @@ export const serverRouter = createTRPCRouter({
           take: 100,
           include: {
             sender: {
-              select: { id: true, userId: true, name: true, image: true },
+              select: {
+                id: true,
+                userId: true,
+                name: true,
+                image: true,
+                serverMemberships: {
+                  where: { serverId: input.serverId },
+                  select: { nickname: true },
+                },
+              },
             },
           },
         }),
@@ -362,6 +394,42 @@ export const serverRouter = createTRPCRouter({
         server,
         messages,
       };
+    }),
+
+  updateMyProfile: protectedProcedure
+    .input(serverProfileInput)
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: ctx.session.user.id,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "参加しているサーバーが見つかりません",
+        });
+      }
+
+      return ctx.db.serverMember.update({
+        where: { id: membership.id },
+        data: {
+          nickname: normalizeOptionalText(input.nickname),
+          bio: normalizeOptionalText(input.bio),
+        },
+        select: {
+          bio: true,
+          id: true,
+          nickname: true,
+          serverId: true,
+          userId: true,
+        },
+      });
     }),
 
   sendMessage: protectedProcedure

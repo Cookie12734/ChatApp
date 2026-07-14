@@ -238,6 +238,8 @@ exports.Prisma.ServerMemberScalarFieldEnum = {
   serverId: 'serverId',
   userId: 'userId',
   role: 'role',
+  nickname: 'nickname',
+  bio: 'bio',
   createdAt: 'createdAt'
 };
 

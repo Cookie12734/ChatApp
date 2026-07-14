@@ -16138,6 +16138,8 @@ export namespace Prisma {
     serverId: string | null
     userId: string | null
     role: $Enums.ServerMemberRole | null
+    nickname: string | null
+    bio: string | null
     createdAt: Date | null
   }
 
@@ -16146,6 +16148,8 @@ export namespace Prisma {
     serverId: string | null
     userId: string | null
     role: $Enums.ServerMemberRole | null
+    nickname: string | null
+    bio: string | null
     createdAt: Date | null
   }
 
@@ -16154,6 +16158,8 @@ export namespace Prisma {
     serverId: number
     userId: number
     role: number
+    nickname: number
+    bio: number
     createdAt: number
     _all: number
   }
@@ -16164,6 +16170,8 @@ export namespace Prisma {
     serverId?: true
     userId?: true
     role?: true
+    nickname?: true
+    bio?: true
     createdAt?: true
   }
 
@@ -16172,6 +16180,8 @@ export namespace Prisma {
     serverId?: true
     userId?: true
     role?: true
+    nickname?: true
+    bio?: true
     createdAt?: true
   }
 
@@ -16180,6 +16190,8 @@ export namespace Prisma {
     serverId?: true
     userId?: true
     role?: true
+    nickname?: true
+    bio?: true
     createdAt?: true
     _all?: true
   }
@@ -16261,6 +16273,8 @@ export namespace Prisma {
     serverId: string
     userId: string
     role: $Enums.ServerMemberRole
+    nickname: string | null
+    bio: string | null
     createdAt: Date
     _count: ServerMemberCountAggregateOutputType | null
     _min: ServerMemberMinAggregateOutputType | null
@@ -16286,6 +16300,8 @@ export namespace Prisma {
     serverId?: boolean
     userId?: boolean
     role?: boolean
+    nickname?: boolean
+    bio?: boolean
     createdAt?: boolean
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -16296,6 +16312,8 @@ export namespace Prisma {
     serverId?: boolean
     userId?: boolean
     role?: boolean
+    nickname?: boolean
+    bio?: boolean
     createdAt?: boolean
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -16306,6 +16324,8 @@ export namespace Prisma {
     serverId?: boolean
     userId?: boolean
     role?: boolean
+    nickname?: boolean
+    bio?: boolean
     createdAt?: boolean
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -16316,10 +16336,12 @@ export namespace Prisma {
     serverId?: boolean
     userId?: boolean
     role?: boolean
+    nickname?: boolean
+    bio?: boolean
     createdAt?: boolean
   }
 
-  export type ServerMemberOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "serverId" | "userId" | "role" | "createdAt", ExtArgs["result"]["serverMember"]>
+  export type ServerMemberOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "serverId" | "userId" | "role" | "nickname" | "bio" | "createdAt", ExtArgs["result"]["serverMember"]>
   export type ServerMemberInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     server?: boolean | ChatServerDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -16344,6 +16366,8 @@ export namespace Prisma {
       serverId: string
       userId: string
       role: $Enums.ServerMemberRole
+      nickname: string | null
+      bio: string | null
       createdAt: Date
     }, ExtArgs["result"]["serverMember"]>
     composites: {}
@@ -16774,6 +16798,8 @@ export namespace Prisma {
     readonly serverId: FieldRef<"ServerMember", 'String'>
     readonly userId: FieldRef<"ServerMember", 'String'>
     readonly role: FieldRef<"ServerMember", 'ServerMemberRole'>
+    readonly nickname: FieldRef<"ServerMember", 'String'>
+    readonly bio: FieldRef<"ServerMember", 'String'>
     readonly createdAt: FieldRef<"ServerMember", 'DateTime'>
   }
     
@@ -20644,6 +20670,8 @@ export namespace Prisma {
     serverId: 'serverId',
     userId: 'userId',
     role: 'role',
+    nickname: 'nickname',
+    bio: 'bio',
     createdAt: 'createdAt'
   };
 
@@ -21671,6 +21699,8 @@ export namespace Prisma {
     serverId?: StringFilter<"ServerMember"> | string
     userId?: StringFilter<"ServerMember"> | string
     role?: EnumServerMemberRoleFilter<"ServerMember"> | $Enums.ServerMemberRole
+    nickname?: StringNullableFilter<"ServerMember"> | string | null
+    bio?: StringNullableFilter<"ServerMember"> | string | null
     createdAt?: DateTimeFilter<"ServerMember"> | Date | string
     server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -21681,6 +21711,8 @@ export namespace Prisma {
     serverId?: SortOrder
     userId?: SortOrder
     role?: SortOrder
+    nickname?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     server?: ChatServerOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
@@ -21695,6 +21727,8 @@ export namespace Prisma {
     serverId?: StringFilter<"ServerMember"> | string
     userId?: StringFilter<"ServerMember"> | string
     role?: EnumServerMemberRoleFilter<"ServerMember"> | $Enums.ServerMemberRole
+    nickname?: StringNullableFilter<"ServerMember"> | string | null
+    bio?: StringNullableFilter<"ServerMember"> | string | null
     createdAt?: DateTimeFilter<"ServerMember"> | Date | string
     server?: XOR<ChatServerScalarRelationFilter, ChatServerWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -21705,6 +21739,8 @@ export namespace Prisma {
     serverId?: SortOrder
     userId?: SortOrder
     role?: SortOrder
+    nickname?: SortOrderInput | SortOrder
+    bio?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: ServerMemberCountOrderByAggregateInput
     _max?: ServerMemberMaxOrderByAggregateInput
@@ -21719,6 +21755,8 @@ export namespace Prisma {
     serverId?: StringWithAggregatesFilter<"ServerMember"> | string
     userId?: StringWithAggregatesFilter<"ServerMember"> | string
     role?: EnumServerMemberRoleWithAggregatesFilter<"ServerMember"> | $Enums.ServerMemberRole
+    nickname?: StringNullableWithAggregatesFilter<"ServerMember"> | string | null
+    bio?: StringNullableWithAggregatesFilter<"ServerMember"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"ServerMember"> | Date | string
   }
 
@@ -22762,6 +22800,8 @@ export namespace Prisma {
   export type ServerMemberCreateInput = {
     id?: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
     server: ChatServerCreateNestedOneWithoutMembersInput
     user: UserCreateNestedOneWithoutServerMembershipsInput
@@ -22772,12 +22812,16 @@ export namespace Prisma {
     serverId: string
     userId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
   export type ServerMemberUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     server?: ChatServerUpdateOneRequiredWithoutMembersNestedInput
     user?: UserUpdateOneRequiredWithoutServerMembershipsNestedInput
@@ -22788,6 +22832,8 @@ export namespace Prisma {
     serverId?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -22796,12 +22842,16 @@ export namespace Prisma {
     serverId: string
     userId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
   export type ServerMemberUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -22810,6 +22860,8 @@ export namespace Prisma {
     serverId?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -23779,6 +23831,8 @@ export namespace Prisma {
     serverId?: SortOrder
     userId?: SortOrder
     role?: SortOrder
+    nickname?: SortOrder
+    bio?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -23787,6 +23841,8 @@ export namespace Prisma {
     serverId?: SortOrder
     userId?: SortOrder
     role?: SortOrder
+    nickname?: SortOrder
+    bio?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -23795,6 +23851,8 @@ export namespace Prisma {
     serverId?: SortOrder
     userId?: SortOrder
     role?: SortOrder
+    nickname?: SortOrder
+    bio?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -26275,6 +26333,8 @@ export namespace Prisma {
   export type ServerMemberCreateWithoutUserInput = {
     id?: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
     server: ChatServerCreateNestedOneWithoutMembersInput
   }
@@ -26283,6 +26343,8 @@ export namespace Prisma {
     id?: string
     serverId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
@@ -26729,6 +26791,8 @@ export namespace Prisma {
     serverId?: StringFilter<"ServerMember"> | string
     userId?: StringFilter<"ServerMember"> | string
     role?: EnumServerMemberRoleFilter<"ServerMember"> | $Enums.ServerMemberRole
+    nickname?: StringNullableFilter<"ServerMember"> | string | null
+    bio?: StringNullableFilter<"ServerMember"> | string | null
     createdAt?: DateTimeFilter<"ServerMember"> | Date | string
   }
 
@@ -28284,6 +28348,8 @@ export namespace Prisma {
   export type ServerMemberCreateWithoutServerInput = {
     id?: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
     user: UserCreateNestedOneWithoutServerMembershipsInput
   }
@@ -28292,6 +28358,8 @@ export namespace Prisma {
     id?: string
     userId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
@@ -29355,6 +29423,8 @@ export namespace Prisma {
     id?: string
     serverId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
@@ -29694,6 +29764,8 @@ export namespace Prisma {
   export type ServerMemberUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     server?: ChatServerUpdateOneRequiredWithoutMembersNestedInput
   }
@@ -29702,6 +29774,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     serverId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -29709,6 +29783,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     serverId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -29803,6 +29879,8 @@ export namespace Prisma {
     id?: string
     userId: string
     role?: $Enums.ServerMemberRole
+    nickname?: string | null
+    bio?: string | null
     createdAt?: Date | string
   }
 
@@ -29843,6 +29921,8 @@ export namespace Prisma {
   export type ServerMemberUpdateWithoutServerInput = {
     id?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutServerMembershipsNestedInput
   }
@@ -29851,6 +29931,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -29858,6 +29940,8 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     role?: EnumServerMemberRoleFieldUpdateOperationsInput | $Enums.ServerMemberRole
+    nickname?: NullableStringFieldUpdateOperationsInput | string | null
+    bio?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

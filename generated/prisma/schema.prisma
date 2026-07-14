@@ -187,6 +187,8 @@ model ServerMember {
   serverId  String
   userId    String
   role      ServerMemberRole @default(MEMBER)
+  nickname  String?
+  bio       String?
   createdAt DateTime         @default(now())
   server    ChatServer       @relation(fields: [serverId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
