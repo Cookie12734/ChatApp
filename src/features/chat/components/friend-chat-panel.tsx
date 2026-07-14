@@ -21,7 +21,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
 import { type RealtimeChannel } from "@supabase/supabase-js";
@@ -41,6 +40,7 @@ import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
 } from "~/features/profile/presence";
+import { PresenceStatusMenu } from "~/features/profile/components/presence-status-menu";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
@@ -277,9 +277,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       ),
     );
   }, [selectedServer]);
-  const selectedServerBackHref = selectedServer
-    ? `/?serverId=${encodeURIComponent(selectedServer.server.id)}`
-    : "/";
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
   const willDeleteSelectedServerOnLeave =
     selectedServer?.role === "OWNER" && selectedServer.server.ownerCount <= 1;
@@ -1532,35 +1529,40 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
             <div className="mt-auto border-t border-[#18221f]/15 px-4 py-3">
               {currentServerUser && (
-                <Link
-                  href={`/profile?from=${encodeURIComponent(
-                    selectedServerBackHref,
-                  )}`}
-                  className="flex items-center gap-3 rounded-md px-1 py-1 transition hover:bg-[#fff8ed]"
+                <PresenceStatusMenu
+                  currentStatus={currentServerUser.presenceStatus}
                 >
-                  <span className="relative shrink-0">
-                    <Avatar
-                      user={currentServerUser}
-                      className="h-10 w-10 rounded-full border border-black/10"
-                    />
-                    <span
-                      className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] ${getPresenceDotClassName(
-                        currentServerUser.presenceStatus,
-                      )}`}
-                    />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
-                      {selectedServer.nickname?.trim() ??
-                        getDisplayName(currentServerUser)}
+                  <button
+                    type="button"
+                    className="flex min-h-12 w-full items-center gap-3 rounded-md px-1 py-1 text-left transition hover:bg-[#fff8ed] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                    aria-label={`オンライン状態を変更。現在は${getPresenceDisplayLabel(
+                      currentServerUser.presenceStatus,
+                    )}`}
+                  >
+                    <span className="relative shrink-0">
+                      <Avatar
+                        user={currentServerUser}
+                        className="h-10 w-10 rounded-full border border-black/10"
+                      />
+                      <span
+                        className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] ${getPresenceDotClassName(
+                          currentServerUser.presenceStatus,
+                        )}`}
+                      />
                     </span>
-                    <span className="block truncate text-xs text-[#68716b]">
-                      {getPresenceDisplayLabel(
-                        currentServerUser.presenceStatus,
-                      )}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">
+                        {selectedServer.nickname?.trim() ??
+                          getDisplayName(currentServerUser)}
+                      </span>
+                      <span className="block truncate text-xs text-[#68716b]">
+                        {getPresenceDisplayLabel(
+                          currentServerUser.presenceStatus,
+                        )}
+                      </span>
                     </span>
-                  </span>
-                </Link>
+                  </button>
+                </PresenceStatusMenu>
               )}
             </div>
           </>

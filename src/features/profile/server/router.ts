@@ -24,6 +24,10 @@ const profileInput = z.object({
   presenceStatus: z.enum(presenceStatuses).optional(),
 });
 
+const presenceInput = z.object({
+  presenceStatus: z.enum(presenceStatuses),
+});
+
 const profileDetailInput = z.object({
   serverId: z.string().min(1).optional(),
   userId: z.string().trim().min(1).max(32),
@@ -218,6 +222,19 @@ export const profileRouter = createTRPCRouter({
           image: true,
           bio: true,
           statusMessage: true,
+          presenceStatus: true,
+        },
+      });
+    }),
+
+  updatePresence: protectedProcedure
+    .input(presenceInput)
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data: { presenceStatus: input.presenceStatus },
+        select: {
+          id: true,
           presenceStatus: true,
         },
       });
