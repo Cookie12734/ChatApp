@@ -3,6 +3,7 @@
 import {
   Check,
   ChevronDown,
+  Copy,
   Hash,
   Inbox,
   LogOut,
@@ -10,6 +11,7 @@ import {
   Pencil,
   Pin,
   Plus,
+  RefreshCw,
   Search,
   Send,
   Settings,
@@ -937,6 +939,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
   });
 
+  const rotateServerInvite = api.server.rotateInvite.useMutation({
+    onSuccess: async () => {
+      setServerSettingsMessage("招待リンクを再発行しました");
+      await utils.server.getOverview.invalidate();
+    },
+    onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
+  });
+
   const selectHome = () => {
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
@@ -1073,6 +1083,20 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setServerSettingsMessage(null);
     setIsServerMenuOpen(false);
     setIsServerSettingsOpen(true);
+  };
+
+  const handleCopyServerInvite = async () => {
+    const inviteCode = selectedServer?.server.inviteCode;
+    if (!inviteCode) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/servers/invite/${inviteCode}`,
+      );
+      setServerSettingsMessage("招待リンクをコピーしました");
+    } catch {
+      setServerSettingsMessage("招待リンクをコピーできませんでした");
+    }
   };
 
   const handleServerSettingsSubmit = async (
@@ -2470,10 +2494,52 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               />
             </label>
 
+            {selectedServer?.server.inviteCode && (
+              <div>
+                <span className="mb-1 block text-sm font-semibold">
+                  招待リンク
+                </span>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={`/servers/invite/${selectedServer.server.inviteCode}`}
+                    readOnly
+                    onFocus={(event) => event.currentTarget.select()}
+                    className="min-h-11 min-w-0 flex-1 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm text-[#53615a] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                    aria-label="招待リンク"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyServerInvite}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
+                  >
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                    コピー
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      rotateServerInvite.mutate({
+                        serverId: selectedServer.server.id,
+                      })
+                    }
+                    disabled={rotateServerInvite.isPending}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc] disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                    再発行
+                  </button>
+                </div>
+              </div>
+            )}
+
             {serverSettingsMessage && (
               <p
                 className={`rounded-md border px-3 py-2 text-sm ${
-                  serverSettingsMessage.includes("保存しました")
+                  [
+                    "サーバー設定を保存しました",
+                    "招待リンクをコピーしました",
+                    "招待リンクを再発行しました",
+                  ].includes(serverSettingsMessage)
                     ? "border-sky-200 bg-sky-50 text-sky-900"
                     : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
                 }`}
