@@ -223,6 +223,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
   const [isPinnedMessagesOpen, setIsPinnedMessagesOpen] = useState(false);
+  const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [serverNameDraft, setServerNameDraft] = useState("");
   const [serverIconFile, setServerIconFile] = useState<File | null>(null);
   const [serverSettingsMessage, setServerSettingsMessage] = useState<
@@ -458,6 +459,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setMessageContextMenu(null);
     setEditingMessage(null);
     setIsPinnedMessagesOpen(false);
+    setIsMemberListOpen(false);
   }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
 
   useEffect(() => {
@@ -1774,26 +1776,39 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <h1 className="font-semibold">ダイレクトメッセージ</h1>
             )}
           </div>
-          {selectedServer && (
-            <button
-              type="button"
-              onClick={() => setIsPinnedMessagesOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-              aria-label="ピン留めしたメッセージ"
-              title="ピン留めしたメッセージ"
-            >
-              <Pin className="h-5 w-5" aria-hidden="true" />
-            </button>
-          )}
-          <ProfileSettingsDialog>
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-              aria-label="設定"
-            >
-              <Settings className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </ProfileSettingsDialog>
+          <div className="flex shrink-0 items-center gap-1">
+            {selectedServer && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsPinnedMessagesOpen(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                  aria-label="ピン留めしたメッセージ"
+                  title="ピン留めしたメッセージ"
+                >
+                  <Pin className="h-5 w-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMemberListOpen(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
+                  aria-label="メンバー一覧"
+                  title="メンバー一覧"
+                >
+                  <Users className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </>
+            )}
+            <ProfileSettingsDialog>
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                aria-label="設定"
+              >
+                <Settings className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </ProfileSettingsDialog>
+          </div>
         </header>
 
         <div className="flex min-h-0 flex-1">
@@ -2327,108 +2342,143 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           </div>
 
           {selectedServer && (
-            <aside className="hidden w-64 shrink-0 border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:block">
-              <h2 className="mb-3 text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
-                メンバー
-              </h2>
-              <div className="space-y-2">
-                {selectedServerMembers.map((member) => {
-                  const isCurrentUser =
-                    member.user.id === currentServerUser?.id;
+            <>
+              {isMemberListOpen && (
+                <button
+                  type="button"
+                  onClick={() => setIsMemberListOpen(false)}
+                  className="fixed inset-0 z-30 bg-black/35 lg:hidden"
+                  aria-label="メンバー一覧を閉じる"
+                />
+              )}
+              <aside
+                className={`${
+                  isMemberListOpen
+                    ? "fixed inset-y-0 right-0 z-40 block shadow-xl"
+                    : "hidden"
+                } w-64 shrink-0 overflow-y-auto border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
+              >
+                <div className="mb-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsMemberListOpen(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
+                    aria-label="メンバー一覧を閉じる"
+                    title="メンバー一覧を閉じる"
+                  >
+                    <X className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <h2 className="text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
+                    メンバー
+                  </h2>
+                </div>
+                <div className="space-y-2">
+                  {selectedServerMembers.map((member) => {
+                    const isCurrentUser =
+                      member.user.id === currentServerUser?.id;
 
-                  return (
-                    <div
-                      key={member.id}
-                      className="group flex items-center gap-2 rounded-md border border-[#d8efee]/25 bg-[#18221f] px-3 py-2 text-[#f6f0e4] transition-colors hover:border-[#18221f]/10 hover:bg-[#fff8ed] hover:text-[#18221f]"
-                    >
-                      <UserProfileDialog
-                        userId={member.user.userId}
-                        serverId={selectedServer.server.id}
+                    return (
+                      <div
+                        key={member.id}
+                        className="group flex items-center gap-2 rounded-md border border-[#d8efee]/25 bg-[#18221f] px-3 py-2 text-[#f6f0e4] transition-colors hover:border-[#18221f]/10 hover:bg-[#fff8ed] hover:text-[#18221f]"
                       >
-                        <button
-                          type="button"
-                          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#d8efee] focus-visible:outline-none"
-                          aria-label={`${getServerDisplayName(member)}のプロフィールを開く`}
+                        <UserProfileDialog
+                          userId={member.user.userId}
+                          serverId={selectedServer.server.id}
                         >
-                          <span className="relative shrink-0">
-                            <Avatar
-                              user={member.user}
-                              className="h-9 w-9 rounded-full border border-black/10"
-                            />
-                            <span
-                              className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#18221f] transition-colors group-hover:border-[#fff8ed] ${getPresenceDotClassName(
-                                member.user.presenceStatus,
-                              )}`}
-                            />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-semibold">
-                              {getServerDisplayName(member)}
-                            </span>
-                            <span className="block truncate text-xs text-[#d8efee] transition-colors group-hover:text-[#68716b]">
-                              {getPresenceDisplayLabel(
-                                member.user.presenceStatus,
-                              )}{" "}
-                              ・
-                              {member.role === "OWNER" ? "管理者" : "メンバー"}
-                            </span>
-                          </span>
-                        </button>
-                      </UserProfileDialog>
-                      {isSelectedServerOwner && !isCurrentUser && (
-                        <div className="flex shrink-0 items-center gap-1">
                           <button
                             type="button"
-                            onClick={() =>
-                              handleUpdateServerMemberRole(
-                                member.id,
-                                member.role === "OWNER" ? "MEMBER" : "OWNER",
-                              )
-                            }
-                            disabled={updateServerMemberRole.isPending}
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#d8efee] transition group-hover:text-[#53615a] hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
-                            aria-label={
-                              member.role === "OWNER"
-                                ? "メンバーに戻す"
-                                : "管理者にする"
-                            }
-                            title={
-                              member.role === "OWNER"
-                                ? "メンバーに戻す"
-                                : "管理者にする"
-                            }
+                            className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#d8efee] focus-visible:outline-none"
+                            aria-label={`${getServerDisplayName(member)}のプロフィールを開く`}
                           >
-                            {member.role === "OWNER" ? (
-                              <ShieldOff
+                            <span className="relative shrink-0">
+                              <Avatar
+                                user={member.user}
+                                className="h-9 w-9 rounded-full border border-black/10"
+                              />
+                              <span
+                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#18221f] transition-colors group-hover:border-[#fff8ed] ${getPresenceDotClassName(
+                                  member.user.presenceStatus,
+                                )}`}
+                              />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">
+                                {getServerDisplayName(member)}
+                              </span>
+                              <span className="block truncate text-xs text-[#d8efee] transition-colors group-hover:text-[#68716b]">
+                                {getPresenceDisplayLabel(
+                                  member.user.presenceStatus,
+                                )}{" "}
+                                ・
+                                {member.role === "OWNER"
+                                  ? "管理者"
+                                  : "メンバー"}
+                              </span>
+                            </span>
+                          </button>
+                        </UserProfileDialog>
+                        {isSelectedServerOwner && !isCurrentUser && (
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleUpdateServerMemberRole(
+                                  member.id,
+                                  member.role === "OWNER" ? "MEMBER" : "OWNER",
+                                )
+                              }
+                              disabled={updateServerMemberRole.isPending}
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-[#d8efee] transition group-hover:text-[#53615a] hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
+                              aria-label={
+                                member.role === "OWNER"
+                                  ? "メンバーに戻す"
+                                  : "管理者にする"
+                              }
+                              title={
+                                member.role === "OWNER"
+                                  ? "メンバーに戻す"
+                                  : "管理者にする"
+                              }
+                            >
+                              {member.role === "OWNER" ? (
+                                <ShieldOff
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Shield
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRemoveServerMember(
+                                  member.id,
+                                  getServerDisplayName(member),
+                                )
+                              }
+                              disabled={removeServerMember.isPending}
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-[#ffd8c6] transition group-hover:text-[#9f4122] hover:bg-[#fff1e8] disabled:opacity-45"
+                              aria-label="退出させる"
+                              title="退出させる"
+                            >
+                              <UserMinus
                                 className="h-4 w-4"
                                 aria-hidden="true"
                               />
-                            ) : (
-                              <Shield className="h-4 w-4" aria-hidden="true" />
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleRemoveServerMember(
-                                member.id,
-                                getServerDisplayName(member),
-                              )
-                            }
-                            disabled={removeServerMember.isPending}
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#ffd8c6] transition group-hover:text-[#9f4122] hover:bg-[#fff1e8] disabled:opacity-45"
-                            aria-label="退出させる"
-                            title="退出させる"
-                          >
-                            <UserMinus className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </aside>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </aside>
+            </>
           )}
         </div>
       </section>
