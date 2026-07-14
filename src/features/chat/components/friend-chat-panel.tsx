@@ -31,6 +31,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { matchesFriendSearch } from "~/features/chat/friend-search";
 import {
   getDirectChatChannelName,
   getSupabaseRealtimeClient,
@@ -193,6 +194,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     string | null
   >(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [friendSearch, setFriendSearch] = useState("");
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
   const [matchingTopic, setMatchingTopic] = useState<MatchingTopic>("CASUAL");
@@ -242,6 +244,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     refetchInterval:
       matchingState === "waiting" || !realtimeClient ? 5000 : false,
   });
+  const filteredFriends = useMemo(
+    () =>
+      (friends.data ?? []).filter((item) =>
+        matchesFriendSearch(item.friend, friendSearch),
+      ),
+    [friendSearch, friends.data],
+  );
   const matchingStatus = api.chat.getMatchingStatus.useQuery(undefined, {
     refetchInterval: matchingState === "waiting" ? 3000 : false,
   });
@@ -1572,8 +1581,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <label className="flex h-9 items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 text-sm text-[#68716b]">
                 <Search className="h-4 w-4" aria-hidden="true" />
                 <input
+                  value={friendSearch}
+                  onChange={(event) => setFriendSearch(event.target.value)}
                   className="min-w-0 flex-1 bg-transparent text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
                   placeholder="フレンドを検索"
+                  aria-label="フレンドを検索"
                 />
               </label>
             </div>
@@ -1636,7 +1648,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 </div>
               )}
 
-              {friends.data?.map((item) => (
+              {filteredFriends.map((item) => (
                 <FriendListItem
                   key={item.friend.id}
                   item={item}
@@ -1651,6 +1663,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   フレンドを追加すると、ここからDMを始められます。
                 </div>
               )}
+
+              {friends.data &&
+                friends.data.length > 0 &&
+                filteredFriends.length === 0 && (
+                  <p className="px-2 py-3 text-sm text-[#68716b]">
+                    該当するフレンドはいません
+                  </p>
+                )}
             </div>
           </>
         )}
