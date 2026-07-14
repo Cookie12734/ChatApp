@@ -4,9 +4,11 @@ import {
   Check,
   ChevronDown,
   Copy,
+  Ellipsis,
   Hash,
   Inbox,
   LogOut,
+  Menu,
   MessageCircle,
   Pencil,
   Pin,
@@ -196,6 +198,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     string | null
   >(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [isNavigationOpen, setIsNavigationOpen] = useState(!initialServerId);
   const [friendSearch, setFriendSearch] = useState("");
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
@@ -323,6 +326,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   useEffect(() => {
     setSelectedServerId(initialServerId ?? null);
+    setIsNavigationOpen(!initialServerId);
     if (initialServerId) {
       setSelectedFriendId(null);
     }
@@ -617,6 +621,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   );
 
   const openDirectFriend = useCallback((friendId: string) => {
+    setIsNavigationOpen(false);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setIsFriendsOpen(false);
@@ -696,6 +701,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (status.status === "waiting" && matchingState === "idle") {
       setMatchingTopic(status.topic);
       setMatchingState("waiting");
+      setIsNavigationOpen(false);
       setIsMatchingOpen(true);
       setMatchingMessage("同じ話題の相手を探しています...");
       return;
@@ -890,6 +896,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const leaveServer = api.server.leave.useMutation({
     onSuccess: async () => {
+      setIsNavigationOpen(true);
       setSelectedServerId(null);
       setSelectedServerChannelId(null);
       setIsFriendsOpen(false);
@@ -904,6 +911,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const deleteServer = api.server.deleteServer.useMutation({
     onSuccess: async () => {
+      setIsNavigationOpen(true);
       setSelectedServerId(null);
       setSelectedServerChannelId(null);
       setIsFriendsOpen(false);
@@ -950,6 +958,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   });
 
   const selectHome = () => {
+    setIsNavigationOpen(true);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setIsFriendsOpen(false);
@@ -965,6 +974,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const selectFriend = (friendId: string) => {
+    setIsNavigationOpen(false);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setIsFriendsOpen(false);
@@ -980,6 +990,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const selectServer = (membership: ChatServerMembership) => {
+    setIsNavigationOpen(true);
     setSelectedServerId(membership.server.id);
     setSelectedServerChannelId(membership.server.channels[0]?.id ?? null);
     setIsFriendsOpen(false);
@@ -996,12 +1007,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const openChannelMenu = (
-    event: MouseEvent<HTMLDivElement>,
+    event: MouseEvent<HTMLElement>,
     channel: ChatServerMembership["server"]["channels"][number],
   ) => {
     if (!isSelectedServerOwner) return;
 
     event.preventDefault();
+    event.stopPropagation();
     setSelectedServerChannelId(channel.id);
     setChannelContextMenu({
       channelId: channel.id,
@@ -1024,6 +1036,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const openMatching = () => {
+    setIsNavigationOpen(false);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setIsFriendsOpen(false);
@@ -1040,6 +1053,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const openFriends = () => {
+    setIsNavigationOpen(false);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setSelectedFriendId(null);
@@ -1056,6 +1070,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const openDirectMessages = () => {
+    setIsNavigationOpen(false);
     setSelectedServerId(null);
     setSelectedServerChannelId(null);
     setIsFriendsOpen(false);
@@ -1236,6 +1251,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (chatMessage.senderId !== directConversation?.currentUserId) return;
 
     event.preventDefault();
+    event.stopPropagation();
     setChannelContextMenu(null);
     setMessageContextMenu({
       kind: "direct",
@@ -1254,6 +1270,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (!isMine && !isSelectedServerOwner) return;
 
     event.preventDefault();
+    event.stopPropagation();
     setChannelContextMenu(null);
     setMessageContextMenu({
       kind: "server",
@@ -1370,10 +1387,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       />
       <aside
         className={`${
-          selectedServer || selectedFriendId || isFriendsOpen || isMatchingOpen
-            ? "hidden md:flex"
-            : "flex"
-        } w-[calc(100vw-4rem)] max-w-[300px] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px]`}
+          isNavigationOpen ? "flex" : "hidden"
+        } w-[calc(100vw-4rem)] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px] md:max-w-[300px]`}
       >
         {selectedServer ? (
           <>
@@ -1558,6 +1573,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       <button
                         type="button"
                         onClick={() => {
+                          setIsNavigationOpen(false);
                           setSelectedServerChannelId(channel.id);
                           setIsServerMenuOpen(false);
                           setServerMessage(null);
@@ -1574,6 +1590,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           </span>
                         )}
                       </button>
+                      {isSelectedServerOwner && (
+                        <button
+                          type="button"
+                          onClick={(event) => openChannelMenu(event, channel)}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                          aria-label={`${channel.name}の操作`}
+                          aria-haspopup="menu"
+                          aria-expanded={
+                            channelContextMenu?.channelId === channel.id
+                          }
+                          title="チャンネル操作"
+                        >
+                          <Ellipsis className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -1720,9 +1751,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         )}
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col bg-[#fff8ed]">
+      <section
+        className={`${
+          isNavigationOpen ? "hidden md:flex" : "flex"
+        } min-w-0 flex-1 flex-col bg-[#fff8ed]`}
+      >
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#18221f]/15 bg-[#e4f2dc] px-4 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsNavigationOpen(true)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] md:hidden"
+              aria-label="ナビゲーションを開く"
+              title="ナビゲーションを開く"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
             {selectedServer ? (
               <Hash
                 className="h-5 w-5 shrink-0 text-[#68716b]"
@@ -1979,6 +2023,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 </p>
                               )}
                             </div>
+                            {(isMine || isSelectedServerOwner) && (
+                              <button
+                                type="button"
+                                onClick={(event) =>
+                                  openServerMessageMenu(event, chatMessage)
+                                }
+                                className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#18221f]/10 bg-[#fff8ed] text-[#53615a] shadow-sm transition hover:bg-white hover:text-[#18221f] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                                aria-label="メッセージ操作"
+                                aria-haspopup="menu"
+                                aria-expanded={
+                                  messageContextMenu?.kind === "server" &&
+                                  messageContextMenu.messageId ===
+                                    chatMessage.id
+                                }
+                                title="メッセージ操作"
+                              >
+                                <Ellipsis
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            )}
                           </article>
                         );
                       })}
@@ -2168,6 +2234,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                   </p>
                                 )}
                               </div>
+                              {isMine && (
+                                <button
+                                  type="button"
+                                  onClick={(event) =>
+                                    openDirectMessageMenu(event, chatMessage)
+                                  }
+                                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#18221f]/10 bg-[#fff8ed] text-[#53615a] shadow-sm transition hover:bg-white hover:text-[#18221f] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                                  aria-label="メッセージ操作"
+                                  aria-haspopup="menu"
+                                  aria-expanded={
+                                    messageContextMenu?.kind === "direct" &&
+                                    messageContextMenu.messageId ===
+                                      chatMessage.id
+                                  }
+                                  title="メッセージ操作"
+                                >
+                                  <Ellipsis
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              )}
                             </article>
                           );
                         })}
@@ -2194,7 +2282,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       value={serverDraft}
                       onChange={(event) => setServerDraft(event.target.value)}
                       onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
+                        if (
+                          event.key === "Enter" &&
+                          !event.shiftKey &&
+                          !event.nativeEvent.isComposing
+                        ) {
                           event.preventDefault();
                           event.currentTarget.form?.requestSubmit();
                         }
@@ -2307,7 +2399,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             handleDraftChange(event.target.value)
                           }
                           onKeyDown={(event) => {
-                            if (event.key === "Enter" && !event.shiftKey) {
+                            if (
+                              event.key === "Enter" &&
+                              !event.shiftKey &&
+                              !event.nativeEvent.isComposing
+                            ) {
                               event.preventDefault();
                               event.currentTarget.form?.requestSubmit();
                             }
