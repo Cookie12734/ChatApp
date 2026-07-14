@@ -2236,7 +2236,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   return (
                     <div
                       key={member.id}
-                      className="flex items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 py-2"
+                      className="group flex items-center gap-2 rounded-md border border-[#d8efee]/25 bg-[#18221f] px-3 py-2 text-[#f6f0e4] transition-colors hover:border-[#18221f]/10 hover:bg-[#fff8ed] hover:text-[#18221f]"
                     >
                       <UserProfileDialog
                         userId={member.user.userId}
@@ -2244,7 +2244,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       >
                         <button
                           type="button"
-                          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#d8efee] focus-visible:outline-none"
                           aria-label={`${getServerDisplayName(member)}のプロフィールを開く`}
                         >
                           <span className="relative shrink-0">
@@ -2253,7 +2253,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               className="h-9 w-9 rounded-full border border-black/10"
                             />
                             <span
-                              className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#fff8ed] ${getPresenceDotClassName(
+                              className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#18221f] transition-colors group-hover:border-[#fff8ed] ${getPresenceDotClassName(
                                 member.user.presenceStatus,
                               )}`}
                             />
@@ -2262,7 +2262,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             <span className="block truncate text-sm font-semibold">
                               {getServerDisplayName(member)}
                             </span>
-                            <span className="block truncate text-xs text-[#68716b]">
+                            <span className="block truncate text-xs text-[#d8efee] transition-colors group-hover:text-[#68716b]">
                               {getPresenceDisplayLabel(
                                 member.user.presenceStatus,
                               )}{" "}
@@ -2283,7 +2283,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               )
                             }
                             disabled={updateServerMemberRole.isPending}
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#d8efee] transition group-hover:text-[#53615a] hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
                             aria-label={
                               member.role === "OWNER"
                                 ? "メンバーに戻す"
@@ -2313,7 +2313,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               )
                             }
                             disabled={removeServerMember.isPending}
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-45"
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-[#ffd8c6] transition group-hover:text-[#9f4122] hover:bg-[#fff1e8] disabled:opacity-45"
                             aria-label="退出させる"
                             title="退出させる"
                           >
