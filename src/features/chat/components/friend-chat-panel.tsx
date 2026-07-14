@@ -220,6 +220,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   );
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
+  const [isPinnedMessagesOpen, setIsPinnedMessagesOpen] = useState(false);
   const [serverNameDraft, setServerNameDraft] = useState("");
   const [serverIconFile, setServerIconFile] = useState<File | null>(null);
   const [serverSettingsMessage, setServerSettingsMessage] = useState<
@@ -454,6 +455,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   useEffect(() => {
     setMessageContextMenu(null);
     setEditingMessage(null);
+    setIsPinnedMessagesOpen(false);
   }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
 
   useEffect(() => {
@@ -1748,6 +1750,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <h1 className="font-semibold">ダイレクトメッセージ</h1>
             )}
           </div>
+          {selectedServer && (
+            <button
+              type="button"
+              onClick={() => setIsPinnedMessagesOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+              aria-label="ピン留めしたメッセージ"
+              title="ピン留めしたメッセージ"
+            >
+              <Pin className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
           <ProfileSettingsDialog>
             <button
               type="button"
@@ -2488,6 +2501,57 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isPinnedMessagesOpen}
+        onOpenChange={setIsPinnedMessagesOpen}
+      >
+        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-xl">
+          <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+            <DialogTitle>ピン留めしたメッセージ</DialogTitle>
+          </DialogHeader>
+          <div className="divide-y divide-[#18221f]/10 px-5 py-2">
+            {serverConversation.isLoading && (
+              <p className="py-6 text-sm text-[#68716b]">読み込み中...</p>
+            )}
+            {serverConversationData?.pinnedMessages.map((chatMessage) => {
+              const author = {
+                ...chatMessage.sender,
+                name:
+                  chatMessage.sender.serverMemberships[0]?.nickname ??
+                  chatMessage.sender.name,
+              };
+
+              return (
+                <article key={chatMessage.id} className="flex gap-3 py-4">
+                  <Avatar
+                    user={author}
+                    className="h-10 w-10 shrink-0 rounded-full border border-black/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-sm font-semibold">
+                        {getDisplayName(author)}
+                      </span>
+                      <time className="text-xs text-[#68716b]">
+                        {formatTime(chatMessage.createdAt)}
+                      </time>
+                    </div>
+                    <p className="leading-7 break-words whitespace-pre-wrap">
+                      {chatMessage.content}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+            {serverConversationData?.pinnedMessages.length === 0 && (
+              <p className="py-6 text-sm text-[#68716b]">
+                ピン留めされたメッセージはありません
+              </p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -360,7 +360,7 @@ export const serverRouter = createTRPCRouter({
         },
       };
 
-      const [currentUser, server, messages] = await Promise.all(
+      const [currentUser, server, messages, pinnedMessages] = await Promise.all(
         [
           ctx.db.user.findUniqueOrThrow({
             where: { id: currentUserId },
@@ -379,6 +379,12 @@ export const serverRouter = createTRPCRouter({
             where: messageWhere,
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             take: MESSAGE_PAGE_SIZE + 1,
+            include: messageInclude,
+          }),
+          ctx.db.serverMessage.findMany({
+            where: { ...messageWhere, pinnedAt: { not: null } },
+            orderBy: { pinnedAt: "desc" },
+            take: 50,
             include: messageInclude,
           }),
         ],
@@ -401,6 +407,7 @@ export const serverRouter = createTRPCRouter({
         channel,
         currentUser,
         server,
+        pinnedMessages,
         ...prepareMessagePage(messages),
       };
     }),
