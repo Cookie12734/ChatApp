@@ -7,10 +7,18 @@ import {
 } from "~/features/friend/server/blocking";
 import { canManageDirectMessage } from "~/features/chat/server/direct-message-permissions";
 import { canShowMatchedUser } from "~/features/chat/server/matching-permissions";
+import {
+  MESSAGE_PAGE_SIZE,
+  prepareMessagePage,
+} from "~/features/chat/message-page";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const friendIdInput = z.object({
   friendId: z.string().min(1),
+});
+
+const conversationInput = friendIdInput.extend({
+  cursor: z.string().nullish(),
 });
 
 const messageIdInput = z.object({
@@ -255,7 +263,7 @@ export const chatRouter = createTRPCRouter({
   }),
 
   getConversation: protectedProcedure
-    .input(friendIdInput)
+    .input(conversationInput)
     .query(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
 
@@ -299,8 +307,9 @@ export const chatRouter = createTRPCRouter({
               },
             ],
           },
-          orderBy: { createdAt: "asc" },
-          take: 100,
+          cursor: input.cursor ? { id: input.cursor } : undefined,
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: MESSAGE_PAGE_SIZE + 1,
           select: {
             id: true,
             content: true,
@@ -325,7 +334,7 @@ export const chatRouter = createTRPCRouter({
         currentUser,
         currentUserId,
         friend: friendship.friend,
-        messages,
+        ...prepareMessagePage(messages),
       };
     }),
 

@@ -5,6 +5,10 @@ import { z } from "zod";
 
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
 import {
+  MESSAGE_PAGE_SIZE,
+  prepareMessagePage,
+} from "~/features/chat/message-page";
+import {
   canManageServer,
   canManageServerMember,
   canDeleteServerMessage,
@@ -75,6 +79,7 @@ const serverProfileInput = serverIdInput.extend({
 
 const conversationInput = serverIdInput.extend({
   channelId: z.string().min(1).optional(),
+  cursor: z.string().nullish(),
 });
 
 const sendMessageInput = serverIdInput.extend({
@@ -340,40 +345,44 @@ export const serverRouter = createTRPCRouter({
         hiddenUserIds: getBlockedPeerIds(currentUserId, blocks),
         serverId: input.serverId,
       });
-
-      const [currentUser, server, messages] = await Promise.all([
-        ctx.db.user.findUniqueOrThrow({
-          where: { id: currentUserId },
-          select: { id: true, userId: true, name: true, image: true },
-        }),
-        ctx.db.chatServer.findUniqueOrThrow({
-          where: { id: input.serverId },
+      const messageInclude = {
+        sender: {
           select: {
             id: true,
+            userId: true,
             name: true,
-            description: true,
-          },
-        }),
-        ctx.db.serverMessage.findMany({
-          where: messageWhere,
-          orderBy: { createdAt: "asc" },
-          take: 100,
-          include: {
-            sender: {
-              select: {
-                id: true,
-                userId: true,
-                name: true,
-                image: true,
-                serverMemberships: {
-                  where: { serverId: input.serverId },
-                  select: { nickname: true },
-                },
-              },
+            image: true,
+            serverMemberships: {
+              where: { serverId: input.serverId },
+              select: { nickname: true },
             },
           },
-        }),
-      ]);
+        },
+      };
+
+      const [currentUser, server, messages] = await Promise.all(
+        [
+          ctx.db.user.findUniqueOrThrow({
+            where: { id: currentUserId },
+            select: { id: true, userId: true, name: true, image: true },
+          }),
+          ctx.db.chatServer.findUniqueOrThrow({
+            where: { id: input.serverId },
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          }),
+          ctx.db.serverMessage.findMany({
+            cursor: input.cursor ? { id: input.cursor } : undefined,
+            where: messageWhere,
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: MESSAGE_PAGE_SIZE + 1,
+            include: messageInclude,
+          }),
+        ],
+      );
       await ctx.db.serverChannelRead.upsert({
         where: {
           channelId_userId: {
@@ -392,7 +401,7 @@ export const serverRouter = createTRPCRouter({
         channel,
         currentUser,
         server,
-        messages,
+        ...prepareMessagePage(messages),
       };
     }),
 

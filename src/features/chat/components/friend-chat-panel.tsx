@@ -294,16 +294,27 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         (channel) => channel.id === channelContextMenu.channelId,
       )
     : undefined;
-  const serverConversation = api.server.getConversation.useQuery(
+  const serverConversation = api.server.getConversation.useInfiniteQuery(
     {
       channelId: selectedServerChannel?.id,
       serverId: selectedServerId ?? "",
     },
     {
       enabled: Boolean(selectedServerId && selectedServerChannel?.id),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
       refetchInterval:
         selectedServerId && selectedServerChannel?.id ? 3000 : false,
     },
+  );
+  const serverConversationData = serverConversation.data?.pages[0] ?? null;
+  const serverMessages = useMemo(
+    () =>
+      serverConversation.data
+        ? [...serverConversation.data.pages]
+            .reverse()
+            .flatMap((page) => page.messages)
+        : [],
+    [serverConversation.data],
   );
 
   useEffect(() => {
@@ -336,15 +347,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     selectedServerId,
   ]);
 
-  const conversation = api.chat.getConversation.useQuery(
+  const conversation = api.chat.getConversation.useInfiniteQuery(
     { friendId: selectedFriendId ?? "" },
     {
       enabled: Boolean(selectedFriendId),
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
       refetchInterval: selectedFriendId && !realtimeClient ? 3000 : false,
     },
   );
 
-  const currentUser = conversation.data?.currentUser ?? null;
+  const directConversation = conversation.data?.pages[0] ?? null;
+  const directMessages = useMemo(
+    () =>
+      conversation.data
+        ? [...conversation.data.pages]
+            .reverse()
+            .flatMap((page) => page.messages)
+        : [],
+    [conversation.data],
+  );
+  const latestDirectMessageId = directMessages.at(-1)?.id;
+  const latestServerMessageId = serverMessages.at(-1)?.id;
+  const currentUser = directConversation?.currentUser ?? null;
   const currentUserId = currentUser?.id;
   const currentUserName = currentUser ? getDisplayName(currentUser) : null;
   const selectedChannelName =
@@ -354,15 +378,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [conversation.data?.messages.length, selectedFriendId]);
+  }, [latestDirectMessageId, selectedFriendId]);
 
   useEffect(() => {
     serverMessagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [
-    serverConversation.data?.messages.length,
-    selectedServerChannel?.id,
-    selectedServerId,
-  ]);
+  }, [latestServerMessageId, selectedServerChannel?.id, selectedServerId]);
 
   useEffect(() => {
     if (!selectedServer) {
@@ -493,12 +513,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const selectedFriend = useMemo(() => {
     return (
-      conversation.data?.friend ??
+      directConversation?.friend ??
       friends.data?.find((item) => item.friend.id === selectedFriendId)
         ?.friend ??
       null
     );
-  }, [conversation.data?.friend, friends.data, selectedFriendId]);
+  }, [directConversation?.friend, friends.data, selectedFriendId]);
 
   useEffect(() => {
     if (
@@ -1185,7 +1205,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event: MouseEvent<HTMLElement>,
     chatMessage: { id: string; senderId: string },
   ) => {
-    if (chatMessage.senderId !== conversation.data?.currentUserId) return;
+    if (chatMessage.senderId !== directConversation?.currentUserId) return;
 
     event.preventDefault();
     setChannelContextMenu(null);
@@ -1202,7 +1222,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     chatMessage: { id: string; senderId: string },
   ) => {
     const isMine =
-      chatMessage.senderId === serverConversation.data?.currentUser.id;
+      chatMessage.senderId === serverConversationData?.currentUser.id;
     if (!isMine && !isSelectedServerOwner) return;
 
     event.preventDefault();
@@ -1283,10 +1303,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     leaveServer.mutate({ serverId: selectedServer.server.id });
   };
 
-  const serverConversationData = serverConversation.data ?? null;
-  const serverMessages = serverConversationData?.messages ?? [];
-  const directConversation = conversation.data ?? null;
-  const directMessages = directConversation?.messages ?? [];
   const serverMessageContextTarget =
     messageContextMenu?.kind === "server"
       ? serverMessages.find(
@@ -1781,6 +1797,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
                   {serverConversationData && serverMessages.length > 0 && (
                     <div className="space-y-1">
+                      {serverConversation.hasNextPage && (
+                        <div className="flex justify-center pb-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void serverConversation.fetchNextPage()
+                            }
+                            disabled={serverConversation.isFetchingNextPage}
+                            className="min-h-9 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4] disabled:opacity-50"
+                          >
+                            {serverConversation.isFetchingNextPage
+                              ? "読み込み中..."
+                              : "過去のメッセージを読み込む"}
+                          </button>
+                        </div>
+                      )}
                       {serverMessages.map((chatMessage) => {
                         const isMine =
                           chatMessage.senderId ===
@@ -1975,6 +2007,20 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     directConversation &&
                     directMessages.length > 0 && (
                       <div className="space-y-1">
+                        {conversation.hasNextPage && (
+                          <div className="flex justify-center pb-4">
+                            <button
+                              type="button"
+                              onClick={() => void conversation.fetchNextPage()}
+                              disabled={conversation.isFetchingNextPage}
+                              className="min-h-9 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4] disabled:opacity-50"
+                            >
+                              {conversation.isFetchingNextPage
+                                ? "読み込み中..."
+                                : "過去のメッセージを読み込む"}
+                            </button>
+                          </div>
+                        )}
                         {directMessages.map((chatMessage) => {
                           const isMine =
                             chatMessage.senderId ===
