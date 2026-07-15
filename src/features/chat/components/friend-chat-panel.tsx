@@ -32,6 +32,7 @@ import { type RealtimeChannel } from "@supabase/supabase-js";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -2651,6 +2652,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-lg">
           <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
             <DialogTitle>サーバー設定</DialogTitle>
+            <DialogDescription className="sr-only">
+              サーバー名、アイコン、招待リンクを管理します。
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleServerSettingsSubmit} className="space-y-5 p-5">
             <div className="flex items-center gap-4">
@@ -2782,6 +2786,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-xl">
           <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
             <DialogTitle>ピン留めしたメッセージ</DialogTitle>
+            <DialogDescription className="sr-only">
+              このチャンネルでピン留めされているメッセージの一覧です。
+            </DialogDescription>
           </DialogHeader>
           <div className="divide-y divide-[#18221f]/10 px-5 py-2">
             {serverConversation.isLoading && (
