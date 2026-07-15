@@ -82,6 +82,10 @@ const conversationInput = serverIdInput.extend({
   cursor: z.string().nullish(),
 });
 
+const markChannelReadInput = channelIdInput.extend({
+  messageId: z.string().min(1),
+});
+
 const sendMessageInput = serverIdInput.extend({
   channelId: z.string().min(1).optional(),
   content: z
@@ -389,20 +393,6 @@ export const serverRouter = createTRPCRouter({
           }),
         ],
       );
-      await ctx.db.serverChannelRead.upsert({
-        where: {
-          channelId_userId: {
-            channelId: channel.id,
-            userId: currentUserId,
-          },
-        },
-        create: {
-          channelId: channel.id,
-          userId: currentUserId,
-        },
-        update: { readAt: new Date() },
-      });
-
       return {
         channel,
         currentUser,
@@ -410,6 +400,67 @@ export const serverRouter = createTRPCRouter({
         pinnedMessages,
         ...prepareMessagePage(messages),
       };
+    }),
+
+  markChannelRead: protectedProcedure
+    .input(markChannelReadInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const channel = await ctx.db.serverChannel.findFirst({
+        where: {
+          id: input.channelId,
+          serverId: input.serverId,
+          server: { members: { some: { userId: currentUserId } } },
+        },
+        select: { id: true, name: true },
+      });
+
+      if (!channel) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "チャンネルが見つかりません",
+        });
+      }
+
+      const message = await ctx.db.serverMessage.findFirst({
+        where: {
+          id: input.messageId,
+          ...getServerMessageWhere({
+            channelId: channel.id,
+            channelName: channel.name,
+            serverId: input.serverId,
+          }),
+        },
+        select: { createdAt: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "メッセージが見つかりません",
+        });
+      }
+
+      await ctx.db.$transaction([
+        ctx.db.serverChannelRead.createMany({
+          data: {
+            channelId: channel.id,
+            userId: currentUserId,
+            readAt: message.createdAt,
+          },
+          skipDuplicates: true,
+        }),
+        ctx.db.serverChannelRead.updateMany({
+          where: {
+            channelId: channel.id,
+            userId: currentUserId,
+            readAt: { lt: message.createdAt },
+          },
+          data: { readAt: message.createdAt },
+        }),
+      ]);
+
+      return { ok: true };
     }),
 
   updateMyProfile: protectedProcedure

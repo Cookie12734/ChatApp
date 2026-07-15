@@ -21,6 +21,10 @@ const conversationInput = friendIdInput.extend({
   cursor: z.string().nullish(),
 });
 
+const markConversationReadInput = friendIdInput.extend({
+  messageId: z.string().min(1),
+});
+
 const messageIdInput = z.object({
   messageId: z.string().min(1),
 });
@@ -321,21 +325,47 @@ export const chatRouter = createTRPCRouter({
         }),
       ]);
 
-      await ctx.db.directMessage.updateMany({
-        where: {
-          receiverId: currentUserId,
-          senderId: input.friendId,
-          readAt: null,
-        },
-        data: { readAt: new Date() },
-      });
-
       return {
         currentUser,
         currentUserId,
         friend: friendship.friend,
         ...prepareMessagePage(messages),
       };
+    }),
+
+  markConversationRead: protectedProcedure
+    .input(markConversationReadInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const message = await ctx.db.directMessage.findFirst({
+        where: {
+          id: input.messageId,
+          OR: [
+            { receiverId: currentUserId, senderId: input.friendId },
+            { receiverId: input.friendId, senderId: currentUserId },
+          ],
+        },
+        select: { createdAt: true },
+      });
+
+      if (!message) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "会話が見つかりません",
+        });
+      }
+
+      const result = await ctx.db.directMessage.updateMany({
+        where: {
+          receiverId: currentUserId,
+          senderId: input.friendId,
+          readAt: null,
+          createdAt: { lte: message.createdAt },
+        },
+        data: { readAt: new Date() },
+      });
+
+      return { count: result.count };
     }),
 
   sendMessage: protectedProcedure

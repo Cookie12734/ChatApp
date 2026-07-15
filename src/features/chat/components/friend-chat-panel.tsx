@@ -199,6 +199,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   >(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [isNavigationOpen, setIsNavigationOpen] = useState(!initialServerId);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
@@ -376,6 +377,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   );
   const latestDirectMessageId = directMessages.at(-1)?.id;
   const latestServerMessageId = serverMessages.at(-1)?.id;
+  const isConversationVisible = isDesktopLayout || !isNavigationOpen;
   const currentUser = directConversation?.currentUser ?? null;
   const currentUserId = currentUser?.id;
   const currentUserName = currentUser ? getDisplayName(currentUser) : null;
@@ -384,6 +386,24 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       ? getDirectChatChannelName(currentUserId, selectedFriendId)
       : null;
 
+  const { mutate: markDirectConversationRead } =
+    api.chat.markConversationRead.useMutation({
+      onSuccess: () => void utils.chat.getFriends.invalidate(),
+    });
+  const { mutate: markServerChannelRead } =
+    api.server.markChannelRead.useMutation({
+      onSuccess: () => void utils.server.getOverview.invalidate(),
+    });
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia("(min-width: 768px)");
+    const updateLayout = () => setIsDesktopLayout(desktopQuery.matches);
+
+    updateLayout();
+    desktopQuery.addEventListener("change", updateLayout);
+    return () => desktopQuery.removeEventListener("change", updateLayout);
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [latestDirectMessageId, selectedFriendId]);
@@ -391,6 +411,45 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   useEffect(() => {
     serverMessagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [latestServerMessageId, selectedServerChannel?.id, selectedServerId]);
+
+  useEffect(() => {
+    if (!isConversationVisible || !selectedFriendId || !latestDirectMessageId) {
+      return;
+    }
+
+    markDirectConversationRead({
+      friendId: selectedFriendId,
+      messageId: latestDirectMessageId,
+    });
+  }, [
+    isConversationVisible,
+    latestDirectMessageId,
+    markDirectConversationRead,
+    selectedFriendId,
+  ]);
+
+  useEffect(() => {
+    if (
+      !isConversationVisible ||
+      !selectedServerId ||
+      !selectedServerChannel?.id ||
+      !latestServerMessageId
+    ) {
+      return;
+    }
+
+    markServerChannelRead({
+      channelId: selectedServerChannel.id,
+      messageId: latestServerMessageId,
+      serverId: selectedServerId,
+    });
+  }, [
+    isConversationVisible,
+    latestServerMessageId,
+    markServerChannelRead,
+    selectedServerChannel?.id,
+    selectedServerId,
+  ]);
 
   useEffect(() => {
     if (!selectedServer) {
