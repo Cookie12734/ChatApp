@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, Settings, UserCheck, UserPlus } from "lucide-react";
+import { Settings, UserCheck, UserPlus, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import {
@@ -48,6 +48,9 @@ export function UserProfileDialog({
   const acceptFriendRequest = api.friend.acceptRequest.useMutation({
     onSuccess: invalidateProfile,
   });
+  const cancelFriendRequest = api.friend.cancelRequest.useMutation({
+    onSuccess: invalidateProfile,
+  });
   const data = profile.data;
   const displayName =
     data?.serverProfile?.nickname?.trim() ??
@@ -56,7 +59,9 @@ export function UserProfileDialog({
     "";
   const displayedBio = data?.serverProfile?.bio ?? data?.bio;
   const friendActionError =
-    sendFriendRequest.error?.message ?? acceptFriendRequest.error?.message;
+    sendFriendRequest.error?.message ??
+    acceptFriendRequest.error?.message ??
+    cancelFriendRequest.error?.message;
 
   return (
     <Dialog
@@ -66,6 +71,7 @@ export function UserProfileDialog({
         if (!open) {
           sendFriendRequest.reset();
           acceptFriendRequest.reset();
+          cancelFriendRequest.reset();
         }
       }}
     >
@@ -220,16 +226,24 @@ export function UserProfileDialog({
                           : "フレンドになる"}
                       </button>
                     )}
-                  {data.relationship === "OUTGOING_PENDING" && (
-                    <button
-                      type="button"
-                      disabled
-                      className="inline-flex min-h-11 w-full cursor-default items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-[#f1e4d0] px-4 text-sm font-semibold text-[#53615a]"
-                    >
-                      <Clock3 className="h-4 w-4" aria-hidden="true" />
-                      フレンド申請済み
-                    </button>
-                  )}
+                  {data.relationship === "OUTGOING_PENDING" &&
+                    data.outgoingRequestId && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          cancelFriendRequest.mutate({
+                            requestId: data.outgoingRequestId!,
+                          })
+                        }
+                        disabled={cancelFriendRequest.isPending}
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#9f4122]/25 bg-[#fff1e8] px-4 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] focus-visible:ring-2 focus-visible:ring-[#9f4122] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                        {cancelFriendRequest.isPending
+                          ? "取消中..."
+                          : "フレンド申請を取り消す"}
+                      </button>
+                    )}
                   {data.relationship === "FRIENDS" && (
                     <button
                       type="button"

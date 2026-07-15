@@ -60,6 +60,13 @@ export function FriendPanel() {
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
+  const cancelRequest = api.friend.cancelRequest.useMutation({
+    onSuccess: async () => {
+      setMessage("フレンド申請を取り消しました");
+      await invalidateOverview();
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
 
   const markNotificationsRead = api.friend.markNotificationsRead.useMutation({
     onSuccess: invalidateOverview,
@@ -211,14 +218,28 @@ export function FriendPanel() {
                 {data.outgoingRequests.map((request) => (
                   <div
                     key={request.id}
-                    className="rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
+                    className="flex items-center justify-between gap-3 rounded-md border border-[#18221f]/10 bg-white px-4 py-3"
                   >
-                    <p className="font-medium">
-                      {request.receiver.name ?? request.receiver.userId}
-                    </p>
-                    <p className="font-mono text-sm text-[#68716b]">
-                      {request.receiver.userId}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {request.receiver.name ?? request.receiver.userId}
+                      </p>
+                      <p className="truncate font-mono text-sm text-[#68716b]">
+                        {request.receiver.userId}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        cancelRequest.mutate({ requestId: request.id })
+                      }
+                      disabled={cancelRequest.isPending}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+                      aria-label="フレンド申請を取り消す"
+                      title="フレンド申請を取り消す"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </button>
                   </div>
                 ))}
               </div>

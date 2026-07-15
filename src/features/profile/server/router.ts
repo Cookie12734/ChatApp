@@ -197,6 +197,8 @@ export const profileRouter = createTRPCRouter({
         ...profile,
         incomingRequestId:
           relationship === "INCOMING_PENDING" ? incomingRequest?.id : null,
+        outgoingRequestId:
+          relationship === "OUTGOING_PENDING" ? outgoingRequest?.id : null,
         relationship,
         serverProfile,
       };

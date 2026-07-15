@@ -6,6 +6,7 @@ import {
   getBlockedPeerIds,
   isVisibleFriendNotification,
 } from "~/features/friend/server/blocking";
+import { canCancelFriendRequest } from "~/features/friend/server/friend-request-permissions";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const userIdSchema = z
@@ -314,6 +315,40 @@ export const friendRouter = createTRPCRouter({
 
         return declinedRequest;
       });
+    }),
+
+  cancelRequest: protectedProcedure
+    .input(z.object({ requestId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const request = await ctx.db.friendRequest.findUnique({
+        where: { id: input.requestId },
+        select: { senderId: true, status: true },
+      });
+
+      if (!canCancelFriendRequest(currentUserId, request)) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "取り消せるフレンド申請が見つかりません",
+        });
+      }
+
+      const result = await ctx.db.friendRequest.deleteMany({
+        where: {
+          id: input.requestId,
+          senderId: currentUserId,
+          status: "PENDING",
+        },
+      });
+
+      if (result.count !== 1) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "取り消せるフレンド申請が見つかりません",
+        });
+      }
+
+      return { requestId: input.requestId };
     }),
 
   markNotificationsRead: protectedProcedure.mutation(async ({ ctx }) => {
