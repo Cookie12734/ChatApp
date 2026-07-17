@@ -27,7 +27,11 @@ function handleAuthError(error: unknown) {
   }
 
   isRedirectingToLogin = true;
-  window.location.assign("/auth/login");
+  const callbackUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const loginUrl = new URL("/auth/login", window.location.origin);
+  loginUrl.searchParams.set("callbackUrl", callbackUrl);
+  loginUrl.searchParams.set("reason", "session_expired");
+  window.location.assign(loginUrl.toString());
 }
 
 export const createQueryClient = () =>

@@ -171,6 +171,13 @@ exports.Prisma.VerificationTokenScalarFieldEnum = {
   expires: 'expires'
 };
 
+exports.Prisma.RateLimitBucketScalarFieldEnum = {
+  key: 'key',
+  count: 'count',
+  resetAt: 'resetAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.FriendRequestScalarFieldEnum = {
   id: 'id',
   senderId: 'senderId',
@@ -317,6 +324,7 @@ exports.Prisma.ModelName = {
   Session: 'Session',
   User: 'User',
   VerificationToken: 'VerificationToken',
+  RateLimitBucket: 'RateLimitBucket',
   FriendRequest: 'FriendRequest',
   Friendship: 'Friendship',
   Notification: 'Notification',

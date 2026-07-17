@@ -9,7 +9,7 @@ import {
   type AuthFormState,
 } from "~/features/auth/actions";
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   const [state, formAction, isPending] = useActionState<
     AuthFormState,
     FormData
@@ -22,6 +22,7 @@ export function LoginForm() {
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
         {state.error && (
           <p className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]">
             {state.error}

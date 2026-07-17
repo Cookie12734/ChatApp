@@ -18,6 +18,7 @@ import {
   countServerOwners,
   getVisibleServerMembers,
 } from "~/features/server/server/message-permissions";
+import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const serverInput = z.object({
@@ -503,6 +504,15 @@ export const serverRouter = createTRPCRouter({
     .input(sendMessageInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "chat:message:user",
+          subject: currentUserId,
+          windowMs: 10 * 1000,
+        },
+      ]);
 
       const membership = await ctx.db.serverMember.findUnique({
         where: {

@@ -6,7 +6,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signIn } from "~/features/auth";
+import { normalizeEmailAddress } from "~/features/auth/lib/email-normalization";
 import { findUserByNormalizedEmail } from "~/features/auth/lib/email-user";
+import { getSafeInternalRedirect } from "~/features/auth/lib/redirect-path";
 import {
   clearPendingVerificationEmail,
   getPendingVerificationEmailSession,
@@ -15,6 +17,15 @@ import {
 } from "~/features/auth/lib/verification-email-session";
 import { createAndSendVerificationToken } from "~/features/auth/lib/verification-token";
 import { db } from "~/server/db";
+import {
+  getRateLimitMessage,
+  RateLimitExceededError,
+  type RateLimitRule,
+} from "~/server/rate-limit-policy";
+import {
+  enforceRateLimits,
+  getRequestRateLimitSubject,
+} from "~/server/rate-limit";
 
 export type AuthFormState = {
   error?: string;
@@ -25,6 +36,31 @@ export type ResendVerificationEmailState = {
   message?: string;
   remainingSeconds?: number;
 };
+
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+
+async function getRateLimitError(rules: RateLimitRule[]) {
+  try {
+    await enforceRateLimits(rules);
+    return null;
+  } catch (error) {
+    if (error instanceof RateLimitExceededError) {
+      return getRateLimitMessage(error);
+    }
+
+    throw error;
+  }
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    error !== null &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "P2002"
+  );
+}
 
 const userIdSchema = z
   .string()
@@ -58,6 +94,7 @@ export async function signInWithCredentials(
   _prevState: AuthFormState | null,
   formData: FormData,
 ): Promise<AuthFormState> {
+  const redirectTo = getSafeInternalRedirect(formData.get("callbackUrl"));
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -67,6 +104,27 @@ export async function signInWithCredentials(
     return {
       error: parsed.error.errors[0]?.message ?? "入力内容を確認してください",
     };
+  }
+
+  const normalizedInputEmail = normalizeEmailAddress(parsed.data.email);
+  const requestSubject = await getRequestRateLimitSubject();
+  const rateLimitError = await getRateLimitError([
+    {
+      limit: 20,
+      scope: "auth:login:address",
+      subject: requestSubject,
+      windowMs: 15 * MINUTE_MS,
+    },
+    {
+      limit: 8,
+      scope: "auth:login:email",
+      subject: normalizedInputEmail,
+      windowMs: 15 * MINUTE_MS,
+    },
+  ]);
+
+  if (rateLimitError) {
+    return { error: rateLimitError };
   }
 
   const { isAmbiguous, normalizedEmail, user } =
@@ -87,6 +145,25 @@ export async function signInWithCredentials(
       return {
         error: "メールアドレスまたはパスワードが正しくありません",
       };
+    }
+
+    const verificationRateLimitError = await getRateLimitError([
+      {
+        limit: 10,
+        scope: "auth:verification:address",
+        subject: requestSubject,
+        windowMs: HOUR_MS,
+      },
+      {
+        limit: 3,
+        scope: "auth:verification:email",
+        subject: normalizedEmail,
+        windowMs: HOUR_MS,
+      },
+    ]);
+
+    if (verificationRateLimitError) {
+      return { error: verificationRateLimitError };
     }
 
     try {
@@ -125,7 +202,7 @@ export async function signInWithCredentials(
     throw error;
   }
 
-  redirect("/");
+  redirect(redirectTo);
 }
 
 export async function signUp(
@@ -147,42 +224,52 @@ export async function signUp(
   }
 
   const { userId, name, email, password } = parsed.data;
+  const normalizedInputEmail = normalizeEmailAddress(email);
+  const requestSubject = await getRequestRateLimitSubject();
+  const rateLimitError = await getRateLimitError([
+    {
+      limit: 5,
+      scope: "auth:signup:address",
+      subject: requestSubject,
+      windowMs: HOUR_MS,
+    },
+    {
+      limit: 3,
+      scope: "auth:signup:email",
+      subject: normalizedInputEmail,
+      windowMs: HOUR_MS,
+    },
+  ]);
+
+  if (rateLimitError) {
+    return { error: rateLimitError };
+  }
+
   const {
     isAmbiguous,
     normalizedEmail,
     user: existing,
   } = await findUserByNormalizedEmail(email);
   const normalizedUserId = userId.trim();
-  const passwordHash = await bcrypt.hash(password, 12);
 
-  if (isAmbiguous || existing?.emailVerified) {
+  if (isAmbiguous || existing) {
     return {
       error: "このメールアドレスはすでに登録されています",
     };
   }
 
   const existingUserId = await db.user.findFirst({
-    where: {
-      userId: normalizedUserId,
-      ...(existing ? { NOT: { id: existing.id } } : {}),
-    },
+    where: { userId: normalizedUserId },
+    select: { id: true },
   });
 
   if (existingUserId) {
     return { error: "そのユーザーIDはすでに使用されています" };
   }
 
-  if (existing) {
-    await db.user.update({
-      where: { id: existing.id },
-      data: {
-        email: normalizedEmail,
-        userId: normalizedUserId,
-        name: name.trim(),
-        passwordHash,
-      },
-    });
-  } else {
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  try {
     await db.user.create({
       data: {
         userId: normalizedUserId,
@@ -192,6 +279,15 @@ export async function signUp(
         emailVerified: null,
       },
     });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        error:
+          "入力されたメールアドレスまたはユーザーIDはすでに使用されています",
+      };
+    }
+
+    throw error;
   }
 
   try {
@@ -226,6 +322,26 @@ export async function resendVerificationEmail(
       error: "まだ再送できません",
       remainingSeconds: pendingSession.remainingSeconds,
     };
+  }
+
+  const requestSubject = await getRequestRateLimitSubject();
+  const rateLimitError = await getRateLimitError([
+    {
+      limit: 10,
+      scope: "auth:verification:address",
+      subject: requestSubject,
+      windowMs: HOUR_MS,
+    },
+    {
+      limit: 3,
+      scope: "auth:verification:email",
+      subject: normalizedEmail,
+      windowMs: HOUR_MS,
+    },
+  ]);
+
+  if (rateLimitError) {
+    return { error: rateLimitError };
   }
 
   if (isAmbiguous || !user) {

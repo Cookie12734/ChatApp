@@ -40,6 +40,21 @@ export async function getDevelopmentVerificationUrl(email: string) {
     : null;
 }
 
+export async function getVerificationTokenStatus(token: string) {
+  const verificationToken = await db.verificationToken.findUnique({
+    where: { token },
+    select: { expires: true },
+  });
+
+  if (!verificationToken) {
+    return "invalid" as const;
+  }
+
+  return verificationToken.expires < new Date()
+    ? ("expired" as const)
+    : ("valid" as const);
+}
+
 export async function verifyEmailToken(token: string) {
   const verificationToken = await db.verificationToken.findUnique({
     where: { token },

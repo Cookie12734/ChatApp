@@ -11,6 +11,7 @@ import {
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
 } from "~/features/chat/message-page";
+import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const friendIdInput = z.object({
@@ -182,6 +183,16 @@ export const chatRouter = createTRPCRouter({
     .input(matchingTopicInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 10,
+          scope: "chat:matching:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+
       const [blocks, friendships] = await Promise.all([
         ctx.db.userBlock.findMany({
           where: {
@@ -372,6 +383,15 @@ export const chatRouter = createTRPCRouter({
     .input(sendMessageInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "chat:message:user",
+          subject: currentUserId,
+          windowMs: 10 * 1000,
+        },
+      ]);
 
       const friendship = await ctx.db.friendship.findUnique({
         where: {

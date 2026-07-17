@@ -7,6 +7,7 @@ import {
   isVisibleFriendNotification,
 } from "~/features/friend/server/blocking";
 import { canCancelFriendRequest } from "~/features/friend/server/friend-request-permissions";
+import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const userIdSchema = z
@@ -126,6 +127,15 @@ export const friendRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
       const receiverUserId = input.userId.trim();
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 10,
+          scope: "friend:request:user",
+          subject: currentUserId,
+          windowMs: 60 * 60 * 1000,
+        },
+      ]);
 
       const receiver = await ctx.db.user.findUnique({
         where: { userId: receiverUserId },

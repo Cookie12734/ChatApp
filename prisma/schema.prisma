@@ -84,6 +84,15 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
 model FriendRequest {
   id            String              @id @default(cuid())
   senderId      String

@@ -13,6 +13,7 @@ import {
   getOAuthUserIdCandidate,
   withOAuthUserIdSuffix,
 } from "~/features/auth/lib/oauth-user-id";
+import { hasActiveSessionUser } from "~/features/auth/lib/session-user";
 import { db } from "~/server/db";
 
 /**
@@ -164,11 +165,20 @@ export const authConfig = {
   },
   adapter,
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
+        return token;
       }
-      return token;
+
+      const hasUser = await hasActiveSessionUser(token.sub, (id) =>
+        db.user.findUnique({
+          where: { id },
+          select: { id: true },
+        }),
+      );
+
+      return hasUser ? token : null;
     },
     session({ session, token }) {
       if (session.user && token.sub) {
