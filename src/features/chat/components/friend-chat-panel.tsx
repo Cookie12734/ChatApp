@@ -36,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
 import {
   getDirectChatChannelName,
@@ -175,7 +176,7 @@ function FriendListItem({
           className="h-10 w-10 rounded-full border border-black/10"
         />
         {item.unreadCount > 0 && (
-          <span className="absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#f1e4d0] bg-[#cc5f2f] px-1 text-[11px] font-semibold text-white">
+          <span className="absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#f1e4d0] bg-[#9f4122] px-1 text-[11px] font-semibold text-white">
             {item.unreadCount}
           </span>
         )}
@@ -184,7 +185,7 @@ function FriendListItem({
         <span className="block truncate text-sm font-semibold">
           {getDisplayName(item.friend)}
         </span>
-        <span className="block truncate text-xs text-[#68716b]">{preview}</span>
+        <span className="block truncate text-xs text-[#53615a]">{preview}</span>
       </span>
     </button>
   );
@@ -250,8 +251,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const realtimeClient = useMemo(() => getSupabaseRealtimeClient(), []);
 
   const friends = api.chat.getFriends.useQuery(undefined, {
-    refetchInterval:
-      matchingState === "waiting" || !realtimeClient ? 5000 : false,
+    refetchInterval: (query) =>
+      query.state.status === "error"
+        ? false
+        : matchingState === "waiting" || !realtimeClient
+          ? 5000
+          : false,
   });
   const filteredFriends = useMemo(
     () =>
@@ -261,10 +266,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     [friendSearch, friends.data],
   );
   const matchingStatus = api.chat.getMatchingStatus.useQuery(undefined, {
-    refetchInterval: matchingState === "waiting" ? 3000 : false,
+    refetchInterval: (query) =>
+      query.state.status === "error"
+        ? false
+        : matchingState === "waiting"
+          ? 3000
+          : false,
   });
   const serverOverview = api.server.getOverview.useQuery(undefined, {
-    refetchInterval: 15000,
+    refetchInterval: (query) =>
+      query.state.status === "error" ? false : 15000,
   });
   const selectedServer = useMemo(() => {
     return (
@@ -311,8 +322,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     {
       enabled: Boolean(selectedServerId && selectedServerChannel?.id),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      refetchInterval:
-        selectedServerId && selectedServerChannel?.id ? 3000 : false,
+      refetchInterval: (query) =>
+        query.state.status === "error"
+          ? false
+          : selectedServerId && selectedServerChannel?.id
+            ? 3000
+            : false,
     },
   );
   const serverConversationData = serverConversation.data?.pages[0] ?? null;
@@ -362,9 +377,40 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     {
       enabled: Boolean(selectedFriendId),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      refetchInterval: selectedFriendId && !realtimeClient ? 3000 : false,
+      refetchInterval: (query) =>
+        query.state.status === "error"
+          ? false
+          : selectedFriendId && !realtimeClient
+            ? 3000
+            : false,
     },
   );
+
+  const hasChatQueryError =
+    friends.isError ||
+    matchingStatus.isError ||
+    serverOverview.isError ||
+    (Boolean(selectedServerId && selectedServerChannel?.id) &&
+      serverConversation.isError) ||
+    (Boolean(selectedFriendId) && conversation.isError);
+
+  const retryChatQueries = async () => {
+    const requests: Promise<unknown>[] = [
+      friends.refetch(),
+      matchingStatus.refetch(),
+      serverOverview.refetch(),
+    ];
+
+    if (selectedServerId && selectedServerChannel?.id) {
+      requests.push(serverConversation.refetch());
+    }
+
+    if (selectedFriendId) {
+      requests.push(conversation.refetch());
+    }
+
+    await Promise.allSettled(requests);
+  };
 
   const directConversation = conversation.data?.pages[0] ?? null;
   const directMessages = useMemo(
@@ -1463,12 +1509,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   <span className="block truncate text-lg font-semibold">
                     {selectedServer.server.name}
                   </span>
-                  <span className="mt-1 block text-xs text-[#68716b]">
+                  <span className="mt-1 block text-xs text-[#53615a]">
                     {selectedServer.server.members.length} メンバー
                   </span>
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-[#68716b] transition ${
+                  className={`h-4 w-4 shrink-0 text-[#53615a] transition ${
                     isServerMenuOpen ? "rotate-180" : ""
                   }`}
                   aria-hidden="true"
@@ -1504,7 +1550,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                <p className="text-xs font-semibold tracking-wide text-[#68716b] uppercase">
+                <p className="text-xs font-semibold tracking-wide text-[#53615a] uppercase">
                   テキストチャンネル
                 </p>
                 {isSelectedServerOwner && (
@@ -1516,7 +1562,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       setEditingChannelName("");
                       setChannelContextMenu(null);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#68716b] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
                     aria-label="チャンネル追加フォームを開く"
                     title="チャンネルを追加"
                   >
@@ -1542,7 +1588,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   <button
                     type="submit"
                     disabled={!newChannelName.trim() || createChannel.isPending}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-45"
                     aria-label="チャンネルを追加"
                     title="チャンネルを追加"
                   >
@@ -1554,7 +1600,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       setIsNewChannelFormOpen(false);
                       setNewChannelName("");
                     }}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
                     aria-label="キャンセル"
                     title="キャンセル"
                   >
@@ -1578,7 +1624,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         className="flex min-h-10 items-center gap-1 rounded-md bg-[#fff8ed] px-2"
                       >
                         <Hash
-                          className="h-4 w-4 shrink-0 text-[#68716b]"
+                          className="h-4 w-4 shrink-0 text-[#53615a]"
                           aria-hidden="true"
                         />
                         <input
@@ -1597,7 +1643,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             !editingChannelName.trim() ||
                             updateChannel.isPending
                           }
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-green-600 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-45"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#114744] text-white transition hover:bg-[#0d3936] disabled:cursor-not-allowed disabled:opacity-45"
                           aria-label="保存"
                           title="保存"
                         >
@@ -1645,7 +1691,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           {channel.name}
                         </span>
                         {channel.unreadCount > 0 && (
-                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#cc5f2f] px-1 text-[11px] font-semibold text-white">
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#9f4122] px-1 text-[11px] font-semibold text-white">
                             {channel.unreadCount}
                           </span>
                         )}
@@ -1699,7 +1745,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         {selectedServer.nickname?.trim() ??
                           getDisplayName(currentServerUser)}
                       </span>
-                      <span className="block truncate text-xs text-[#68716b]">
+                      <span className="block truncate text-xs text-[#53615a]">
                         {getPresenceDisplayLabel(
                           currentServerUser.presenceStatus,
                         )}
@@ -1713,7 +1759,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         ) : (
           <>
             <div className="border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
-              <label className="flex h-9 items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 text-sm text-[#68716b]">
+              <label className="flex h-11 items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 text-sm text-[#68716b]">
                 <Search className="h-4 w-4" aria-hidden="true" />
                 <input
                   value={friendSearch}
@@ -1729,7 +1775,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="button"
                 onClick={openFriends}
-                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   isFriendsOpen
                     ? "bg-[#18221f] text-[#f6f0e4]"
                     : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
@@ -1741,7 +1787,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="button"
                 onClick={openDirectMessages}
-                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   !isFriendsOpen && !isMatchingOpen
                     ? "bg-[#18221f] text-[#f6f0e4]"
                     : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
@@ -1755,7 +1801,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="button"
                 onClick={openMatching}
-                className={`flex h-10 w-full items-center gap-3 rounded-md px-2 text-left transition ${
+                className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   isMatchingOpen
                     ? "bg-[#18221f] text-[#f6f0e4]"
                     : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
@@ -1766,9 +1812,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </button>
             </div>
 
-            <div className="flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide text-[#68716b] uppercase">
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide text-[#53615a] uppercase">
               <span>DM</span>
-              <Plus className="h-4 w-4" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={openFriends}
+                className="flex h-11 w-11 items-center justify-center rounded-md transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                aria-label="フレンドを追加・管理"
+                title="フレンドを追加・管理"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
 
             <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
@@ -1795,14 +1849,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               {friends.data?.length === 0 && (
                 <div className="mx-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] p-4 text-sm leading-6 text-[#53615a]">
                   <Inbox className="mb-3 h-5 w-5 text-[#cc5f2f]" />
-                  フレンドを追加すると、ここからDMを始められます。
+                  <p>フレンドを追加すると、ここからDMを始められます。</p>
+                  <button
+                    type="button"
+                    onClick={openFriends}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#18221f] px-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+                  >
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                    フレンドを追加
+                  </button>
                 </div>
               )}
 
               {friends.data &&
                 friends.data.length > 0 &&
                 filteredFriends.length === 0 && (
-                  <p className="px-2 py-3 text-sm text-[#68716b]">
+                  <p className="px-2 py-3 text-sm text-[#53615a]">
                     該当するフレンドはいません
                   </p>
                 )}
@@ -1821,7 +1883,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             <button
               type="button"
               onClick={() => setIsNavigationOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] md:hidden"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] md:hidden"
               aria-label="ナビゲーションを開く"
               title="ナビゲーションを開く"
             >
@@ -1886,7 +1948,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <button
                   type="button"
                   onClick={() => setIsPinnedMessagesOpen(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
                   aria-label="ピン留めしたメッセージ"
                   title="ピン留めしたメッセージ"
                 >
@@ -1895,7 +1957,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <button
                   type="button"
                   onClick={() => setIsMemberListOpen(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
                   aria-label="メンバー一覧"
                   title="メンバー一覧"
                 >
@@ -1906,7 +1968,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             <ProfileSettingsDialog>
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
                 aria-label="設定"
               >
                 <Settings className="h-5 w-5" aria-hidden="true" />
@@ -1914,6 +1976,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             </ProfileSettingsDialog>
           </div>
         </header>
+
+        {hasChatQueryError && <ChatQueryError onRetry={retryChatQueries} />}
 
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
@@ -2131,7 +2195,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {!isMatchingOpen &&
                     !isFriendsOpen &&
                     !selectedFriendId &&
-                    !friends.isLoading && (
+                    !friends.isLoading &&
+                    !friends.isError && (
                       <div className="flex h-full items-center justify-center">
                         <div className="max-w-sm text-center">
                           <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
@@ -2141,6 +2206,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           <p className="mt-2 text-sm leading-6 text-[#53615a]">
                             フレンド一覧から相手を選ぶと、会話を始められます。
                           </p>
+                          <button
+                            type="button"
+                            onClick={openFriends}
+                            className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+                          >
+                            <Users className="h-4 w-4" aria-hidden="true" />
+                            フレンドを追加・管理
+                          </button>
                         </div>
                       </div>
                     )}
@@ -2437,7 +2510,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         </div>
                       </form>
                     </>
-                  ) : (
+                  ) : selectedFriendId ? (
                     <>
                       {message && (
                         <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
@@ -2491,7 +2564,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         </button>
                       </form>
                     </>
-                  )}
+                  ) : null}
                 </>
               )}
             </div>
@@ -2770,7 +2843,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="submit"
                 disabled={!serverNameDraft.trim() || updateServer.isPending}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-green-600 px-4 font-semibold text-white transition hover:bg-green-700 disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#114744] px-4 font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
               >
                 保存
               </button>

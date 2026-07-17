@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Plus, UserRound } from "lucide-react";
+import { LogOut, Plus, RefreshCw, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -25,7 +25,12 @@ export function ServerRail({
 }: ServerRailProps) {
   const overview = api.server.getOverview.useQuery(undefined, {
     enabled: memberships === undefined,
-    refetchInterval: memberships === undefined ? 15000 : false,
+    refetchInterval: (query) =>
+      query.state.status === "error"
+        ? false
+        : memberships === undefined
+          ? 15000
+          : false,
   });
   const items = memberships ?? overview.data?.memberships ?? [];
   const homeIndicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
@@ -54,6 +59,21 @@ export function ServerRail({
       </div>
       <div className="h-px w-8 bg-[#f6f0e4]/25" />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
+        {memberships === undefined && overview.isError && (
+          <button
+            type="button"
+            onClick={() => void overview.refetch()}
+            disabled={overview.isFetching}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744] disabled:opacity-50"
+            aria-label="サーバー一覧を再読み込み"
+            title="サーバー一覧を再読み込み"
+          >
+            <RefreshCw
+              className={`h-5 w-5 ${overview.isFetching ? "animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+          </button>
+        )}
         {items.map((membership) => {
           const label = membership.server.name;
           const unreadCount = membership.server.channels.reduce(

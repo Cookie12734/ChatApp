@@ -54,6 +54,8 @@
 }
 
 :root {
+  --connect-focus: #114744;
+  --connect-placeholder: #53615a;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -131,5 +133,36 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--connect-focus);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--connect-placeholder);
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  :where(button, input, select, textarea, [role="button"]) {
+    min-block-size: 44px;
+  }
+
+  :where(button, [role="button"]) {
+    min-inline-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

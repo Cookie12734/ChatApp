@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { api } from "~/trpc/react";
 
@@ -29,7 +30,8 @@ export function FriendPanel() {
   const [message, setMessage] = useState<string | null>(null);
 
   const overview = api.friend.getOverview.useQuery(undefined, {
-    refetchInterval: 15000,
+    refetchInterval: (query) =>
+      query.state.status === "error" ? false : 15000,
   });
 
   const invalidateOverview = async () => {
@@ -96,11 +98,7 @@ export function FriendPanel() {
   }
 
   if (overview.error) {
-    return (
-      <div className="w-full rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] p-6 text-sm text-[#9f4122]">
-        {overview.error.message}
-      </div>
-    );
+    return <ChatQueryError onRetry={async () => overview.refetch()} />;
   }
 
   const data = overview.data;
@@ -284,7 +282,7 @@ export function FriendPanel() {
                       blockUser.mutate({ userId: friendship.friend.userId });
                     }}
                     disabled={blockUser.isPending}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
                     aria-label="ブロック"
                     title="ブロック"
                   >
@@ -323,7 +321,7 @@ export function FriendPanel() {
                       unblockUser.mutate({ userId: block.blocked.userId })
                     }
                     disabled={unblockUser.isPending}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#e4f2dc] text-[#114744] transition hover:bg-[#d1eac6] disabled:opacity-50"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#e4f2dc] text-[#114744] transition hover:bg-[#d1eac6] disabled:opacity-50"
                     aria-label="ブロック解除"
                     title="ブロック解除"
                   >
