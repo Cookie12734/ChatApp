@@ -11,6 +11,10 @@ import {
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
 } from "~/features/chat/message-page";
+import {
+  getLatestFriendMessage,
+  sortFriendsByLatestMessage,
+} from "~/features/chat/friend-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
@@ -74,60 +78,64 @@ export const chatRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
       include: {
         friend: {
-          select: { id: true, userId: true, name: true, image: true },
+          select: {
+            id: true,
+            userId: true,
+            name: true,
+            image: true,
+            sentDirectMessages: {
+              where: { receiverId: currentUserId },
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              take: 1,
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                receiverId: true,
+                senderId: true,
+              },
+            },
+            receivedDirectMessages: {
+              where: { senderId: currentUserId },
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              take: 1,
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                receiverId: true,
+                senderId: true,
+              },
+            },
+            _count: {
+              select: {
+                sentDirectMessages: {
+                  where: { receiverId: currentUserId, readAt: null },
+                },
+              },
+            },
+          },
         },
       },
     });
 
-    const friends = await Promise.all(
-      friendships.map(async (friendship) => {
-        const [lastMessage, unreadCount] = await Promise.all([
-          ctx.db.directMessage.findFirst({
-            where: {
-              OR: [
-                {
-                  receiverId: currentUserId,
-                  senderId: friendship.friendId,
-                },
-                {
-                  receiverId: friendship.friendId,
-                  senderId: currentUserId,
-                },
-              ],
-            },
-            orderBy: { createdAt: "desc" },
-            select: {
-              id: true,
-              content: true,
-              createdAt: true,
-              receiverId: true,
-              senderId: true,
-            },
-          }),
-          ctx.db.directMessage.count({
-            where: {
-              receiverId: currentUserId,
-              senderId: friendship.friendId,
-              readAt: null,
-            },
-          }),
-        ]);
+    const friends = friendships.map((friendship) => {
+      const { _count, receivedDirectMessages, sentDirectMessages, ...friend } =
+        friendship.friend;
 
-        return {
-          currentUserId,
-          friendshipId: friendship.id,
-          friend: friendship.friend,
-          lastMessage,
-          unreadCount,
-        };
-      }),
-    );
-
-    return friends.sort((a, b) => {
-      const aTime = a.lastMessage?.createdAt.getTime() ?? 0;
-      const bTime = b.lastMessage?.createdAt.getTime() ?? 0;
-      return bTime - aTime;
+      return {
+        currentUserId,
+        friendshipId: friendship.id,
+        friend,
+        lastMessage: getLatestFriendMessage(
+          sentDirectMessages[0],
+          receivedDirectMessages[0],
+        ),
+        unreadCount: _count.sentDirectMessages,
+      };
     });
+
+    return sortFriendsByLatestMessage(friends);
   }),
 
   getMatchingStatus: protectedProcedure.query(async ({ ctx }) => {

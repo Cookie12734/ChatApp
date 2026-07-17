@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   assertNotBlocked,
   getBlockedPeerIds,
-  isVisibleFriendNotification,
+  getVisibleFriendNotificationWhere,
 } from "~/features/friend/server/blocking";
 import { canCancelFriendRequest } from "~/features/friend/server/friend-request-permissions";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
@@ -23,6 +23,22 @@ const userIdSchema = z
 export const friendRouter = createTRPCRouter({
   getOverview: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
+    const blocks = await ctx.db.userBlock.findMany({
+      where: {
+        OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        blocked: {
+          select: { id: true, userId: true, name: true, image: true },
+        },
+      },
+    });
+    const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+    const notificationWhere = getVisibleFriendNotificationWhere(
+      currentUserId,
+      blockedPeerIds,
+    );
 
     const [
       currentUser,
@@ -30,15 +46,19 @@ export const friendRouter = createTRPCRouter({
       incomingRequests,
       outgoingRequests,
       notifications,
-      blocks,
-      blockedUsers,
+      unreadNotificationCount,
     ] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
         where: { id: currentUserId },
         select: { id: true, userId: true, name: true, image: true },
       }),
       ctx.db.friendship.findMany({
-        where: { userId: currentUserId },
+        where: {
+          userId: currentUserId,
+          ...(blockedPeerIds.length > 0
+            ? { friendId: { notIn: blockedPeerIds } }
+            : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: {
           friend: {
@@ -47,7 +67,13 @@ export const friendRouter = createTRPCRouter({
         },
       }),
       ctx.db.friendRequest.findMany({
-        where: { receiverId: currentUserId, status: "PENDING" },
+        where: {
+          receiverId: currentUserId,
+          status: "PENDING",
+          ...(blockedPeerIds.length > 0
+            ? { senderId: { notIn: blockedPeerIds } }
+            : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: {
           sender: {
@@ -56,7 +82,13 @@ export const friendRouter = createTRPCRouter({
         },
       }),
       ctx.db.friendRequest.findMany({
-        where: { senderId: currentUserId, status: "PENDING" },
+        where: {
+          senderId: currentUserId,
+          status: "PENDING",
+          ...(blockedPeerIds.length > 0
+            ? { receiverId: { notIn: blockedPeerIds } }
+            : {}),
+        },
         orderBy: { createdAt: "desc" },
         include: {
           receiver: {
@@ -65,60 +97,23 @@ export const friendRouter = createTRPCRouter({
         },
       }),
       ctx.db.notification.findMany({
-        where: { userId: currentUserId },
+        where: notificationWhere,
         orderBy: { createdAt: "desc" },
         take: 20,
-        include: {
-          friendRequest: {
-            select: { receiverId: true, senderId: true },
-          },
-        },
       }),
-      ctx.db.userBlock.findMany({
-        where: {
-          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
-        },
-        select: { blockedId: true, blockerId: true },
-      }),
-      ctx.db.userBlock.findMany({
-        where: { blockerId: currentUserId },
-        orderBy: { createdAt: "desc" },
-        include: {
-          blocked: {
-            select: { id: true, userId: true, name: true, image: true },
-          },
-        },
+      ctx.db.notification.count({
+        where: { ...notificationWhere, readAt: null },
       }),
     ]);
-    const blockedPeerIds = new Set(getBlockedPeerIds(currentUserId, blocks));
-    const visibleNotifications = notifications
-      .filter((notification) =>
-        isVisibleFriendNotification(
-          currentUserId,
-          blockedPeerIds,
-          notification,
-        ),
-      )
-      .map(
-        ({ friendRequest: _friendRequest, ...notification }) => notification,
-      );
 
     return {
       currentUser,
-      friends: friends.filter(
-        (friendship) => !blockedPeerIds.has(friendship.friendId),
-      ),
-      incomingRequests: incomingRequests.filter(
-        (request) => !blockedPeerIds.has(request.senderId),
-      ),
-      outgoingRequests: outgoingRequests.filter(
-        (request) => !blockedPeerIds.has(request.receiverId),
-      ),
-      notifications: visibleNotifications,
-      blockedUsers,
-      unreadNotificationCount: visibleNotifications.filter(
-        (notification) => !notification.readAt,
-      ).length,
+      friends,
+      incomingRequests,
+      outgoingRequests,
+      notifications,
+      blockedUsers: blocks.filter((block) => block.blockerId === currentUserId),
+      unreadNotificationCount,
     };
   }),
 

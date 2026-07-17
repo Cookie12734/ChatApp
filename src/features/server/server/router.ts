@@ -18,6 +18,7 @@ import {
   countServerOwners,
   getVisibleServerMembers,
 } from "~/features/server/server/message-permissions";
+import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
@@ -192,71 +193,109 @@ export const serverRouter = createTRPCRouter({
     ]);
     const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
     const hiddenUnreadUserIds = [currentUserId, ...blockedPeerIds];
+    const missingChannelServerIds = memberships
+      .filter((membership) => membership.server.channels.length === 0)
+      .map((membership) => membership.server.id);
+    const fallbackGeneralChannels = await (async () => {
+      if (missingChannelServerIds.length === 0) return [];
+
+      await ctx.db.serverChannel.createMany({
+        data: missingChannelServerIds.map((serverId) => ({
+          name: "general",
+          serverId,
+        })),
+        skipDuplicates: true,
+      });
+
+      return ctx.db.serverChannel.findMany({
+        where: {
+          name: "general",
+          serverId: { in: missingChannelServerIds },
+        },
+      });
+    })();
+    const fallbackGeneralChannelByServerId = new Map(
+      fallbackGeneralChannels.map((channel) => [channel.serverId, channel]),
+    );
+    const normalizedMemberships = memberships.map((membership) => {
+      if (membership.server.channels.length > 0) return membership;
+
+      const generalChannel = fallbackGeneralChannelByServerId.get(
+        membership.server.id,
+      );
+
+      if (!generalChannel) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to initialize the general channel",
+        });
+      }
+
+      return {
+        ...membership,
+        server: {
+          ...membership.server,
+          channels: [generalChannel],
+        },
+      };
+    });
+    const channels = normalizedMemberships.flatMap(
+      (membership) => membership.server.channels,
+    );
+    const channelReads =
+      channels.length === 0
+        ? []
+        : await ctx.db.serverChannelRead.findMany({
+            where: {
+              channelId: { in: channels.map((channel) => channel.id) },
+              userId: currentUserId,
+            },
+            select: { channelId: true, readAt: true },
+          });
+    const readAtByChannelId = new Map(
+      channelReads.map((read) => [read.channelId, read.readAt]),
+    );
+    const unreadGroups =
+      channels.length === 0
+        ? []
+        : await ctx.db.serverMessage.groupBy({
+            by: ["serverId", "channelId"],
+            where: {
+              senderId: { notIn: hiddenUnreadUserIds },
+              OR: channels.map((channel) =>
+                getServerMessageWhere({
+                  channelId: channel.id,
+                  channelName: channel.name,
+                  readAt: readAtByChannelId.get(channel.id),
+                  serverId: channel.serverId,
+                }),
+              ),
+            },
+            _count: { _all: true },
+          });
 
     return {
       currentUser,
-      memberships: await Promise.all(
-        memberships.map(async (membership) => {
-          const channels =
-            membership.server.channels.length > 0
-              ? membership.server.channels
-              : [
-                  await ctx.db.serverChannel.upsert({
-                    where: {
-                      serverId_name: {
-                        serverId: membership.server.id,
-                        name: "general",
-                      },
-                    },
-                    create: {
-                      name: "general",
-                      serverId: membership.server.id,
-                    },
-                    update: {},
-                  }),
-                ];
-          const channelsWithUnread = await Promise.all(
-            channels.map(async (channel) => {
-              const read = await ctx.db.serverChannelRead.findUnique({
-                where: {
-                  channelId_userId: {
-                    channelId: channel.id,
-                    userId: currentUserId,
-                  },
-                },
-                select: { readAt: true },
-              });
-              const unreadCount = await ctx.db.serverMessage.count({
-                where: getServerMessageWhere({
-                  channelId: channel.id,
-                  channelName: channel.name,
-                  hiddenUserIds: hiddenUnreadUserIds,
-                  readAt: read?.readAt,
-                  serverId: membership.server.id,
-                }),
-              });
-
-              return { ...channel, unreadCount };
-            }),
-          );
-
-          return {
-            ...membership,
-            server: {
-              ...membership.server,
-              channels: channelsWithUnread,
-              inviteCode: canManageServer(membership.role)
-                ? membership.server.inviteCode
-                : null,
-              members: getVisibleServerMembers(
-                membership.server.members,
-                blockedPeerIds,
-              ),
-              ownerCount: countServerOwners(membership.server.members),
-            },
-          };
-        }),
-      ),
+      memberships: normalizedMemberships.map((membership) => {
+        return {
+          ...membership,
+          server: {
+            ...membership.server,
+            channels: addUnreadCountsToServerChannels(
+              membership.server.channels,
+              unreadGroups,
+            ),
+            inviteCode: canManageServer(membership.role)
+              ? membership.server.inviteCode
+              : null,
+            members: getVisibleServerMembers(
+              membership.server.members,
+              blockedPeerIds,
+            ),
+            ownerCount: countServerOwners(membership.server.members),
+          },
+        };
+      }),
     };
   }),
 

@@ -40,6 +40,38 @@ export function isVisibleFriendNotification(
   return !blockedPeerIds.has(peerId);
 }
 
+export function getVisibleFriendNotificationWhere(
+  currentUserId: string,
+  blockedPeerIds: string[],
+) {
+  if (blockedPeerIds.length === 0) {
+    return { userId: currentUserId };
+  }
+
+  return {
+    userId: currentUserId,
+    OR: [
+      { friendRequestId: null },
+      {
+        friendRequest: {
+          is: {
+            OR: [
+              {
+                senderId: currentUserId,
+                receiverId: { notIn: blockedPeerIds },
+              },
+              {
+                NOT: { senderId: currentUserId },
+                senderId: { notIn: blockedPeerIds },
+              },
+            ],
+          },
+        },
+      },
+    ],
+  };
+}
+
 export async function assertNotBlocked(
   db: BlockReader,
   userAId: string,
