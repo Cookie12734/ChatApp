@@ -90,7 +90,7 @@ export function ServerRail({
                 ? "h-3 w-3 ring-2 ring-[#18221f] group-hover:h-5 group-hover:w-1"
                 : "h-0 w-0 group-hover:h-5 group-hover:w-1"
           }`;
-          const className = `flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold transition ${
+          const className = `flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl text-sm font-semibold transition ${
             isSelected
               ? "bg-[#d8efee] text-[#114744]"
               : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
