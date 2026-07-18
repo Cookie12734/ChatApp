@@ -102,6 +102,21 @@ type PendingServerMessage = PendingMessage & {
   channelId: string;
   serverId: string;
 };
+
+function shouldGroupPendingMessage(
+  message: PendingMessage,
+  previousPendingMessage: PendingMessage | undefined,
+  previousMessage: { createdAt: Date; senderId: string } | undefined,
+  senderId: string,
+) {
+  return shouldGroupMessage(
+    { createdAt: message.createdAt, senderId },
+    previousPendingMessage
+      ? { createdAt: previousPendingMessage.createdAt, senderId }
+      : previousMessage,
+  );
+}
+
 const matchingTopics = [
   { label: "雑談", value: "CASUAL" },
   { label: "ゲーム", value: "GAME" },
@@ -2358,20 +2373,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           </article>
                         );
                       })}
-                      {activeServerPendingMessages.map((pendingMessage) => (
-                        <PendingMessageRow
-                          key={pendingMessage.clientId}
-                          author={{
-                            ...serverConversationData.currentUser,
-                            name:
-                              selectedServer.nickname?.trim() ??
-                              serverConversationData.currentUser.name,
-                          }}
-                          message={pendingMessage}
-                          onOpenLink={setPendingExternalLink}
-                          serverId={selectedServer.server.id}
-                        />
-                      ))}
+                      {activeServerPendingMessages.map(
+                        (pendingMessage, pendingIndex) => (
+                          <PendingMessageRow
+                            key={pendingMessage.clientId}
+                            author={{
+                              ...serverConversationData.currentUser,
+                              name:
+                                selectedServer.nickname?.trim() ??
+                                serverConversationData.currentUser.name,
+                            }}
+                            isFollowup={shouldGroupPendingMessage(
+                              pendingMessage,
+                              activeServerPendingMessages[pendingIndex - 1],
+                              serverMessages.at(-1),
+                              serverConversationData.currentUser.id,
+                            )}
+                            message={pendingMessage}
+                            onOpenLink={setPendingExternalLink}
+                            serverId={selectedServer.server.id}
+                          />
+                        ),
+                      )}
                       <div ref={messageViewport.endRef} />
                     </div>
                   )}
@@ -2596,14 +2619,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             </article>
                           );
                         })}
-                        {activeDirectPendingMessages.map((pendingMessage) => (
-                          <PendingMessageRow
-                            key={pendingMessage.clientId}
-                            author={directConversation.currentUser}
-                            message={pendingMessage}
-                            onOpenLink={setPendingExternalLink}
-                          />
-                        ))}
+                        {activeDirectPendingMessages.map(
+                          (pendingMessage, pendingIndex) => (
+                            <PendingMessageRow
+                              key={pendingMessage.clientId}
+                              author={directConversation.currentUser}
+                              isFollowup={shouldGroupPendingMessage(
+                                pendingMessage,
+                                activeDirectPendingMessages[pendingIndex - 1],
+                                directMessages.at(-1),
+                                directConversation.currentUserId,
+                              )}
+                              message={pendingMessage}
+                              onOpenLink={setPendingExternalLink}
+                            />
+                          ),
+                        )}
                         <div ref={messageViewport.endRef} />
                       </div>
                     )}

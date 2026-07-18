@@ -120,6 +120,25 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await expect(
     page.locator("article").filter({ hasText: content }),
   ).toHaveCount(1);
+
+  const followupContent = `optimistic-followup-${runId}`;
+  await input.fill(followupContent);
+  await input.press("Enter");
+
+  const followupMessage = page
+    .locator("article")
+    .filter({ hasText: followupContent });
+  await expect(followupMessage).toContainText("送信中...");
+  await expect(followupMessage.locator("time")).toHaveCount(0);
+  await expect(
+    followupMessage.getByRole("button", { name: /プロフィールを開く/ }),
+  ).toHaveCount(0);
+  await expect(
+    followupMessage.getByText("E2E Owner", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText("送信中...")).toHaveCount(0, {
+    timeout: 10_000,
+  });
 });
 
 test("スクロール中の新着件数と未読線を表示する", async ({ page }) => {

@@ -109,11 +109,13 @@ export function MessageText({
 
 export function PendingMessageRow({
   author,
+  isFollowup = false,
   message,
   onOpenLink,
   serverId,
 }: {
   author: ChatUser;
+  isFollowup?: boolean;
   message: PendingMessage;
   onOpenLink: (url: string) => void;
   serverId?: string;
@@ -122,26 +124,35 @@ export function PendingMessageRow({
 
   return (
     <article
-      className={`flex items-start gap-3 px-2 py-1.5 ${isPending ? "text-[#7d8781]" : "text-[#18221f]"}`}
+      className={`flex items-start gap-3 px-2 ${isFollowup ? "py-0.5" : "py-1.5"} ${isPending ? "text-[#7d8781]" : "text-[#18221f]"}`}
       aria-live="polite"
     >
-      <ProfileAvatar
-        user={author}
-        serverId={serverId}
-        className="mt-1 h-10 w-10"
-      />
+      {isFollowup ? (
+        <span className="w-10 shrink-0" aria-hidden="true" />
+      ) : (
+        <ProfileAvatar
+          user={author}
+          serverId={serverId}
+          className="mt-1 h-10 w-10"
+        />
+      )}
       <div className="min-w-0 flex-1 text-left">
-        <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-          <span className="text-sm font-semibold">
-            {getDisplayName(author)}
-          </span>
-          <time className="text-xs text-[#68716b]">
-            {formatMessageTime(message.createdAt)}
-          </time>
-          {isPending && <span className="text-xs">送信中...</span>}
-        </div>
+        {!isFollowup && (
+          <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+            <span className="text-sm font-semibold">
+              {getDisplayName(author)}
+            </span>
+            <time className="text-xs text-[#68716b]">
+              {formatMessageTime(message.createdAt)}
+            </time>
+            {isPending && <span className="text-xs">送信中...</span>}
+          </div>
+        )}
         <p className="text-left leading-7 break-words whitespace-pre-wrap">
           <MessageText content={message.content} onOpenLink={onOpenLink} />
+          {isPending && isFollowup && (
+            <span className="ml-2 text-xs">送信中...</span>
+          )}
         </p>
       </div>
     </article>
