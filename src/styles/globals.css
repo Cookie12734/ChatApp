@@ -166,6 +166,31 @@ textarea[data-chat-input]:focus-visible {
   display: none;
 }
 
+.chat-scrollbar {
+  scrollbar-color: #8da69b transparent;
+  scrollbar-width: thin;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: #8da69b;
+  background-clip: padding-box;
+  border: 3px solid #fff8ed;
+  border-radius: 999px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #687f75;
+  background-clip: padding-box;
+}
+
 ::placeholder {
   color: var(--connect-placeholder);
   opacity: 1;
