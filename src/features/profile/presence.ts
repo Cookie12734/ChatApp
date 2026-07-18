@@ -2,6 +2,8 @@ export const presenceStatuses = ["ONLINE", "IDLE", "DND", "INVISIBLE"] as const;
 
 export type PresenceStatus = (typeof presenceStatuses)[number];
 
+const presenceStaleAfterMs = 45_000;
+
 export const presenceOptions = [
   {
     dotClassName: "bg-green-500",
@@ -49,4 +51,20 @@ export function getPresenceDotClassName(
   status: PresenceStatus | null | undefined,
 ) {
   return getPresenceOption(status).dotClassName;
+}
+
+export function getEffectivePresenceStatus(
+  preferredStatus: PresenceStatus,
+  lastSeenAt: Date | null,
+  now = Date.now(),
+): PresenceStatus {
+  if (
+    preferredStatus === "INVISIBLE" ||
+    !lastSeenAt ||
+    now - lastSeenAt.getTime() > presenceStaleAfterMs
+  ) {
+    return "INVISIBLE";
+  }
+
+  return preferredStatus;
 }

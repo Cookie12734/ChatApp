@@ -57,6 +57,7 @@ model User {
   bio                    String?
   statusMessage          String?
   presenceStatus         UserPresenceStatus  @default(ONLINE)
+  lastSeenAt             DateTime?
   accounts               Account[]
   blockedBy              UserBlock[]         @relation("BlockedUsers")
   blockedUsers           UserBlock[]         @relation("UserBlocks")

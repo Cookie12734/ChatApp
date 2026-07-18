@@ -6120,6 +6120,7 @@ export namespace Prisma {
     bio: string | null
     statusMessage: string | null
     presenceStatus: $Enums.UserPresenceStatus | null
+    lastSeenAt: Date | null
   }
 
   export type UserMaxAggregateOutputType = {
@@ -6133,6 +6134,7 @@ export namespace Prisma {
     bio: string | null
     statusMessage: string | null
     presenceStatus: $Enums.UserPresenceStatus | null
+    lastSeenAt: Date | null
   }
 
   export type UserCountAggregateOutputType = {
@@ -6146,6 +6148,7 @@ export namespace Prisma {
     bio: number
     statusMessage: number
     presenceStatus: number
+    lastSeenAt: number
     _all: number
   }
 
@@ -6161,6 +6164,7 @@ export namespace Prisma {
     bio?: true
     statusMessage?: true
     presenceStatus?: true
+    lastSeenAt?: true
   }
 
   export type UserMaxAggregateInputType = {
@@ -6174,6 +6178,7 @@ export namespace Prisma {
     bio?: true
     statusMessage?: true
     presenceStatus?: true
+    lastSeenAt?: true
   }
 
   export type UserCountAggregateInputType = {
@@ -6187,6 +6192,7 @@ export namespace Prisma {
     bio?: true
     statusMessage?: true
     presenceStatus?: true
+    lastSeenAt?: true
     _all?: true
   }
 
@@ -6273,6 +6279,7 @@ export namespace Prisma {
     bio: string | null
     statusMessage: string | null
     presenceStatus: $Enums.UserPresenceStatus
+    lastSeenAt: Date | null
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -6303,6 +6310,7 @@ export namespace Prisma {
     bio?: boolean
     statusMessage?: boolean
     presenceStatus?: boolean
+    lastSeenAt?: boolean
     accounts?: boolean | User$accountsArgs<ExtArgs>
     blockedBy?: boolean | User$blockedByArgs<ExtArgs>
     blockedUsers?: boolean | User$blockedUsersArgs<ExtArgs>
@@ -6334,6 +6342,7 @@ export namespace Prisma {
     bio?: boolean
     statusMessage?: boolean
     presenceStatus?: boolean
+    lastSeenAt?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -6347,6 +6356,7 @@ export namespace Prisma {
     bio?: boolean
     statusMessage?: boolean
     presenceStatus?: boolean
+    lastSeenAt?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
@@ -6360,9 +6370,10 @@ export namespace Prisma {
     bio?: boolean
     statusMessage?: boolean
     presenceStatus?: boolean
+    lastSeenAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio" | "statusMessage" | "presenceStatus", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "email" | "emailVerified" | "passwordHash" | "image" | "bio" | "statusMessage" | "presenceStatus" | "lastSeenAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     accounts?: boolean | User$accountsArgs<ExtArgs>
     blockedBy?: boolean | User$blockedByArgs<ExtArgs>
@@ -6418,6 +6429,7 @@ export namespace Prisma {
       bio: string | null
       statusMessage: string | null
       presenceStatus: $Enums.UserPresenceStatus
+      lastSeenAt: Date | null
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -6868,6 +6880,7 @@ export namespace Prisma {
     readonly bio: FieldRef<"User", 'String'>
     readonly statusMessage: FieldRef<"User", 'String'>
     readonly presenceStatus: FieldRef<"User", 'UserPresenceStatus'>
+    readonly lastSeenAt: FieldRef<"User", 'DateTime'>
   }
     
 
@@ -22786,7 +22799,8 @@ export namespace Prisma {
     image: 'image',
     bio: 'bio',
     statusMessage: 'statusMessage',
-    presenceStatus: 'presenceStatus'
+    presenceStatus: 'presenceStatus',
+    lastSeenAt: 'lastSeenAt'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -23373,6 +23387,7 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     statusMessage?: StringNullableFilter<"User"> | string | null
     presenceStatus?: EnumUserPresenceStatusFilter<"User"> | $Enums.UserPresenceStatus
+    lastSeenAt?: DateTimeNullableFilter<"User"> | Date | string | null
     accounts?: AccountListRelationFilter
     blockedBy?: UserBlockListRelationFilter
     blockedUsers?: UserBlockListRelationFilter
@@ -23403,6 +23418,7 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     statusMessage?: SortOrderInput | SortOrder
     presenceStatus?: SortOrder
+    lastSeenAt?: SortOrderInput | SortOrder
     accounts?: AccountOrderByRelationAggregateInput
     blockedBy?: UserBlockOrderByRelationAggregateInput
     blockedUsers?: UserBlockOrderByRelationAggregateInput
@@ -23436,6 +23452,7 @@ export namespace Prisma {
     bio?: StringNullableFilter<"User"> | string | null
     statusMessage?: StringNullableFilter<"User"> | string | null
     presenceStatus?: EnumUserPresenceStatusFilter<"User"> | $Enums.UserPresenceStatus
+    lastSeenAt?: DateTimeNullableFilter<"User"> | Date | string | null
     accounts?: AccountListRelationFilter
     blockedBy?: UserBlockListRelationFilter
     blockedUsers?: UserBlockListRelationFilter
@@ -23466,6 +23483,7 @@ export namespace Prisma {
     bio?: SortOrderInput | SortOrder
     statusMessage?: SortOrderInput | SortOrder
     presenceStatus?: SortOrder
+    lastSeenAt?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -23485,6 +23503,7 @@ export namespace Prisma {
     bio?: StringNullableWithAggregatesFilter<"User"> | string | null
     statusMessage?: StringNullableWithAggregatesFilter<"User"> | string | null
     presenceStatus?: EnumUserPresenceStatusWithAggregatesFilter<"User"> | $Enums.UserPresenceStatus
+    lastSeenAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   }
 
   export type VerificationTokenWhereInput = {
@@ -24556,6 +24575,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -24586,6 +24606,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -24616,6 +24637,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -24646,6 +24668,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -24676,6 +24699,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
   }
 
   export type UserUpdateManyMutationInput = {
@@ -24689,6 +24713,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
@@ -24702,6 +24727,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type VerificationTokenCreateInput = {
@@ -25959,6 +25985,7 @@ export namespace Prisma {
     bio?: SortOrder
     statusMessage?: SortOrder
     presenceStatus?: SortOrder
+    lastSeenAt?: SortOrder
   }
 
   export type UserMaxOrderByAggregateInput = {
@@ -25972,6 +25999,7 @@ export namespace Prisma {
     bio?: SortOrder
     statusMessage?: SortOrder
     presenceStatus?: SortOrder
+    lastSeenAt?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
@@ -25985,6 +26013,7 @@ export namespace Prisma {
     bio?: SortOrder
     statusMessage?: SortOrder
     presenceStatus?: SortOrder
+    lastSeenAt?: SortOrder
   }
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -28279,6 +28308,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -28308,6 +28338,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -28353,6 +28384,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -28382,6 +28414,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -28411,6 +28444,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
     channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
@@ -28440,6 +28474,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
     channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
@@ -28485,6 +28520,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
     channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
@@ -28514,6 +28550,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
     channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
@@ -28543,6 +28580,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -28572,6 +28610,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -28617,6 +28656,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -28646,6 +28686,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -29577,6 +29618,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -29606,6 +29648,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -29640,6 +29683,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -29669,6 +29713,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -29730,6 +29775,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -29759,6 +29805,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -29799,6 +29846,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -29828,6 +29876,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -29857,6 +29906,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -29886,6 +29936,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -29920,6 +29971,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -29949,6 +30001,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -29994,6 +30047,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30023,6 +30077,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30063,6 +30118,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30092,6 +30148,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30144,6 +30201,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -30173,6 +30231,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -30247,6 +30306,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30276,6 +30336,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30305,6 +30366,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -30334,6 +30396,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -30368,6 +30431,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -30397,6 +30461,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -30442,6 +30507,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30471,6 +30537,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30511,6 +30578,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30540,6 +30608,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30569,6 +30638,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -30598,6 +30668,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -30643,6 +30714,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -30672,6 +30744,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -30701,6 +30774,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
     channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
@@ -30730,6 +30804,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
     channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
@@ -30764,6 +30839,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     channelReads?: ServerChannelReadCreateNestedManyWithoutUserInput
@@ -30793,6 +30869,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     channelReads?: ServerChannelReadUncheckedCreateNestedManyWithoutUserInput
@@ -30838,6 +30915,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
     channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
@@ -30867,6 +30945,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
     channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
@@ -30907,6 +30986,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     channelReads?: ServerChannelReadUpdateManyWithoutUserNestedInput
@@ -30936,6 +31016,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     channelReads?: ServerChannelReadUncheckedUpdateManyWithoutUserNestedInput
@@ -30965,6 +31046,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -30994,6 +31076,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -31123,6 +31206,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -31152,6 +31236,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -31271,6 +31356,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -31300,6 +31386,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -31382,6 +31469,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -31411,6 +31499,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -31613,6 +31702,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -31642,6 +31732,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -31716,6 +31807,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -31745,6 +31837,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput
@@ -31797,6 +31890,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockCreateNestedManyWithoutBlockerInput
@@ -31826,6 +31920,7 @@ export namespace Prisma {
     bio?: string | null
     statusMessage?: string | null
     presenceStatus?: $Enums.UserPresenceStatus
+    lastSeenAt?: Date | string | null
     accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
     blockedBy?: UserBlockUncheckedCreateNestedManyWithoutBlockedInput
     blockedUsers?: UserBlockUncheckedCreateNestedManyWithoutBlockerInput
@@ -31931,6 +32026,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUpdateManyWithoutBlockerNestedInput
@@ -31960,6 +32056,7 @@ export namespace Prisma {
     bio?: NullableStringFieldUpdateOperationsInput | string | null
     statusMessage?: NullableStringFieldUpdateOperationsInput | string | null
     presenceStatus?: EnumUserPresenceStatusFieldUpdateOperationsInput | $Enums.UserPresenceStatus
+    lastSeenAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
     blockedBy?: UserBlockUncheckedUpdateManyWithoutBlockedNestedInput
     blockedUsers?: UserBlockUncheckedUpdateManyWithoutBlockerNestedInput

@@ -1,7 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { presenceStatuses } from "~/features/profile/presence";
+import {
+  getEffectivePresenceStatus,
+  presenceStatuses,
+} from "~/features/profile/presence";
 import { canViewProfile } from "~/features/profile/server/profile-permissions";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
@@ -69,6 +72,7 @@ export const profileRouter = createTRPCRouter({
           bio: true,
           id: true,
           image: true,
+          lastSeenAt: true,
           name: true,
           presenceStatus: true,
           statusMessage: true,
@@ -193,8 +197,16 @@ export const profileRouter = createTRPCRouter({
               ? ("INCOMING_PENDING" as const)
               : ("NONE" as const);
 
+      const { lastSeenAt, ...visibleProfile } = profile;
+
       return {
-        ...profile,
+        ...visibleProfile,
+        presenceStatus: isCurrentUser
+          ? visibleProfile.presenceStatus
+          : getEffectivePresenceStatus(
+              visibleProfile.presenceStatus,
+              lastSeenAt,
+            ),
         incomingRequestId:
           relationship === "INCOMING_PENDING" ? incomingRequest?.id : null,
         outgoingRequestId:

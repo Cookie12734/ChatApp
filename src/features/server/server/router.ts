@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
+import { getEffectivePresenceStatus } from "~/features/profile/presence";
 import {
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
@@ -171,6 +172,7 @@ export const serverRouter = createTRPCRouter({
                       userId: true,
                       name: true,
                       image: true,
+                      lastSeenAt: true,
                       presenceStatus: true,
                     },
                   },
@@ -284,7 +286,20 @@ export const serverRouter = createTRPCRouter({
             inviteCode: canManageServer(membership.role)
               ? membership.server.inviteCode
               : null,
-            members: membership.server.members,
+            members: membership.server.members.map((member) => {
+              const { lastSeenAt, ...user } = member.user;
+
+              return {
+                ...member,
+                user: {
+                  ...user,
+                  presenceStatus: getEffectivePresenceStatus(
+                    user.presenceStatus,
+                    lastSeenAt,
+                  ),
+                },
+              };
+            }),
           },
         };
       }),

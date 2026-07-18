@@ -162,7 +162,8 @@ exports.Prisma.UserScalarFieldEnum = {
   image: 'image',
   bio: 'bio',
   statusMessage: 'statusMessage',
-  presenceStatus: 'presenceStatus'
+  presenceStatus: 'presenceStatus',
+  lastSeenAt: 'lastSeenAt'
 };
 
 exports.Prisma.VerificationTokenScalarFieldEnum = {

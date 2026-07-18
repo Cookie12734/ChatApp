@@ -11,6 +11,18 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const updateLastSeen = async () => {
+    try {
+      await db.user.update({
+        where: { id: userId },
+        data: { lastSeenAt: new Date() },
+      });
+    } catch (error) {
+      console.error("Failed to update presence heartbeat", error);
+    }
+  };
+  await updateLastSeen();
+
   let lastEventId =
     (
       await db.chatEvent.findFirst({
@@ -46,9 +58,7 @@ export async function GET(request: Request) {
 
           for (const event of events) {
             lastEventId = event.id;
-            enqueue(
-              `event: chat\ndata: ${JSON.stringify(event.payload)}\n\n`,
-            );
+            enqueue(`event: chat\ndata: ${JSON.stringify(event.payload)}\n\n`);
           }
         } catch (error) {
           console.error("Failed to poll chat events", error);
@@ -57,12 +67,14 @@ export async function GET(request: Request) {
         }
       };
       const pollTimer = setInterval(() => void poll(), 1000);
+      const heartbeatTimer = setInterval(() => void updateLastSeen(), 20_000);
       const keepAlive = setInterval(() => enqueue(": keep-alive\n\n"), 25_000);
 
       cleanup = () => {
         if (closed) return;
         closed = true;
         clearInterval(pollTimer);
+        clearInterval(heartbeatTimer);
         clearInterval(keepAlive);
       };
       request.signal.addEventListener(
