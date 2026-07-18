@@ -307,8 +307,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     );
   }, [selectedServer]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
-  const willDeleteSelectedServerOnLeave =
-    selectedServer?.role === "OWNER" && selectedServer.server.ownerCount <= 1;
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
         (channel) => channel.id === channelContextMenu.channelId,
@@ -1337,6 +1335,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     role: "MEMBER" | "OWNER",
   ) => {
     if (!selectedServer?.server.id) return;
+    if (
+      role === "OWNER" &&
+      !window.confirm(
+        "このメンバーへサーバー所有権を移譲しますか？移譲後はあなたがメンバーになります。",
+      )
+    ) {
+      return;
+    }
 
     updateServerMemberRole.mutate({
       memberId,
@@ -1451,10 +1457,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleLeaveServer = () => {
     if (!selectedServer?.server.id) return;
-    const action = willDeleteSelectedServerOnLeave
-      ? "サーバーを削除して退出しますか？"
-      : "このサーバーから退出しますか？";
-    if (!window.confirm(action)) return;
+    if (!window.confirm("このサーバーから退出しますか？")) return;
 
     leaveServer.mutate({ serverId: selectedServer.server.id });
   };
@@ -1543,11 +1546,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       setIsServerMenuOpen(false);
                       handleLeaveServer();
                     }}
-                    disabled={leaveServer.isPending}
+                    disabled={isSelectedServerOwner || leaveServer.isPending}
                     className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-50"
+                    title={
+                      isSelectedServerOwner
+                        ? "所有権を移譲してから退出してください"
+                        : "退出"
+                    }
                   >
                     <LogOut className="h-4 w-4" aria-hidden="true" />
-                    {willDeleteSelectedServerOnLeave ? "削除して退出" : "退出"}
+                    {isSelectedServerOwner ? "所有権を移譲して退出" : "退出"}
                   </button>
                 </div>
               )}
@@ -2655,7 +2663,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 )}{" "}
                                 ・
                                 {member.role === "OWNER"
-                                  ? "管理者"
+                                  ? "所有者"
                                   : "メンバー"}
                               </span>
                             </span>
@@ -2676,12 +2684,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               aria-label={
                                 member.role === "OWNER"
                                   ? "メンバーに戻す"
-                                  : "管理者にする"
+                                  : "所有権を移譲"
                               }
                               title={
                                 member.role === "OWNER"
                                   ? "メンバーに戻す"
-                                  : "管理者にする"
+                                  : "所有権を移譲"
                               }
                             >
                               {member.role === "OWNER" ? (

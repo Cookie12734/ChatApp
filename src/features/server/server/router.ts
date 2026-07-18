@@ -14,9 +14,8 @@ import {
   canDeleteServerMessage,
   canEditMessage,
   canPinServerMessage,
-  shouldDeleteServerOnLeave,
-  countServerOwners,
   getVisibleServerMembers,
+  isServerOwner,
 } from "~/features/server/server/message-permissions";
 import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
@@ -292,7 +291,6 @@ export const serverRouter = createTRPCRouter({
               membership.server.members,
               blockedPeerIds,
             ),
-            ownerCount: countServerOwners(membership.server.members),
           },
         };
       }),
@@ -972,13 +970,19 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { role: true },
+        select: {
+          role: true,
+          server: { select: { createdById: true } },
+        },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (
+        !membership ||
+        !isServerOwner(membership.server.createdById, currentUserId)
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "メンバー権限を変更できるのは管理者だけです",
+          message: "メンバー権限を変更できるのはサーバー所有者だけです",
         });
       }
 
@@ -1003,6 +1007,26 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
+      if (input.role === "OWNER") {
+        return ctx.db.$transaction(async (tx) => {
+          await tx.serverMember.updateMany({
+            where: { role: "OWNER", serverId: input.serverId },
+            data: { role: "MEMBER" },
+          });
+          const newOwner = await tx.serverMember.update({
+            where: { id: target.id },
+            data: { role: "OWNER" },
+            select: { id: true, role: true },
+          });
+          await tx.chatServer.update({
+            where: { id: input.serverId },
+            data: { createdById: target.userId },
+          });
+
+          return newOwner;
+        });
+      }
+
       return ctx.db.serverMember.update({
         where: { id: target.id },
         data: { role: input.role },
@@ -1021,13 +1045,19 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { role: true },
+        select: {
+          role: true,
+          server: { select: { createdById: true } },
+        },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (
+        !membership ||
+        !isServerOwner(membership.server.createdById, currentUserId)
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "メンバーを退出させられるのは管理者だけです",
+          message: "メンバーを退出させられるのはサーバー所有者だけです",
         });
       }
 
@@ -1040,6 +1070,13 @@ export const serverRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "メンバーが見つかりません",
+        });
+      }
+
+      if (isServerOwner(membership.server.createdById, target.userId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "サーバー所有者は退出させられません",
         });
       }
 
@@ -1067,20 +1104,24 @@ export const serverRouter = createTRPCRouter({
   deleteServer: protectedProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
       const membership = await ctx.db.serverMember.findUnique({
         where: {
           serverId_userId: {
             serverId: input.serverId,
-            userId: ctx.session.user.id,
+            userId: currentUserId,
           },
         },
-        select: { role: true },
+        select: { server: { select: { createdById: true } } },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (
+        !membership ||
+        !isServerOwner(membership.server.createdById, currentUserId)
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "サーバーを削除できるのは管理者だけです",
+          message: "サーバーを削除できるのはサーバー所有者だけです",
         });
       }
 
@@ -1099,7 +1140,10 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { id: true, role: true },
+        select: {
+          id: true,
+          server: { select: { createdById: true } },
+        },
       });
 
       if (!membership) {
@@ -1109,35 +1153,22 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      if (membership.role === "OWNER") {
-        const ownerCount = await ctx.db.serverMember.count({
-          where: { role: "OWNER", serverId: input.serverId },
+      if (isServerOwner(membership.server.createdById, currentUserId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "所有権を別のメンバーへ移譲してから退出してください",
         });
-
-        if (shouldDeleteServerOnLeave(membership.role, ownerCount)) {
-          await ctx.db.chatServer.delete({ where: { id: input.serverId } });
-        } else {
-          await ctx.db.$transaction([
-            ctx.db.serverChannelRead.deleteMany({
-              where: {
-                userId: currentUserId,
-                channel: { serverId: input.serverId },
-              },
-            }),
-            ctx.db.serverMember.delete({ where: { id: membership.id } }),
-          ]);
-        }
-      } else {
-        await ctx.db.$transaction([
-          ctx.db.serverChannelRead.deleteMany({
-            where: {
-              userId: currentUserId,
-              channel: { serverId: input.serverId },
-            },
-          }),
-          ctx.db.serverMember.delete({ where: { id: membership.id } }),
-        ]);
       }
+
+      await ctx.db.$transaction([
+        ctx.db.serverChannelRead.deleteMany({
+          where: {
+            userId: currentUserId,
+            channel: { serverId: input.serverId },
+          },
+        }),
+        ctx.db.serverMember.delete({ where: { id: membership.id } }),
+      ]);
 
       return { serverId: input.serverId };
     }),

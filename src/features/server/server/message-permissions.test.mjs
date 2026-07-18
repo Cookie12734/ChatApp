@@ -3,14 +3,13 @@ import test from "node:test";
 
 import {
   canJoinServerByInvite,
-  countServerOwners,
   getVisibleServerMembers,
+  isServerOwner,
   canManageServer,
   canManageServerMember,
   canDeleteServerMessage,
   canEditMessage,
   canPinServerMessage,
-  shouldDeleteServerOnLeave,
 } from "./message-permissions.ts";
 
 test("server message permissions match owner and author rules", () => {
@@ -24,9 +23,8 @@ test("server message permissions match owner and author rules", () => {
   assert.equal(canManageServerMember("OWNER", "me", "other"), true);
   assert.equal(canManageServerMember("OWNER", "me", "me"), false);
   assert.equal(canManageServerMember("MEMBER", "me", "other"), false);
-  assert.equal(shouldDeleteServerOnLeave("OWNER", 1), true);
-  assert.equal(shouldDeleteServerOnLeave("OWNER", 2), false);
-  assert.equal(shouldDeleteServerOnLeave("MEMBER", 1), false);
+  assert.equal(isServerOwner("owner", "owner"), true);
+  assert.equal(isServerOwner("owner", "member"), false);
   assert.equal(
     canJoinServerByInvite({ hasBlockedMember: false, isMember: false }),
     true,
@@ -38,14 +36,6 @@ test("server message permissions match owner and author rules", () => {
   assert.equal(
     canJoinServerByInvite({ hasBlockedMember: true, isMember: true }),
     true,
-  );
-  assert.equal(
-    countServerOwners([
-      { role: "OWNER" },
-      { role: "MEMBER" },
-      { role: "OWNER" },
-    ]),
-    2,
   );
   assert.deepEqual(
     getVisibleServerMembers(

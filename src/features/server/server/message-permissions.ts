@@ -12,11 +12,8 @@ export function canManageServerMember(
   return canManageServer(role) && currentUserId !== memberUserId;
 }
 
-export function shouldDeleteServerOnLeave(
-  role: ServerMemberRole,
-  ownerCount: number,
-) {
-  return canManageServer(role) && ownerCount <= 1;
+export function isServerOwner(serverOwnerId: string, userId: string) {
+  return serverOwnerId === userId;
 }
 
 export function canJoinServerByInvite({
@@ -27,12 +24,6 @@ export function canJoinServerByInvite({
   isMember: boolean;
 }) {
   return isMember || !hasBlockedMember;
-}
-
-export function countServerOwners<T extends { role: ServerMemberRole }>(
-  members: T[],
-) {
-  return members.filter((member) => member.role === "OWNER").length;
 }
 
 export function getVisibleServerMembers<T extends { userId: string }>(
