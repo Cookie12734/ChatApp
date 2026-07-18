@@ -1279,6 +1279,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleDeleteChannel = (channelId: string) => {
     if (!selectedServer?.server.id) return;
+    if (
+      !window.confirm(
+        "このチャンネルを削除しますか？チャンネル内のメッセージもすべて削除されます。",
+      )
+    ) {
+      return;
+    }
 
     setChannelContextMenu(null);
     deleteChannel.mutate({
@@ -1322,8 +1329,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event: MouseEvent<HTMLElement>,
     chatMessage: { id: string; senderId: string },
   ) => {
-    if (chatMessage.senderId !== directConversation?.currentUserId) return;
-
     event.preventDefault();
     event.stopPropagation();
     setChannelContextMenu(null);
@@ -1339,10 +1344,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event: MouseEvent<HTMLElement>,
     chatMessage: { id: string; senderId: string },
   ) => {
-    const isMine =
-      chatMessage.senderId === serverConversationData?.currentUser.id;
-    if (!isMine && !isSelectedServerOwner) return;
-
     event.preventDefault();
     event.stopPropagation();
     setChannelContextMenu(null);
@@ -1447,6 +1448,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     isServerContextMessageMine,
     Boolean(serverMessageContextTarget && isSelectedServerOwner),
   ].some(Boolean);
+  const handleCopyMessage = async () => {
+    if (!messageContextTarget) return;
+
+    try {
+      await navigator.clipboard.writeText(messageContextTarget.content);
+      setMessageContextMenu(null);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      if (messageContextMenu?.kind === "server") {
+        setServerMessage(errorMessage);
+      } else {
+        setMessage(errorMessage);
+      }
+    }
+  };
 
   return (
     <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
@@ -2030,7 +2046,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            className="group flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
+                            className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                           >
                             <Avatar
                               user={author}
@@ -2112,6 +2128,24 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 </p>
                               )}
                             </div>
+                            <button
+                              type="button"
+                              onClick={(event) =>
+                                openServerMessageMenu(event, chatMessage)
+                              }
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none md:pointer-events-none md:absolute md:top-1 md:right-2 md:opacity-0 md:focus-visible:pointer-events-auto md:focus-visible:opacity-100"
+                              aria-label="メッセージ操作"
+                              aria-haspopup="menu"
+                              aria-expanded={
+                                messageContextMenu?.kind === "server" &&
+                                messageContextMenu.messageId === chatMessage.id
+                              }
+                            >
+                              <Settings
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
+                            </button>
                           </article>
                         );
                       })}
@@ -2232,7 +2266,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              className="group flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
+                              className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                             >
                               <Avatar
                                 user={author}
@@ -2293,6 +2327,25 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                   </p>
                                 )}
                               </div>
+                              <button
+                                type="button"
+                                onClick={(event) =>
+                                  openDirectMessageMenu(event, chatMessage)
+                                }
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none md:pointer-events-none md:absolute md:top-1 md:right-2 md:opacity-0 md:focus-visible:pointer-events-auto md:focus-visible:opacity-100"
+                                aria-label="メッセージ操作"
+                                aria-haspopup="menu"
+                                aria-expanded={
+                                  messageContextMenu?.kind === "direct" &&
+                                  messageContextMenu.messageId ===
+                                    chatMessage.id
+                                }
+                              >
+                                <Settings
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </button>
                             </article>
                           );
                         })}
@@ -2916,6 +2969,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           onClick={(event) => event.stopPropagation()}
           role="menu"
         >
+          <button
+            type="button"
+            onClick={() => void handleCopyMessage()}
+            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+            role="menuitem"
+          >
+            <Copy className="h-4 w-4" aria-hidden="true" />
+            コピー
+          </button>
           {serverMessageContextTarget && isSelectedServerOwner && (
             <button
               type="button"
