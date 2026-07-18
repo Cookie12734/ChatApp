@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getChatEventRecord } from "./chat-events.ts";
+import { canReceiveChatEvent, getChatEventRecord } from "./chat-events.ts";
 
-test("chat event records target direct participants and server members", () => {
+test("chat event records target direct participants without server fanout", () => {
   assert.deepEqual(
     getChatEventRecord({ kind: "direct", userIds: ["me", "friend"] }),
     {
@@ -13,18 +13,15 @@ test("chat event records target direct participants and server members", () => {
     },
   );
   assert.deepEqual(
-    getChatEventRecord(
-      {
-        change: "created",
-        channelId: "general",
-        kind: "server",
-        senderId: "owner",
-        serverId: "server-a",
-      },
-      ["owner", "member"],
-    ),
+    getChatEventRecord({
+      change: "created",
+      channelId: "general",
+      kind: "server",
+      senderId: "owner",
+      serverId: "server-a",
+    }),
     {
-      audienceIds: ["owner", "member"],
+      audienceIds: [],
       kind: "server",
       payload: {
         change: "created",
@@ -34,5 +31,40 @@ test("chat event records target direct participants and server members", () => {
         serverId: "server-a",
       },
     },
+  );
+});
+
+test("chat event recipients are filtered by participant or server membership", () => {
+  const serverIds = new Set(["server-a"]);
+
+  assert.equal(
+    canReceiveChatEvent(
+      { kind: "direct", userIds: ["me", "friend"] },
+      "me",
+      serverIds,
+    ),
+    true,
+  );
+  assert.equal(
+    canReceiveChatEvent(
+      { kind: "direct", userIds: ["other", "friend"] },
+      "me",
+      serverIds,
+    ),
+    false,
+  );
+  assert.equal(
+    canReceiveChatEvent(
+      {
+        change: "created",
+        channelId: "general",
+        kind: "server",
+        senderId: "friend",
+        serverId: "server-a",
+      },
+      "me",
+      serverIds,
+    ),
+    true,
   );
 });
