@@ -7,6 +7,7 @@ import {
   Inbox,
   Send,
   Undo2,
+  UserMinus,
   UserPlus,
   X,
 } from "lucide-react";
@@ -35,7 +36,10 @@ export function FriendPanel() {
   });
 
   const invalidateOverview = async () => {
-    await utils.friend.getOverview.invalidate();
+    await Promise.all([
+      utils.chat.getFriends.invalidate(),
+      utils.friend.getOverview.invalidate(),
+    ]);
   };
 
   const sendRequest = api.friend.sendRequest.useMutation({
@@ -72,6 +76,13 @@ export function FriendPanel() {
 
   const markNotificationsRead = api.friend.markNotificationsRead.useMutation({
     onSuccess: invalidateOverview,
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+  const removeFriend = api.friend.removeFriend.useMutation({
+    onSuccess: async () => {
+      setMessage("フレンドを解除しました。過去のDMはDM一覧から確認できます");
+      await invalidateOverview();
+    },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
   const blockUser = api.friend.blockUser.useMutation({
@@ -273,21 +284,42 @@ export function FriendPanel() {
                       </span>
                     </button>
                   </UserProfileDialog>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!window.confirm("このユーザーをブロックしますか？")) {
-                        return;
-                      }
-                      blockUser.mutate({ userId: friendship.friend.userId });
-                    }}
-                    disabled={blockUser.isPending}
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
-                    aria-label="ブロック"
-                    title="ブロック"
-                  >
-                    <Ban className="h-4 w-4" aria-hidden="true" />
-                  </button>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!window.confirm("フレンドを解除しますか？")) return;
+                        removeFriend.mutate({
+                          userId: friendship.friend.userId,
+                        });
+                      }}
+                      disabled={removeFriend.isPending}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#f1e4d0] hover:text-[#18221f] disabled:opacity-50"
+                      aria-label="フレンド解除"
+                      title="フレンド解除"
+                    >
+                      <UserMinus className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          !window.confirm("このユーザーをブロックしますか？")
+                        ) {
+                          return;
+                        }
+                        blockUser.mutate({
+                          userId: friendship.friend.userId,
+                        });
+                      }}
+                      disabled={blockUser.isPending}
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
+                      aria-label="ブロック"
+                      title="ブロック"
+                    >
+                      <Ban className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

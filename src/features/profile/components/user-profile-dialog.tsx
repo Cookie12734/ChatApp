@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, UserCheck, UserPlus, X } from "lucide-react";
+import { Settings, UserCheck, UserMinus, UserPlus, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import {
@@ -38,6 +38,7 @@ export function UserProfileDialog({
   );
   const invalidateProfile = async () => {
     await Promise.all([
+      utils.chat.getFriends.invalidate(),
       utils.friend.getOverview.invalidate(),
       utils.profile.getByUserId.invalidate(),
     ]);
@@ -51,6 +52,9 @@ export function UserProfileDialog({
   const cancelFriendRequest = api.friend.cancelRequest.useMutation({
     onSuccess: invalidateProfile,
   });
+  const removeFriend = api.friend.removeFriend.useMutation({
+    onSuccess: invalidateProfile,
+  });
   const data = profile.data;
   const displayName =
     data?.serverProfile?.nickname?.trim() ??
@@ -61,7 +65,8 @@ export function UserProfileDialog({
   const friendActionError =
     sendFriendRequest.error?.message ??
     acceptFriendRequest.error?.message ??
-    cancelFriendRequest.error?.message;
+    cancelFriendRequest.error?.message ??
+    removeFriend.error?.message;
 
   return (
     <Dialog
@@ -72,6 +77,7 @@ export function UserProfileDialog({
           sendFriendRequest.reset();
           acceptFriendRequest.reset();
           cancelFriendRequest.reset();
+          removeFriend.reset();
         }
       }}
     >
@@ -247,11 +253,15 @@ export function UserProfileDialog({
                   {data.relationship === "FRIENDS" && (
                     <button
                       type="button"
-                      disabled
-                      className="inline-flex min-h-11 w-full cursor-default items-center justify-center gap-2 rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 text-sm font-semibold text-[#114744]"
+                      onClick={() => {
+                        if (!window.confirm("フレンドを解除しますか？")) return;
+                        removeFriend.mutate({ userId });
+                      }}
+                      disabled={removeFriend.isPending}
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#9f4122]/25 bg-[#fff1e8] px-4 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:cursor-wait disabled:opacity-50"
                     >
-                      <UserCheck className="h-4 w-4" aria-hidden="true" />
-                      フレンド
+                      <UserMinus className="h-4 w-4" aria-hidden="true" />
+                      {removeFriend.isPending ? "解除中..." : "フレンド解除"}
                     </button>
                   )}
                   {friendActionError && (

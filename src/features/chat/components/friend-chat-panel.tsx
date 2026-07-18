@@ -627,14 +627,19 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     utils.chat.getFriends,
   ]);
 
+  const selectedFriendContact = useMemo(
+    () =>
+      friends.data?.find((item) => item.friend.id === selectedFriendId) ?? null,
+    [friends.data, selectedFriendId],
+  );
   const selectedFriend = useMemo(() => {
-    return (
-      directConversation?.friend ??
-      friends.data?.find((item) => item.friend.id === selectedFriendId)
-        ?.friend ??
-      null
+    return directConversation?.friend ?? selectedFriendContact?.friend ?? null;
+  }, [directConversation?.friend, selectedFriendContact?.friend]);
+  const canSendDirectMessage =
+    directConversation?.canSend ??
+    Boolean(
+      selectedFriendContact?.isFriend && !selectedFriendContact.isBlocked,
     );
-  }, [directConversation?.friend, friends.data, selectedFriendId]);
 
   useEffect(() => {
     if (
@@ -1267,7 +1272,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedFriendId || !draft.trim()) return;
+    if (!selectedFriendId || !canSendDirectMessage || !draft.trim()) return;
     broadcastTyping(false);
 
     sendMessage.mutate({
@@ -2520,7 +2525,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
                         {typingUserName
                           ? `${typingUserName} が入力中...`
-                          : null}
+                          : canSendDirectMessage
+                            ? null
+                            : "フレンドではないため、新しいメッセージは送信できません"}
                       </div>
                       <form
                         onSubmit={handleSubmit}
@@ -2543,17 +2550,24 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           }}
                           className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                           placeholder={
-                            selectedFriend
-                              ? `${getDisplayName(selectedFriend)} へメッセージを送信`
-                              : "フレンドを選択してください"
+                            !canSendDirectMessage
+                              ? "この会話には送信できません"
+                              : selectedFriend
+                                ? `${getDisplayName(selectedFriend)} へメッセージを送信`
+                                : "フレンドを選択してください"
                           }
-                          disabled={!selectedFriendId || sendMessage.isPending}
+                          disabled={
+                            !selectedFriendId ||
+                            !canSendDirectMessage ||
+                            sendMessage.isPending
+                          }
                           maxLength={1000}
                         />
                         <button
                           type="submit"
                           disabled={
                             !selectedFriendId ||
+                            !canSendDirectMessage ||
                             !draft.trim() ||
                             sendMessage.isPending
                           }

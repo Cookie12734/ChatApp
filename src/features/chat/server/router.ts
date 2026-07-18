@@ -60,73 +60,89 @@ const userPreviewSelect = {
 export const chatRouter = createTRPCRouter({
   getFriends: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
-    const blocks = await ctx.db.userBlock.findMany({
-      where: {
-        OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
-      },
-      select: { blockedId: true, blockerId: true },
-    });
+    const [blocks, friendships, sentPeers, receivedPeers] = await Promise.all([
+      ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      }),
+      ctx.db.friendship.findMany({
+        where: { userId: currentUserId },
+        orderBy: { createdAt: "desc" },
+        select: { friendId: true, id: true },
+      }),
+      ctx.db.directMessage.groupBy({
+        by: ["receiverId"],
+        where: { senderId: currentUserId },
+      }),
+      ctx.db.directMessage.groupBy({
+        by: ["senderId"],
+        where: { receiverId: currentUserId },
+      }),
+    ]);
     const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
-
-    const friendships = await ctx.db.friendship.findMany({
-      where: {
-        userId: currentUserId,
-        ...(blockedPeerIds.length > 0
-          ? { friendId: { notIn: blockedPeerIds } }
-          : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        friend: {
+    const blockedPeerIdSet = new Set(blockedPeerIds);
+    const friendshipByFriendId = new Map(
+      friendships.map((friendship) => [friendship.friendId, friendship.id]),
+    );
+    const contactIds = new Set([
+      ...friendshipByFriendId.keys(),
+      ...sentPeers.map((message) => message.receiverId),
+      ...receivedPeers.map((message) => message.senderId),
+    ]);
+    const contacts = await ctx.db.user.findMany({
+      where: { id: { in: [...contactIds] } },
+      select: {
+        id: true,
+        userId: true,
+        name: true,
+        image: true,
+        sentDirectMessages: {
+          where: { receiverId: currentUserId },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: 1,
           select: {
             id: true,
-            userId: true,
-            name: true,
-            image: true,
+            content: true,
+            createdAt: true,
+            receiverId: true,
+            senderId: true,
+          },
+        },
+        receivedDirectMessages: {
+          where: { senderId: currentUserId },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: 1,
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            receiverId: true,
+            senderId: true,
+          },
+        },
+        _count: {
+          select: {
             sentDirectMessages: {
-              where: { receiverId: currentUserId },
-              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-              take: 1,
-              select: {
-                id: true,
-                content: true,
-                createdAt: true,
-                receiverId: true,
-                senderId: true,
-              },
-            },
-            receivedDirectMessages: {
-              where: { senderId: currentUserId },
-              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-              take: 1,
-              select: {
-                id: true,
-                content: true,
-                createdAt: true,
-                receiverId: true,
-                senderId: true,
-              },
-            },
-            _count: {
-              select: {
-                sentDirectMessages: {
-                  where: { receiverId: currentUserId, readAt: null },
-                },
-              },
+              where: { receiverId: currentUserId, readAt: null },
             },
           },
         },
       },
     });
 
-    const friends = friendships.map((friendship) => {
+    const friends = contacts.map((contact) => {
       const { _count, receivedDirectMessages, sentDirectMessages, ...friend } =
-        friendship.friend;
+        contact;
+      const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
 
       return {
         currentUserId,
-        friendshipId: friendship.id,
+        friendshipId,
         friend,
+        isBlocked: blockedPeerIdSet.has(friend.id),
+        isFriend: friendshipId !== null,
         lastMessage: getLatestFriendMessage(
           sentDirectMessages[0],
           receivedDirectMessages[0],
@@ -290,27 +306,46 @@ export const chatRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
 
-      const friendship = await ctx.db.friendship.findUnique({
-        where: {
-          userId_friendId: {
-            userId: currentUserId,
-            friendId: input.friendId,
+      const [friendship, existingMessage, block, friend] = await Promise.all([
+        ctx.db.friendship.findUnique({
+          where: {
+            userId_friendId: {
+              userId: currentUserId,
+              friendId: input.friendId,
+            },
           },
-        },
-        include: {
-          friend: {
-            select: { id: true, userId: true, name: true, image: true },
+          select: { id: true },
+        }),
+        ctx.db.directMessage.findFirst({
+          where: {
+            OR: [
+              { receiverId: currentUserId, senderId: input.friendId },
+              { receiverId: input.friendId, senderId: currentUserId },
+            ],
           },
-        },
-      });
+          select: { id: true },
+        }),
+        ctx.db.userBlock.findFirst({
+          where: {
+            OR: [
+              { blockerId: currentUserId, blockedId: input.friendId },
+              { blockerId: input.friendId, blockedId: currentUserId },
+            ],
+          },
+          select: { id: true },
+        }),
+        ctx.db.user.findUnique({
+          where: { id: input.friendId },
+          select: { id: true, userId: true, name: true, image: true },
+        }),
+      ]);
 
-      if (!friendship) {
+      if (!friend || (!friendship && !existingMessage)) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "フレンドとのチャットだけ開けます",
+          message: "この会話は開けません",
         });
       }
-      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
 
       const [currentUser, messages] = await Promise.all([
         ctx.db.user.findUniqueOrThrow({
@@ -347,7 +382,8 @@ export const chatRouter = createTRPCRouter({
       return {
         currentUser,
         currentUserId,
-        friend: friendship.friend,
+        canSend: Boolean(friendship) && !block,
+        friend,
         ...prepareMessagePage(messages),
       };
     }),
@@ -434,7 +470,7 @@ export const chatRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, receiverId: true, senderId: true },
+        select: { id: true, senderId: true },
       });
 
       if (message?.senderId !== currentUserId) {
@@ -444,32 +480,9 @@ export const chatRouter = createTRPCRouter({
         });
       }
 
-      const [block, friendship] = await Promise.all([
-        ctx.db.userBlock.findFirst({
-          where: {
-            OR: [
-              { blockerId: currentUserId, blockedId: message.receiverId },
-              { blockerId: message.receiverId, blockedId: currentUserId },
-            ],
-          },
-          select: { id: true },
-        }),
-        ctx.db.friendship.findUnique({
-          where: {
-            userId_friendId: {
-              userId: currentUserId,
-              friendId: message.receiverId,
-            },
-          },
-          select: { id: true },
-        }),
-      ]);
-
       if (
         !canManageDirectMessage({
           currentUserId,
-          isBlocked: Boolean(block),
-          isFriend: Boolean(friendship),
           senderId: message.senderId,
         })
       ) {
@@ -492,7 +505,7 @@ export const chatRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, receiverId: true, senderId: true },
+        select: { id: true, senderId: true },
       });
 
       if (message?.senderId !== currentUserId) {
@@ -502,32 +515,9 @@ export const chatRouter = createTRPCRouter({
         });
       }
 
-      const [block, friendship] = await Promise.all([
-        ctx.db.userBlock.findFirst({
-          where: {
-            OR: [
-              { blockerId: currentUserId, blockedId: message.receiverId },
-              { blockerId: message.receiverId, blockedId: currentUserId },
-            ],
-          },
-          select: { id: true },
-        }),
-        ctx.db.friendship.findUnique({
-          where: {
-            userId_friendId: {
-              userId: currentUserId,
-              friendId: message.receiverId,
-            },
-          },
-          select: { id: true },
-        }),
-      ]);
-
       if (
         !canManageDirectMessage({
           currentUserId,
-          isBlocked: Boolean(block),
-          isFriend: Boolean(friendship),
           senderId: message.senderId,
         })
       ) {

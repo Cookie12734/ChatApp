@@ -356,6 +356,41 @@ export const friendRouter = createTRPCRouter({
       return { requestId: input.requestId };
     }),
 
+  removeFriend: protectedProcedure
+    .input(z.object({ userId: userIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const friend = await ctx.db.user.findUnique({
+        where: { userId: input.userId },
+        select: { id: true },
+      });
+
+      if (!friend) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "フレンドが見つかりません",
+        });
+      }
+
+      const result = await ctx.db.friendship.deleteMany({
+        where: {
+          OR: [
+            { userId: currentUserId, friendId: friend.id },
+            { userId: friend.id, friendId: currentUserId },
+          ],
+        },
+      });
+
+      if (result.count === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "フレンドが見つかりません",
+        });
+      }
+
+      return { userId: input.userId };
+    }),
+
   markNotificationsRead: protectedProcedure.mutation(async ({ ctx }) => {
     const result = await ctx.db.notification.updateMany({
       where: { userId: ctx.session.user.id, readAt: null },
