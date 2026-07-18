@@ -37,6 +37,7 @@ import {
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
+import { splitMessageLinks } from "~/features/chat/message-links";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
 import {
   getPresenceDisplayLabel,
@@ -93,6 +94,29 @@ function getDisplayName(user: { name?: string | null; userId: string }) {
   }
 
   return name;
+}
+
+function MessageText({
+  content,
+  onOpenLink,
+}: {
+  content: string;
+  onOpenLink: (url: string) => void;
+}) {
+  return splitMessageLinks(content).map((part, index) =>
+    part.kind === "link" ? (
+      <button
+        key={`${index}:${part.value}`}
+        type="button"
+        onClick={() => onOpenLink(part.value)}
+        className="inline cursor-pointer border-0 bg-transparent p-0 align-baseline font-medium text-[#0b5f89] underline decoration-[#0b5f89]/45 underline-offset-2 hover:decoration-current"
+      >
+        {part.value}
+      </button>
+    ) : (
+      <span key={`${index}:${part.value}`}>{part.value}</span>
+    ),
+  );
 }
 
 function getServerDisplayName(member: {
@@ -223,6 +247,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
   const [isPinnedMessagesOpen, setIsPinnedMessagesOpen] = useState(false);
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
+  const [pendingExternalLink, setPendingExternalLink] = useState<string | null>(
+    null,
+  );
   const [serverNameDraft, setServerNameDraft] = useState("");
   const [serverIconFile, setServerIconFile] = useState<File | null>(null);
   const [serverSettingsMessage, setServerSettingsMessage] = useState<
@@ -2070,12 +2097,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     ブロック関係にあるユーザーのメッセージ
                                   </summary>
                                   <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                                    {chatMessage.content}
+                                    <MessageText
+                                      content={chatMessage.content}
+                                      onOpenLink={setPendingExternalLink}
+                                    />
                                   </p>
                                 </details>
                               ) : (
                                 <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                                  {chatMessage.content}
+                                  <MessageText
+                                    content={chatMessage.content}
+                                    onOpenLink={setPendingExternalLink}
+                                  />
                                 </p>
                               )}
                             </div>
@@ -2253,7 +2286,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                   </form>
                                 ) : (
                                   <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                                    {chatMessage.content}
+                                    <MessageText
+                                      content={chatMessage.content}
+                                      onOpenLink={setPendingExternalLink}
+                                    />
                                   </p>
                                 )}
                               </div>
@@ -2775,12 +2811,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           ブロック関係にあるユーザーのメッセージ
                         </summary>
                         <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                          {chatMessage.content}
+                          <MessageText
+                            content={chatMessage.content}
+                            onOpenLink={setPendingExternalLink}
+                          />
                         </p>
                       </details>
                     ) : (
                       <p className="leading-7 break-words whitespace-pre-wrap">
-                        {chatMessage.content}
+                        <MessageText
+                          content={chatMessage.content}
+                          onOpenLink={setPendingExternalLink}
+                        />
                       </p>
                     )}
                   </div>
@@ -2791,6 +2833,45 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <p className="py-6 text-sm text-[#68716b]">
                 ピン留めされたメッセージはありません
               </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingExternalLink !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPendingExternalLink(null);
+        }}
+      >
+        <DialogContent className="bg-[#fff8ed] text-[#18221f] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>外部リンクを開きますか？</DialogTitle>
+            <DialogDescription className="text-[#68716b]">
+              次のリンクを新しいタブで開きます。
+            </DialogDescription>
+          </DialogHeader>
+          <p className="max-h-32 overflow-y-auto rounded-md bg-[#f6f0e4] px-3 py-2 text-sm break-all text-[#53615a]">
+            {pendingExternalLink}
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingExternalLink(null)}
+              className="inline-flex min-h-10 items-center rounded-md border border-[#18221f]/15 px-4 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+            >
+              キャンセル
+            </button>
+            {pendingExternalLink && (
+              <a
+                href={pendingExternalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setPendingExternalLink(null)}
+                className="inline-flex min-h-10 items-center rounded-md bg-[#114744] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3936]"
+              >
+                開く
+              </a>
             )}
           </div>
         </DialogContent>
