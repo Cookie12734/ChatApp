@@ -609,7 +609,10 @@ export const serverRouter = createTRPCRouter({
         },
       });
 
-      publishChatEvent({ kind: "server", serverId: input.serverId });
+      await publishChatEvent(ctx.db, {
+        kind: "server",
+        serverId: input.serverId,
+      });
       return message;
     }),
 
@@ -659,7 +662,10 @@ export const serverRouter = createTRPCRouter({
         select: { id: true, content: true },
       });
 
-      publishChatEvent({ kind: "server", serverId: input.serverId });
+      await publishChatEvent(ctx.db, {
+        kind: "server",
+        serverId: input.serverId,
+      });
       return updatedMessage;
     }),
 
@@ -703,7 +709,10 @@ export const serverRouter = createTRPCRouter({
         select: { id: true, pinnedAt: true },
       });
 
-      publishChatEvent({ kind: "server", serverId: input.serverId });
+      await publishChatEvent(ctx.db, {
+        kind: "server",
+        serverId: input.serverId,
+      });
       return updatedMessage;
     }),
 
@@ -754,7 +763,10 @@ export const serverRouter = createTRPCRouter({
       }
 
       await ctx.db.serverMessage.delete({ where: { id: message.id } });
-      publishChatEvent({ kind: "server", serverId: input.serverId });
+      await publishChatEvent(ctx.db, {
+        kind: "server",
+        serverId: input.serverId,
+      });
       return { id: message.id };
     }),
 

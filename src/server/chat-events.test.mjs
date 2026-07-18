@@ -1,41 +1,26 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { canReceiveChatEvent } from "./chat-events.ts";
+import { getChatEventRecord } from "./chat-events.ts";
 
-test("chat events are visible only to participants", () => {
-  const serverIds = new Set(["server-a"]);
-
-  assert.equal(
-    canReceiveChatEvent(
-      { kind: "direct", userIds: ["me", "friend"] },
-      "me",
-      serverIds,
-    ),
-    true,
+test("chat event records target direct participants and server members", () => {
+  assert.deepEqual(
+    getChatEventRecord({ kind: "direct", userIds: ["me", "friend"] }),
+    {
+      audienceIds: ["me", "friend"],
+      kind: "direct",
+      payload: { kind: "direct", userIds: ["me", "friend"] },
+    },
   );
-  assert.equal(
-    canReceiveChatEvent(
-      { kind: "direct", userIds: ["other", "friend"] },
-      "me",
-      serverIds,
-    ),
-    false,
-  );
-  assert.equal(
-    canReceiveChatEvent(
-      { kind: "server", serverId: "server-a" },
-      "me",
-      serverIds,
-    ),
-    true,
-  );
-  assert.equal(
-    canReceiveChatEvent(
-      { kind: "server", serverId: "server-b" },
-      "me",
-      serverIds,
-    ),
-    false,
+  assert.deepEqual(
+    getChatEventRecord({ kind: "server", serverId: "server-a" }, [
+      "owner",
+      "member",
+    ]),
+    {
+      audienceIds: ["owner", "member"],
+      kind: "server",
+      payload: { kind: "server", serverId: "server-a" },
+    },
   );
 });

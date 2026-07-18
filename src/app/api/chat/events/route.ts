@@ -1,8 +1,4 @@
 import { auth } from "~/features/auth";
-import {
-  canReceiveChatEvent,
-  subscribeToChatEvents,
-} from "~/server/chat-events";
 import { db } from "~/server/db";
 
 export const runtime = "nodejs";
@@ -15,31 +11,59 @@ export async function GET(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const memberships = await db.serverMember.findMany({
-    where: { userId },
-    select: { serverId: true },
-  });
-  const serverIds = new Set(memberships.map(({ serverId }) => serverId));
+  let lastEventId =
+    (
+      await db.chatEvent.findFirst({
+        where: { audienceIds: { has: userId } },
+        orderBy: { id: "desc" },
+        select: { id: true },
+      })
+    )?.id ?? 0n;
   const encoder = new TextEncoder();
   let cleanup: (() => void) | undefined;
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false;
+      let isPolling = false;
       const enqueue = (value: string) => {
         if (!closed) controller.enqueue(encoder.encode(value));
       };
-      const unsubscribe = subscribeToChatEvents((event) => {
-        if (!canReceiveChatEvent(event, userId, serverIds)) return;
-        enqueue(`event: chat\ndata: ${JSON.stringify(event)}\n\n`);
-      });
+      const poll = async () => {
+        if (closed || isPolling) return;
+        isPolling = true;
+
+        try {
+          const events = await db.chatEvent.findMany({
+            where: {
+              audienceIds: { has: userId },
+              id: { gt: lastEventId },
+            },
+            orderBy: { id: "asc" },
+            select: { id: true, payload: true },
+            take: 100,
+          });
+
+          for (const event of events) {
+            lastEventId = event.id;
+            enqueue(
+              `event: chat\ndata: ${JSON.stringify(event.payload)}\n\n`,
+            );
+          }
+        } catch (error) {
+          console.error("Failed to poll chat events", error);
+        } finally {
+          isPolling = false;
+        }
+      };
+      const pollTimer = setInterval(() => void poll(), 1000);
       const keepAlive = setInterval(() => enqueue(": keep-alive\n\n"), 25_000);
 
       cleanup = () => {
         if (closed) return;
         closed = true;
+        clearInterval(pollTimer);
         clearInterval(keepAlive);
-        unsubscribe();
       };
       request.signal.addEventListener(
         "abort",

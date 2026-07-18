@@ -44,6 +44,11 @@ export type VerificationToken = $Result.DefaultSelection<Prisma.$VerificationTok
  */
 export type RateLimitBucket = $Result.DefaultSelection<Prisma.$RateLimitBucketPayload>
 /**
+ * Model ChatEvent
+ * 
+ */
+export type ChatEvent = $Result.DefaultSelection<Prisma.$ChatEventPayload>
+/**
  * Model FriendRequest
  * 
  */
@@ -345,6 +350,16 @@ export class PrismaClient<
     * ```
     */
   get rateLimitBucket(): Prisma.RateLimitBucketDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.chatEvent`: Exposes CRUD operations for the **ChatEvent** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ChatEvents
+    * const chatEvents = await prisma.chatEvent.findMany()
+    * ```
+    */
+  get chatEvent(): Prisma.ChatEventDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.friendRequest`: Exposes CRUD operations for the **FriendRequest** model.
@@ -902,6 +917,7 @@ export namespace Prisma {
     User: 'User',
     VerificationToken: 'VerificationToken',
     RateLimitBucket: 'RateLimitBucket',
+    ChatEvent: 'ChatEvent',
     FriendRequest: 'FriendRequest',
     Friendship: 'Friendship',
     Notification: 'Notification',
@@ -931,7 +947,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "rateLimitBucket" | "friendRequest" | "friendship" | "notification" | "directMessage" | "matchingQueue" | "userBlock" | "chatServer" | "serverMember" | "serverChannel" | "serverChannelRead" | "serverMessage"
+      modelProps: "post" | "account" | "session" | "user" | "verificationToken" | "rateLimitBucket" | "chatEvent" | "friendRequest" | "friendship" | "notification" | "directMessage" | "matchingQueue" | "userBlock" | "chatServer" | "serverMember" | "serverChannel" | "serverChannelRead" | "serverMessage"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1376,6 +1392,80 @@ export namespace Prisma {
           count: {
             args: Prisma.RateLimitBucketCountArgs<ExtArgs>
             result: $Utils.Optional<RateLimitBucketCountAggregateOutputType> | number
+          }
+        }
+      }
+      ChatEvent: {
+        payload: Prisma.$ChatEventPayload<ExtArgs>
+        fields: Prisma.ChatEventFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ChatEventFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ChatEventFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          findFirst: {
+            args: Prisma.ChatEventFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ChatEventFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          findMany: {
+            args: Prisma.ChatEventFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>[]
+          }
+          create: {
+            args: Prisma.ChatEventCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          createMany: {
+            args: Prisma.ChatEventCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ChatEventCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>[]
+          }
+          delete: {
+            args: Prisma.ChatEventDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          update: {
+            args: Prisma.ChatEventUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          deleteMany: {
+            args: Prisma.ChatEventDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ChatEventUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ChatEventUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>[]
+          }
+          upsert: {
+            args: Prisma.ChatEventUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChatEventPayload>
+          }
+          aggregate: {
+            args: Prisma.ChatEventAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateChatEvent>
+          }
+          groupBy: {
+            args: Prisma.ChatEventGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ChatEventGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ChatEventCountArgs<ExtArgs>
+            result: $Utils.Optional<ChatEventCountAggregateOutputType> | number
           }
         }
       }
@@ -2295,6 +2385,7 @@ export namespace Prisma {
     user?: UserOmit
     verificationToken?: VerificationTokenOmit
     rateLimitBucket?: RateLimitBucketOmit
+    chatEvent?: ChatEventOmit
     friendRequest?: FriendRequestOmit
     friendship?: FriendshipOmit
     notification?: NotificationOmit
@@ -9568,6 +9659,1027 @@ export namespace Prisma {
      * Omit specific fields from the RateLimitBucket
      */
     omit?: RateLimitBucketOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ChatEvent
+   */
+
+  export type AggregateChatEvent = {
+    _count: ChatEventCountAggregateOutputType | null
+    _avg: ChatEventAvgAggregateOutputType | null
+    _sum: ChatEventSumAggregateOutputType | null
+    _min: ChatEventMinAggregateOutputType | null
+    _max: ChatEventMaxAggregateOutputType | null
+  }
+
+  export type ChatEventAvgAggregateOutputType = {
+    id: number | null
+  }
+
+  export type ChatEventSumAggregateOutputType = {
+    id: bigint | null
+  }
+
+  export type ChatEventMinAggregateOutputType = {
+    id: bigint | null
+    kind: string | null
+    createdAt: Date | null
+  }
+
+  export type ChatEventMaxAggregateOutputType = {
+    id: bigint | null
+    kind: string | null
+    createdAt: Date | null
+  }
+
+  export type ChatEventCountAggregateOutputType = {
+    id: number
+    kind: number
+    payload: number
+    audienceIds: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ChatEventAvgAggregateInputType = {
+    id?: true
+  }
+
+  export type ChatEventSumAggregateInputType = {
+    id?: true
+  }
+
+  export type ChatEventMinAggregateInputType = {
+    id?: true
+    kind?: true
+    createdAt?: true
+  }
+
+  export type ChatEventMaxAggregateInputType = {
+    id?: true
+    kind?: true
+    createdAt?: true
+  }
+
+  export type ChatEventCountAggregateInputType = {
+    id?: true
+    kind?: true
+    payload?: true
+    audienceIds?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ChatEventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ChatEvent to aggregate.
+     */
+    where?: ChatEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChatEvents to fetch.
+     */
+    orderBy?: ChatEventOrderByWithRelationInput | ChatEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ChatEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChatEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChatEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ChatEvents
+    **/
+    _count?: true | ChatEventCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ChatEventAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ChatEventSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ChatEventMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ChatEventMaxAggregateInputType
+  }
+
+  export type GetChatEventAggregateType<T extends ChatEventAggregateArgs> = {
+        [P in keyof T & keyof AggregateChatEvent]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateChatEvent[P]>
+      : GetScalarType<T[P], AggregateChatEvent[P]>
+  }
+
+
+
+
+  export type ChatEventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChatEventWhereInput
+    orderBy?: ChatEventOrderByWithAggregationInput | ChatEventOrderByWithAggregationInput[]
+    by: ChatEventScalarFieldEnum[] | ChatEventScalarFieldEnum
+    having?: ChatEventScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ChatEventCountAggregateInputType | true
+    _avg?: ChatEventAvgAggregateInputType
+    _sum?: ChatEventSumAggregateInputType
+    _min?: ChatEventMinAggregateInputType
+    _max?: ChatEventMaxAggregateInputType
+  }
+
+  export type ChatEventGroupByOutputType = {
+    id: bigint
+    kind: string
+    payload: JsonValue
+    audienceIds: string[]
+    createdAt: Date
+    _count: ChatEventCountAggregateOutputType | null
+    _avg: ChatEventAvgAggregateOutputType | null
+    _sum: ChatEventSumAggregateOutputType | null
+    _min: ChatEventMinAggregateOutputType | null
+    _max: ChatEventMaxAggregateOutputType | null
+  }
+
+  type GetChatEventGroupByPayload<T extends ChatEventGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ChatEventGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ChatEventGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ChatEventGroupByOutputType[P]>
+            : GetScalarType<T[P], ChatEventGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ChatEventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    payload?: boolean
+    audienceIds?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["chatEvent"]>
+
+  export type ChatEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    payload?: boolean
+    audienceIds?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["chatEvent"]>
+
+  export type ChatEventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    kind?: boolean
+    payload?: boolean
+    audienceIds?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["chatEvent"]>
+
+  export type ChatEventSelectScalar = {
+    id?: boolean
+    kind?: boolean
+    payload?: boolean
+    audienceIds?: boolean
+    createdAt?: boolean
+  }
+
+  export type ChatEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "kind" | "payload" | "audienceIds" | "createdAt", ExtArgs["result"]["chatEvent"]>
+
+  export type $ChatEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ChatEvent"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      kind: string
+      payload: Prisma.JsonValue
+      audienceIds: string[]
+      createdAt: Date
+    }, ExtArgs["result"]["chatEvent"]>
+    composites: {}
+  }
+
+  type ChatEventGetPayload<S extends boolean | null | undefined | ChatEventDefaultArgs> = $Result.GetResult<Prisma.$ChatEventPayload, S>
+
+  type ChatEventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ChatEventFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ChatEventCountAggregateInputType | true
+    }
+
+  export interface ChatEventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ChatEvent'], meta: { name: 'ChatEvent' } }
+    /**
+     * Find zero or one ChatEvent that matches the filter.
+     * @param {ChatEventFindUniqueArgs} args - Arguments to find a ChatEvent
+     * @example
+     * // Get one ChatEvent
+     * const chatEvent = await prisma.chatEvent.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ChatEventFindUniqueArgs>(args: SelectSubset<T, ChatEventFindUniqueArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ChatEvent that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ChatEventFindUniqueOrThrowArgs} args - Arguments to find a ChatEvent
+     * @example
+     * // Get one ChatEvent
+     * const chatEvent = await prisma.chatEvent.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ChatEventFindUniqueOrThrowArgs>(args: SelectSubset<T, ChatEventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ChatEvent that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventFindFirstArgs} args - Arguments to find a ChatEvent
+     * @example
+     * // Get one ChatEvent
+     * const chatEvent = await prisma.chatEvent.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ChatEventFindFirstArgs>(args?: SelectSubset<T, ChatEventFindFirstArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ChatEvent that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventFindFirstOrThrowArgs} args - Arguments to find a ChatEvent
+     * @example
+     * // Get one ChatEvent
+     * const chatEvent = await prisma.chatEvent.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ChatEventFindFirstOrThrowArgs>(args?: SelectSubset<T, ChatEventFindFirstOrThrowArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ChatEvents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ChatEvents
+     * const chatEvents = await prisma.chatEvent.findMany()
+     * 
+     * // Get first 10 ChatEvents
+     * const chatEvents = await prisma.chatEvent.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const chatEventWithIdOnly = await prisma.chatEvent.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ChatEventFindManyArgs>(args?: SelectSubset<T, ChatEventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ChatEvent.
+     * @param {ChatEventCreateArgs} args - Arguments to create a ChatEvent.
+     * @example
+     * // Create one ChatEvent
+     * const ChatEvent = await prisma.chatEvent.create({
+     *   data: {
+     *     // ... data to create a ChatEvent
+     *   }
+     * })
+     * 
+     */
+    create<T extends ChatEventCreateArgs>(args: SelectSubset<T, ChatEventCreateArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ChatEvents.
+     * @param {ChatEventCreateManyArgs} args - Arguments to create many ChatEvents.
+     * @example
+     * // Create many ChatEvents
+     * const chatEvent = await prisma.chatEvent.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ChatEventCreateManyArgs>(args?: SelectSubset<T, ChatEventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ChatEvents and returns the data saved in the database.
+     * @param {ChatEventCreateManyAndReturnArgs} args - Arguments to create many ChatEvents.
+     * @example
+     * // Create many ChatEvents
+     * const chatEvent = await prisma.chatEvent.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ChatEvents and only return the `id`
+     * const chatEventWithIdOnly = await prisma.chatEvent.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ChatEventCreateManyAndReturnArgs>(args?: SelectSubset<T, ChatEventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ChatEvent.
+     * @param {ChatEventDeleteArgs} args - Arguments to delete one ChatEvent.
+     * @example
+     * // Delete one ChatEvent
+     * const ChatEvent = await prisma.chatEvent.delete({
+     *   where: {
+     *     // ... filter to delete one ChatEvent
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ChatEventDeleteArgs>(args: SelectSubset<T, ChatEventDeleteArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ChatEvent.
+     * @param {ChatEventUpdateArgs} args - Arguments to update one ChatEvent.
+     * @example
+     * // Update one ChatEvent
+     * const chatEvent = await prisma.chatEvent.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ChatEventUpdateArgs>(args: SelectSubset<T, ChatEventUpdateArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ChatEvents.
+     * @param {ChatEventDeleteManyArgs} args - Arguments to filter ChatEvents to delete.
+     * @example
+     * // Delete a few ChatEvents
+     * const { count } = await prisma.chatEvent.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ChatEventDeleteManyArgs>(args?: SelectSubset<T, ChatEventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ChatEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ChatEvents
+     * const chatEvent = await prisma.chatEvent.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ChatEventUpdateManyArgs>(args: SelectSubset<T, ChatEventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ChatEvents and returns the data updated in the database.
+     * @param {ChatEventUpdateManyAndReturnArgs} args - Arguments to update many ChatEvents.
+     * @example
+     * // Update many ChatEvents
+     * const chatEvent = await prisma.chatEvent.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ChatEvents and only return the `id`
+     * const chatEventWithIdOnly = await prisma.chatEvent.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ChatEventUpdateManyAndReturnArgs>(args: SelectSubset<T, ChatEventUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ChatEvent.
+     * @param {ChatEventUpsertArgs} args - Arguments to update or create a ChatEvent.
+     * @example
+     * // Update or create a ChatEvent
+     * const chatEvent = await prisma.chatEvent.upsert({
+     *   create: {
+     *     // ... data to create a ChatEvent
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ChatEvent we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ChatEventUpsertArgs>(args: SelectSubset<T, ChatEventUpsertArgs<ExtArgs>>): Prisma__ChatEventClient<$Result.GetResult<Prisma.$ChatEventPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ChatEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventCountArgs} args - Arguments to filter ChatEvents to count.
+     * @example
+     * // Count the number of ChatEvents
+     * const count = await prisma.chatEvent.count({
+     *   where: {
+     *     // ... the filter for the ChatEvents we want to count
+     *   }
+     * })
+    **/
+    count<T extends ChatEventCountArgs>(
+      args?: Subset<T, ChatEventCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ChatEventCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ChatEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ChatEventAggregateArgs>(args: Subset<T, ChatEventAggregateArgs>): Prisma.PrismaPromise<GetChatEventAggregateType<T>>
+
+    /**
+     * Group by ChatEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChatEventGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ChatEventGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ChatEventGroupByArgs['orderBy'] }
+        : { orderBy?: ChatEventGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ChatEventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetChatEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ChatEvent model
+   */
+  readonly fields: ChatEventFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ChatEvent.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ChatEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ChatEvent model
+   */
+  interface ChatEventFieldRefs {
+    readonly id: FieldRef<"ChatEvent", 'BigInt'>
+    readonly kind: FieldRef<"ChatEvent", 'String'>
+    readonly payload: FieldRef<"ChatEvent", 'Json'>
+    readonly audienceIds: FieldRef<"ChatEvent", 'String[]'>
+    readonly createdAt: FieldRef<"ChatEvent", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ChatEvent findUnique
+   */
+  export type ChatEventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ChatEvent to fetch.
+     */
+    where: ChatEventWhereUniqueInput
+  }
+
+  /**
+   * ChatEvent findUniqueOrThrow
+   */
+  export type ChatEventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ChatEvent to fetch.
+     */
+    where: ChatEventWhereUniqueInput
+  }
+
+  /**
+   * ChatEvent findFirst
+   */
+  export type ChatEventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ChatEvent to fetch.
+     */
+    where?: ChatEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChatEvents to fetch.
+     */
+    orderBy?: ChatEventOrderByWithRelationInput | ChatEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ChatEvents.
+     */
+    cursor?: ChatEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChatEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChatEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ChatEvents.
+     */
+    distinct?: ChatEventScalarFieldEnum | ChatEventScalarFieldEnum[]
+  }
+
+  /**
+   * ChatEvent findFirstOrThrow
+   */
+  export type ChatEventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ChatEvent to fetch.
+     */
+    where?: ChatEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChatEvents to fetch.
+     */
+    orderBy?: ChatEventOrderByWithRelationInput | ChatEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ChatEvents.
+     */
+    cursor?: ChatEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChatEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChatEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ChatEvents.
+     */
+    distinct?: ChatEventScalarFieldEnum | ChatEventScalarFieldEnum[]
+  }
+
+  /**
+   * ChatEvent findMany
+   */
+  export type ChatEventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ChatEvents to fetch.
+     */
+    where?: ChatEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChatEvents to fetch.
+     */
+    orderBy?: ChatEventOrderByWithRelationInput | ChatEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ChatEvents.
+     */
+    cursor?: ChatEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChatEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChatEvents.
+     */
+    skip?: number
+    distinct?: ChatEventScalarFieldEnum | ChatEventScalarFieldEnum[]
+  }
+
+  /**
+   * ChatEvent create
+   */
+  export type ChatEventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ChatEvent.
+     */
+    data: XOR<ChatEventCreateInput, ChatEventUncheckedCreateInput>
+  }
+
+  /**
+   * ChatEvent createMany
+   */
+  export type ChatEventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ChatEvents.
+     */
+    data: ChatEventCreateManyInput | ChatEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ChatEvent createManyAndReturn
+   */
+  export type ChatEventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * The data used to create many ChatEvents.
+     */
+    data: ChatEventCreateManyInput | ChatEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ChatEvent update
+   */
+  export type ChatEventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ChatEvent.
+     */
+    data: XOR<ChatEventUpdateInput, ChatEventUncheckedUpdateInput>
+    /**
+     * Choose, which ChatEvent to update.
+     */
+    where: ChatEventWhereUniqueInput
+  }
+
+  /**
+   * ChatEvent updateMany
+   */
+  export type ChatEventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ChatEvents.
+     */
+    data: XOR<ChatEventUpdateManyMutationInput, ChatEventUncheckedUpdateManyInput>
+    /**
+     * Filter which ChatEvents to update
+     */
+    where?: ChatEventWhereInput
+    /**
+     * Limit how many ChatEvents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ChatEvent updateManyAndReturn
+   */
+  export type ChatEventUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * The data used to update ChatEvents.
+     */
+    data: XOR<ChatEventUpdateManyMutationInput, ChatEventUncheckedUpdateManyInput>
+    /**
+     * Filter which ChatEvents to update
+     */
+    where?: ChatEventWhereInput
+    /**
+     * Limit how many ChatEvents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ChatEvent upsert
+   */
+  export type ChatEventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ChatEvent to update in case it exists.
+     */
+    where: ChatEventWhereUniqueInput
+    /**
+     * In case the ChatEvent found by the `where` argument doesn't exist, create a new ChatEvent with this data.
+     */
+    create: XOR<ChatEventCreateInput, ChatEventUncheckedCreateInput>
+    /**
+     * In case the ChatEvent was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ChatEventUpdateInput, ChatEventUncheckedUpdateInput>
+  }
+
+  /**
+   * ChatEvent delete
+   */
+  export type ChatEventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
+    /**
+     * Filter which ChatEvent to delete.
+     */
+    where: ChatEventWhereUniqueInput
+  }
+
+  /**
+   * ChatEvent deleteMany
+   */
+  export type ChatEventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ChatEvents to delete
+     */
+    where?: ChatEventWhereInput
+    /**
+     * Limit how many ChatEvents to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ChatEvent without action
+   */
+  export type ChatEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChatEvent
+     */
+    select?: ChatEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChatEvent
+     */
+    omit?: ChatEventOmit<ExtArgs> | null
   }
 
 
@@ -21699,6 +22811,17 @@ export namespace Prisma {
   export type RateLimitBucketScalarFieldEnum = (typeof RateLimitBucketScalarFieldEnum)[keyof typeof RateLimitBucketScalarFieldEnum]
 
 
+  export const ChatEventScalarFieldEnum: {
+    id: 'id',
+    kind: 'kind',
+    payload: 'payload',
+    audienceIds: 'audienceIds',
+    createdAt: 'createdAt'
+  };
+
+  export type ChatEventScalarFieldEnum = (typeof ChatEventScalarFieldEnum)[keyof typeof ChatEventScalarFieldEnum]
+
+
   export const FriendRequestScalarFieldEnum: {
     id: 'id',
     senderId: 'senderId',
@@ -21837,6 +22960,13 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const JsonNullValueInput: {
+    JsonNull: typeof JsonNull
+  };
+
+  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
   export const QueryMode: {
     default: 'default',
     insensitive: 'insensitive'
@@ -21851,6 +22981,15 @@ export namespace Prisma {
   };
 
   export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+  export const JsonNullValueFilter: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull,
+    AnyNull: typeof AnyNull
+  };
+
+  export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
   /**
@@ -21911,6 +23050,34 @@ export namespace Prisma {
    * Reference to a field of type 'UserPresenceStatus[]'
    */
   export type ListEnumUserPresenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserPresenceStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt'
+   */
+  export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt[]'
+   */
+  export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -22410,6 +23577,60 @@ export namespace Prisma {
     count?: IntWithAggregatesFilter<"RateLimitBucket"> | number
     resetAt?: DateTimeWithAggregatesFilter<"RateLimitBucket"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"RateLimitBucket"> | Date | string
+  }
+
+  export type ChatEventWhereInput = {
+    AND?: ChatEventWhereInput | ChatEventWhereInput[]
+    OR?: ChatEventWhereInput[]
+    NOT?: ChatEventWhereInput | ChatEventWhereInput[]
+    id?: BigIntFilter<"ChatEvent"> | bigint | number
+    kind?: StringFilter<"ChatEvent"> | string
+    payload?: JsonFilter<"ChatEvent">
+    audienceIds?: StringNullableListFilter<"ChatEvent">
+    createdAt?: DateTimeFilter<"ChatEvent"> | Date | string
+  }
+
+  export type ChatEventOrderByWithRelationInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    payload?: SortOrder
+    audienceIds?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ChatEventWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    AND?: ChatEventWhereInput | ChatEventWhereInput[]
+    OR?: ChatEventWhereInput[]
+    NOT?: ChatEventWhereInput | ChatEventWhereInput[]
+    kind?: StringFilter<"ChatEvent"> | string
+    payload?: JsonFilter<"ChatEvent">
+    audienceIds?: StringNullableListFilter<"ChatEvent">
+    createdAt?: DateTimeFilter<"ChatEvent"> | Date | string
+  }, "id">
+
+  export type ChatEventOrderByWithAggregationInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    payload?: SortOrder
+    audienceIds?: SortOrder
+    createdAt?: SortOrder
+    _count?: ChatEventCountOrderByAggregateInput
+    _avg?: ChatEventAvgOrderByAggregateInput
+    _max?: ChatEventMaxOrderByAggregateInput
+    _min?: ChatEventMinOrderByAggregateInput
+    _sum?: ChatEventSumOrderByAggregateInput
+  }
+
+  export type ChatEventScalarWhereWithAggregatesInput = {
+    AND?: ChatEventScalarWhereWithAggregatesInput | ChatEventScalarWhereWithAggregatesInput[]
+    OR?: ChatEventScalarWhereWithAggregatesInput[]
+    NOT?: ChatEventScalarWhereWithAggregatesInput | ChatEventScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"ChatEvent"> | bigint | number
+    kind?: StringWithAggregatesFilter<"ChatEvent"> | string
+    payload?: JsonWithAggregatesFilter<"ChatEvent">
+    audienceIds?: StringNullableListFilter<"ChatEvent">
+    createdAt?: DateTimeWithAggregatesFilter<"ChatEvent"> | Date | string
   }
 
   export type FriendRequestWhereInput = {
@@ -23572,6 +24793,62 @@ export namespace Prisma {
     count?: IntFieldUpdateOperationsInput | number
     resetAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChatEventCreateInput = {
+    id?: bigint | number
+    kind: string
+    payload: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventCreateaudienceIdsInput | string[]
+    createdAt?: Date | string
+  }
+
+  export type ChatEventUncheckedCreateInput = {
+    id?: bigint | number
+    kind: string
+    payload: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventCreateaudienceIdsInput | string[]
+    createdAt?: Date | string
+  }
+
+  export type ChatEventUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    kind?: StringFieldUpdateOperationsInput | string
+    payload?: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventUpdateaudienceIdsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChatEventUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    kind?: StringFieldUpdateOperationsInput | string
+    payload?: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventUpdateaudienceIdsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChatEventCreateManyInput = {
+    id?: bigint | number
+    kind: string
+    payload: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventCreateaudienceIdsInput | string[]
+    createdAt?: Date | string
+  }
+
+  export type ChatEventUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    kind?: StringFieldUpdateOperationsInput | string
+    payload?: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventUpdateaudienceIdsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChatEventUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    kind?: StringFieldUpdateOperationsInput | string
+    payload?: JsonNullValueInput | InputJsonValue
+    audienceIds?: ChatEventUpdateaudienceIdsInput | string[]
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type FriendRequestCreateInput = {
@@ -24786,6 +26063,118 @@ export namespace Prisma {
     count?: SortOrder
   }
 
+  export type BigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+  export type JsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
+  export type ChatEventCountOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    payload?: SortOrder
+    audienceIds?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ChatEventAvgOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type ChatEventMaxOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ChatEventMinOrderByAggregateInput = {
+    id?: SortOrder
+    kind?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ChatEventSumOrderByAggregateInput = {
+    id?: SortOrder
+  }
+
+  export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+  export type JsonWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedJsonFilter<$PrismaModel>
+    _max?: NestedJsonFilter<$PrismaModel>
+  }
+
   export type EnumFriendRequestStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.FriendRequestStatus | EnumFriendRequestStatusFieldRefInput<$PrismaModel>
     in?: $Enums.FriendRequestStatus[] | ListEnumFriendRequestStatusFieldRefInput<$PrismaModel>
@@ -25987,6 +27376,23 @@ export namespace Prisma {
     deleteMany?: SessionScalarWhereInput | SessionScalarWhereInput[]
   }
 
+  export type ChatEventCreateaudienceIdsInput = {
+    set: string[]
+  }
+
+  export type BigIntFieldUpdateOperationsInput = {
+    set?: bigint | number
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
+  export type ChatEventUpdateaudienceIdsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
   export type NotificationCreateNestedManyWithoutFriendRequestInput = {
     create?: XOR<NotificationCreateWithoutFriendRequestInput, NotificationUncheckedCreateWithoutFriendRequestInput> | NotificationCreateWithoutFriendRequestInput[] | NotificationUncheckedCreateWithoutFriendRequestInput[]
     connectOrCreate?: NotificationCreateOrConnectWithoutFriendRequestInput | NotificationCreateOrConnectWithoutFriendRequestInput[]
@@ -26742,6 +28148,56 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
     _max?: NestedEnumUserPresenceStatusFilter<$PrismaModel>
+  }
+
+  export type NestedBigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
+  export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+  export type NestedJsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type NestedEnumFriendRequestStatusFilter<$PrismaModel = never> = {

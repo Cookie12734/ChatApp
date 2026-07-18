@@ -178,6 +178,14 @@ exports.Prisma.RateLimitBucketScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ChatEventScalarFieldEnum = {
+  id: 'id',
+  kind: 'kind',
+  payload: 'payload',
+  audienceIds: 'audienceIds',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.FriendRequestScalarFieldEnum = {
   id: 'id',
   senderId: 'senderId',
@@ -280,6 +288,10 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -288,6 +300,12 @@ exports.Prisma.QueryMode = {
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
+};
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
 };
 exports.UserPresenceStatus = exports.$Enums.UserPresenceStatus = {
   ONLINE: 'ONLINE',
@@ -325,6 +343,7 @@ exports.Prisma.ModelName = {
   User: 'User',
   VerificationToken: 'VerificationToken',
   RateLimitBucket: 'RateLimitBucket',
+  ChatEvent: 'ChatEvent',
   FriendRequest: 'FriendRequest',
   Friendship: 'Friendship',
   Notification: 'Notification',

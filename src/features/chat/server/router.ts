@@ -465,7 +465,7 @@ export const chatRouter = createTRPCRouter({
       await assertNotBlocked(ctx.db, currentUserId, input.friendId);
       const userName = currentUser.name?.trim() ?? currentUser.userId;
 
-      publishChatEvent({
+      await publishChatEvent(ctx.db, {
         isTyping: input.isTyping,
         kind: "typing",
         senderId: currentUserId,
@@ -516,7 +516,7 @@ export const chatRouter = createTRPCRouter({
         },
       });
 
-      publishChatEvent({
+      await publishChatEvent(ctx.db, {
         kind: "direct",
         userIds: [currentUserId, input.friendId],
       });
@@ -557,7 +557,7 @@ export const chatRouter = createTRPCRouter({
         select: { id: true, content: true },
       });
 
-      publishChatEvent({
+      await publishChatEvent(ctx.db, {
         kind: "direct",
         userIds: [currentUserId, message.receiverId],
       });
@@ -593,7 +593,7 @@ export const chatRouter = createTRPCRouter({
       }
 
       await ctx.db.directMessage.delete({ where: { id: message.id } });
-      publishChatEvent({
+      await publishChatEvent(ctx.db, {
         kind: "direct",
         userIds: [currentUserId, message.receiverId],
       });

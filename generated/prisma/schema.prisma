@@ -93,6 +93,17 @@ model RateLimitBucket {
   @@index([resetAt])
 }
 
+model ChatEvent {
+  id          BigInt   @id @default(autoincrement())
+  kind        String
+  payload     Json
+  audienceIds String[]
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([audienceIds], type: Gin)
+}
+
 model FriendRequest {
   id            String              @id @default(cuid())
   senderId      String

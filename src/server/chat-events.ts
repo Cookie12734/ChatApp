@@ -1,3 +1,5 @@
+import type { PrismaClient } from "../../generated/prisma";
+
 export type ChatEvent =
   | { kind: "direct"; userIds: string[] }
   | { kind: "server"; serverId: string }
@@ -9,33 +11,61 @@ export type ChatEvent =
       userName: string;
     };
 
-type ChatEventListener = (event: ChatEvent) => void;
+type ChatEventDatabase = Pick<PrismaClient, "chatEvent" | "serverMember">;
 
-// ponytail: in-process fan-out is for one app instance; use shared pub/sub when horizontally scaling.
-const globalForChatEvents = globalThis as typeof globalThis & {
-  connectChatEventListeners?: Set<ChatEventListener>;
-};
+let nextCleanupAt = 0;
 
-const listeners =
-  globalForChatEvents.connectChatEventListeners ?? new Set<ChatEventListener>();
-
-globalForChatEvents.connectChatEventListeners = listeners;
-
-export function publishChatEvent(event: ChatEvent) {
-  listeners.forEach((listener) => listener(event));
-}
-
-export function subscribeToChatEvents(listener: ChatEventListener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-export function canReceiveChatEvent(
+export function getChatEventRecord(
   event: ChatEvent,
-  userId: string,
-  serverIds: Set<string>,
+  serverAudienceIds: string[] = [],
 ) {
-  return event.kind === "server"
-    ? serverIds.has(event.serverId)
-    : event.userIds.includes(userId);
+  return {
+    audienceIds:
+      event.kind === "server" ? serverAudienceIds : [...event.userIds],
+    kind: event.kind,
+    payload: event,
+  };
+}
+
+async function cleanupExpiredEvents(db: ChatEventDatabase) {
+  const now = Date.now();
+  if (now < nextCleanupAt) return;
+
+  nextCleanupAt = now + 60 * 60 * 1000;
+  try {
+    await db.chatEvent.deleteMany({
+      where: { createdAt: { lt: new Date(now - 60 * 60 * 1000) } },
+    });
+  } catch {
+    nextCleanupAt = 0;
+  }
+}
+
+export async function publishChatEvent(
+  db: ChatEventDatabase,
+  event: ChatEvent,
+) {
+  try {
+    const serverAudienceIds =
+      event.kind === "server"
+        ? (
+            await db.serverMember.findMany({
+              where: { serverId: event.serverId },
+              select: { userId: true },
+            })
+          ).map(({ userId }) => userId)
+        : [];
+    const record = getChatEventRecord(event, serverAudienceIds);
+
+    await db.chatEvent.create({
+      data: {
+        audienceIds: record.audienceIds,
+        kind: record.kind,
+        payload: record.payload,
+      },
+    });
+    void cleanupExpiredEvents(db);
+  } catch (error) {
+    console.error("Failed to publish chat event", error);
+  }
 }
