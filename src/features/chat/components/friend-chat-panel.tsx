@@ -169,6 +169,28 @@ function Avatar({
   );
 }
 
+function ProfileAvatar({
+  className,
+  serverId,
+  user,
+}: {
+  className: string;
+  serverId?: string;
+  user: { image?: string | null; name?: string | null; userId: string };
+}) {
+  return (
+    <UserProfileDialog serverId={serverId} userId={user.userId}>
+      <button
+        type="button"
+        className={`${className} inline-flex shrink-0 overflow-hidden rounded-full border border-black/10 focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none`}
+        aria-label={`${getDisplayName(user)}のプロフィールを開く`}
+      >
+        <Avatar user={user} className="h-full w-full rounded-full" />
+      </button>
+    </UserProfileDialog>
+  );
+}
+
 function FriendListItem({
   item,
   onSelect,
@@ -1965,10 +1987,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </div>
             ) : selectedFriend ? (
               <>
-                <Avatar
-                  user={selectedFriend}
-                  className="h-8 w-8 rounded-full border border-black/10"
-                />
+                <ProfileAvatar user={selectedFriend} className="h-8 w-8" />
                 <div className="min-w-0">
                   <h1 className="truncate font-semibold">
                     {getDisplayName(selectedFriend)}
@@ -2106,9 +2125,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             }
                             className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                           >
-                            <Avatar
+                            <ProfileAvatar
                               user={author}
-                              className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
+                              serverId={selectedServer.server.id}
+                              className="mt-1 h-10 w-10"
                             />
                             <div className="min-w-0 flex-1 text-left">
                               <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
@@ -2274,9 +2294,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     directMessages.length === 0 && (
                       <div className="flex min-h-full items-end pb-8">
                         <div>
-                          <Avatar
+                          <ProfileAvatar
                             user={directConversation.friend}
-                            className="mb-4 h-20 w-20 rounded-full border border-black/10"
+                            className="mb-4 h-20 w-20"
                           />
                           <h2 className="text-3xl font-semibold">
                             {getDisplayName(directConversation.friend)}
@@ -2312,7 +2332,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             chatMessage.senderId ===
                             directConversation.currentUserId;
                           const author = isMine
-                            ? { userId: "me", name: "あなた", image: null }
+                            ? directConversation.currentUser
                             : directConversation.friend;
                           const isEditing =
                             editingMessage?.kind === "direct" &&
@@ -2326,9 +2346,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               }
                               className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                             >
-                              <Avatar
+                              <ProfileAvatar
                                 user={author}
-                                className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
+                                className="mt-1 h-10 w-10"
                               />
                               <div className="min-w-0 flex-1 text-left">
                                 <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
@@ -2903,9 +2923,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
               return (
                 <article key={chatMessage.id} className="flex gap-3 py-4">
-                  <Avatar
+                  <ProfileAvatar
                     user={author}
-                    className="h-10 w-10 shrink-0 rounded-full border border-black/10"
+                    serverId={selectedServer?.server.id}
+                    className="h-10 w-10"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
