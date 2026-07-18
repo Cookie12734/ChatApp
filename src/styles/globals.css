@@ -141,6 +141,10 @@
   outline-offset: 2px;
 }
 
+textarea[data-chat-input]:focus-visible {
+  outline: none;
+}
+
 ::placeholder {
   color: var(--connect-placeholder);
   opacity: 1;

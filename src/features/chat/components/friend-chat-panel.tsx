@@ -2364,6 +2364,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
                   >
                     <textarea
+                      data-chat-input
                       value={serverDraft}
                       onChange={(event) => setServerDraft(event.target.value)}
                       onKeyDown={(event) => {
@@ -2481,6 +2482,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
                       >
                         <textarea
+                          data-chat-input
                           value={draft}
                           onChange={(event) =>
                             handleDraftChange(event.target.value)
