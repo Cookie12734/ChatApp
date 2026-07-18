@@ -14,7 +14,6 @@ import {
   canDeleteServerMessage,
   canEditMessage,
   canPinServerMessage,
-  getVisibleServerMembers,
   isServerOwner,
 } from "~/features/server/server/message-permissions";
 import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
@@ -121,13 +120,11 @@ function normalizeOptionalText(value: string | undefined) {
 function getServerMessageWhere({
   channelId,
   channelName,
-  hiddenUserIds = [],
   readAt,
   serverId,
 }: {
   channelId: string;
   channelName: string;
-  hiddenUserIds?: string[];
   readAt?: Date;
   serverId: string;
 }) {
@@ -136,7 +133,6 @@ function getServerMessageWhere({
     ...(channelName === "general"
       ? { OR: [{ channelId }, { channelId: null }] }
       : { channelId }),
-    ...(hiddenUserIds.length > 0 ? { senderId: { notIn: hiddenUserIds } } : {}),
     ...(readAt ? { createdAt: { gt: readAt } } : {}),
   };
 }
@@ -287,10 +283,7 @@ export const serverRouter = createTRPCRouter({
             inviteCode: canManageServer(membership.role)
               ? membership.server.inviteCode
               : null,
-            members: getVisibleServerMembers(
-              membership.server.members,
-              blockedPeerIds,
-            ),
+            members: membership.server.members,
           },
         };
       }),
@@ -381,10 +374,10 @@ export const serverRouter = createTRPCRouter({
         },
         select: { blockedId: true, blockerId: true },
       });
+      const blockedPeerIds = new Set(getBlockedPeerIds(currentUserId, blocks));
       const messageWhere = getServerMessageWhere({
         channelId: channel.id,
         channelName: channel.name,
-        hiddenUserIds: getBlockedPeerIds(currentUserId, blocks),
         serverId: input.serverId,
       });
       const messageInclude = {
@@ -435,8 +428,16 @@ export const serverRouter = createTRPCRouter({
         channel,
         currentUser,
         server,
-        pinnedMessages,
-        ...prepareMessagePage(messages),
+        pinnedMessages: pinnedMessages.map((message) => ({
+          ...message,
+          isBlocked: blockedPeerIds.has(message.senderId),
+        })),
+        ...prepareMessagePage(
+          messages.map((message) => ({
+            ...message,
+            isBlocked: blockedPeerIds.has(message.senderId),
+          })),
+        ),
       };
     }),
 

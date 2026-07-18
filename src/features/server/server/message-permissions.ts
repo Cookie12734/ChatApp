@@ -16,23 +16,6 @@ export function isServerOwner(serverOwnerId: string, userId: string) {
   return serverOwnerId === userId;
 }
 
-export function canJoinServerByInvite({
-  hasBlockedMember,
-  isMember,
-}: {
-  hasBlockedMember: boolean;
-  isMember: boolean;
-}) {
-  return isMember || !hasBlockedMember;
-}
-
-export function getVisibleServerMembers<T extends { userId: string }>(
-  members: T[],
-  hiddenUserIds: string[],
-) {
-  return members.filter((member) => !hiddenUserIds.includes(member.userId));
-}
-
 export function canEditMessage(currentUserId: string, senderId: string) {
   return currentUserId === senderId;
 }

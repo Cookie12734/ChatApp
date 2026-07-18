@@ -21,7 +21,7 @@ export async function joinServerByInvite(code: string, _formData: FormData) {
   }
 
   const server = await db.chatServer.findFirst({
-    where: getAccessibleServerInviteWhere(code, userId),
+    where: getAccessibleServerInviteWhere(code),
     select: {
       id: true,
       members: {

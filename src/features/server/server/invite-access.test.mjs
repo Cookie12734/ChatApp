@@ -3,35 +3,8 @@ import test from "node:test";
 
 import { getAccessibleServerInviteWhere } from "./invite-access.ts";
 
-test("invite visibility allows existing members and excludes either block direction", () => {
-  assert.deepEqual(getAccessibleServerInviteWhere("invite-code", "me"), {
+test("invite visibility depends only on the invite code", () => {
+  assert.deepEqual(getAccessibleServerInviteWhere("invite-code"), {
     inviteCode: "invite-code",
-    OR: [
-      {
-        members: {
-          some: { userId: "me" },
-        },
-      },
-      {
-        members: {
-          none: {
-            user: {
-              OR: [
-                {
-                  blockedUsers: {
-                    some: { blockedId: "me" },
-                  },
-                },
-                {
-                  blockedBy: {
-                    some: { blockerId: "me" },
-                  },
-                },
-              ],
-            },
-          },
-        },
-      },
-    ],
   });
 });

@@ -2148,6 +2148,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     </button>
                                   </div>
                                 </form>
+                              ) : chatMessage.isBlocked ? (
+                                <details className="rounded-md border border-[#18221f]/10 bg-[#f1e4d0] px-3 py-2 text-left text-sm text-[#53615a]">
+                                  <summary className="cursor-pointer font-medium">
+                                    ブロック関係にあるユーザーのメッセージ
+                                  </summary>
+                                  <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
+                                    {chatMessage.content}
+                                  </p>
+                                </details>
                               ) : (
                                 <p
                                   className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
@@ -2912,9 +2921,20 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         {formatTime(chatMessage.createdAt)}
                       </time>
                     </div>
-                    <p className="leading-7 break-words whitespace-pre-wrap">
-                      {chatMessage.content}
-                    </p>
+                    {chatMessage.isBlocked ? (
+                      <details className="rounded-md border border-[#18221f]/10 bg-[#f1e4d0] px-3 py-2 text-sm text-[#53615a]">
+                        <summary className="cursor-pointer font-medium">
+                          ブロック関係にあるユーザーのメッセージ
+                        </summary>
+                        <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
+                          {chatMessage.content}
+                        </p>
+                      </details>
+                    ) : (
+                      <p className="leading-7 break-words whitespace-pre-wrap">
+                        {chatMessage.content}
+                      </p>
+                    )}
                   </div>
                 </article>
               );

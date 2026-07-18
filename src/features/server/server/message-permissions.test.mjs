@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  canJoinServerByInvite,
-  getVisibleServerMembers,
   isServerOwner,
   canManageServer,
   canManageServerMember,
@@ -25,25 +23,6 @@ test("server message permissions match owner and author rules", () => {
   assert.equal(canManageServerMember("MEMBER", "me", "other"), false);
   assert.equal(isServerOwner("owner", "owner"), true);
   assert.equal(isServerOwner("owner", "member"), false);
-  assert.equal(
-    canJoinServerByInvite({ hasBlockedMember: false, isMember: false }),
-    true,
-  );
-  assert.equal(
-    canJoinServerByInvite({ hasBlockedMember: true, isMember: false }),
-    false,
-  );
-  assert.equal(
-    canJoinServerByInvite({ hasBlockedMember: true, isMember: true }),
-    true,
-  );
-  assert.deepEqual(
-    getVisibleServerMembers(
-      [{ userId: "me" }, { userId: "blocked" }],
-      ["blocked"],
-    ),
-    [{ userId: "me" }],
-  );
   assert.equal(canPinServerMessage("OWNER"), true);
   assert.equal(canPinServerMessage("MEMBER"), false);
 });
