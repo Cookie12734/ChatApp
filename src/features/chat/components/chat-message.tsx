@@ -145,14 +145,10 @@ export function PendingMessageRow({
             <time className="text-xs text-[#68716b]">
               {formatMessageTime(message.createdAt)}
             </time>
-            {isPending && <span className="text-xs">送信中...</span>}
           </div>
         )}
         <p className="text-left leading-7 break-words whitespace-pre-wrap">
           <MessageText content={message.content} onOpenLink={onOpenLink} />
-          {isPending && isFollowup && (
-            <span className="ml-2 text-xs">送信中...</span>
-          )}
         </p>
       </div>
     </article>

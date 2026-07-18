@@ -112,9 +112,9 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await input.press("Enter");
 
   const pendingMessage = page.locator("article").filter({ hasText: content });
-  await expect(pendingMessage).toContainText("送信中...");
   await expect(pendingMessage).toHaveCSS("color", "rgb(125, 135, 129)");
-  await expect(page.getByText("送信中...")).toHaveCount(0, {
+  await expect(pendingMessage).not.toContainText("送信中");
+  await expect(pendingMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
     timeout: 10_000,
   });
   await expect(
@@ -128,7 +128,8 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   const followupMessage = page
     .locator("article")
     .filter({ hasText: followupContent });
-  await expect(followupMessage).toContainText("送信中...");
+  await expect(followupMessage).toHaveCSS("color", "rgb(125, 135, 129)");
+  await expect(followupMessage).not.toContainText("送信中");
   await expect(followupMessage.locator("time")).toHaveCount(0);
   await expect(
     followupMessage.getByRole("button", { name: /プロフィールを開く/ }),
@@ -136,7 +137,7 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await expect(
     followupMessage.getByText("E2E Owner", { exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByText("送信中...")).toHaveCount(0, {
+  await expect(followupMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
     timeout: 10_000,
   });
 });
