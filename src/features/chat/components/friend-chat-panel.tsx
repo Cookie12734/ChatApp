@@ -2424,7 +2424,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           event.currentTarget.form?.requestSubmit();
                         }
                       }}
-                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                       placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
                       disabled={
                         !selectedServerChannel?.id ||
@@ -2541,7 +2541,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               event.currentTarget.form?.requestSubmit();
                             }
                           }}
-                          className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                          className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                           placeholder={
                             selectedFriend
                               ? `${getDisplayName(selectedFriend)} へメッセージを送信`
