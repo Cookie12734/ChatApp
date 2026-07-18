@@ -158,6 +158,14 @@ textarea[data-chat-input]:focus-visible {
   outline: none;
 }
 
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 ::placeholder {
   color: var(--connect-placeholder);
   opacity: 1;

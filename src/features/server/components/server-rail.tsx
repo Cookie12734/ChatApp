@@ -58,7 +58,7 @@ export function ServerRail({
         </Link>
       </div>
       <div className="h-px w-8 bg-[#f6f0e4]/25" />
-      <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
+      <div className="scrollbar-hidden flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
         {memberships === undefined && overview.isError && (
           <button
             type="button"
