@@ -37,6 +37,7 @@ import {
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
+import { shouldGroupMessage } from "~/features/chat/message-grouping";
 import { splitMessageLinks } from "~/features/chat/message-links";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
 import {
@@ -2079,7 +2080,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   )}
 
                   {serverConversationData && serverMessages.length > 0 && (
-                    <div className="space-y-1">
+                    <div>
                       {serverConversation.hasNextPage && (
                         <div className="flex justify-center pb-4">
                           <button
@@ -2096,7 +2097,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           </button>
                         </div>
                       )}
-                      {serverMessages.map((chatMessage) => {
+                      {serverMessages.map((chatMessage, messageIndex) => {
                         const isMine =
                           chatMessage.senderId ===
                           serverConversationData.currentUser.id;
@@ -2116,6 +2117,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         const isEditing =
                           editingMessage?.kind === "server" &&
                           editingMessage.messageId === chatMessage.id;
+                        const isFollowup =
+                          !chatMessage.pinnedAt &&
+                          shouldGroupMessage(
+                            chatMessage,
+                            serverMessages[messageIndex - 1],
+                          );
 
                         return (
                           <article
@@ -2123,31 +2130,43 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
+                            className={`group relative flex items-start gap-3 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
                           >
-                            <ProfileAvatar
-                              user={author}
-                              serverId={selectedServer.server.id}
-                              className="mt-1 h-10 w-10"
-                            />
+                            {isFollowup ? (
+                              <time
+                                dateTime={chatMessage.createdAt.toISOString()}
+                                className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
+                                aria-label={`${getDisplayName(author)}、${formatTime(chatMessage.createdAt)}`}
+                              >
+                                {formatTime(chatMessage.createdAt)}
+                              </time>
+                            ) : (
+                              <ProfileAvatar
+                                user={author}
+                                serverId={selectedServer.server.id}
+                                className="mt-1 h-10 w-10"
+                              />
+                            )}
                             <div className="min-w-0 flex-1 text-left">
-                              <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                                <span className="text-sm font-semibold text-[#18221f]">
-                                  {getDisplayName(author)}
-                                </span>
-                                <time className="text-xs text-[#68716b]">
-                                  {formatTime(chatMessage.createdAt)}
-                                </time>
-                                {chatMessage.pinnedAt && (
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
-                                    <Pin
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    ピン留め
+                              {!isFollowup && (
+                                <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                                  <span className="text-sm font-semibold text-[#18221f]">
+                                    {getDisplayName(author)}
                                   </span>
-                                )}
-                              </div>
+                                  <time className="text-xs text-[#68716b]">
+                                    {formatTime(chatMessage.createdAt)}
+                                  </time>
+                                  {chatMessage.pinnedAt && (
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
+                                      <Pin
+                                        className="h-3 w-3"
+                                        aria-hidden="true"
+                                      />
+                                      ピン留め
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                               {isEditing ? (
                                 <form
                                   onSubmit={handleMessageEditSubmit}
@@ -2312,7 +2331,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {!isFriendsOpen &&
                     directConversation &&
                     directMessages.length > 0 && (
-                      <div className="space-y-1">
+                      <div>
                         {conversation.hasNextPage && (
                           <div className="flex justify-center pb-4">
                             <button
@@ -2327,7 +2346,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             </button>
                           </div>
                         )}
-                        {directMessages.map((chatMessage) => {
+                        {directMessages.map((chatMessage, messageIndex) => {
                           const isMine =
                             chatMessage.senderId ===
                             directConversation.currentUserId;
@@ -2337,6 +2356,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           const isEditing =
                             editingMessage?.kind === "direct" &&
                             editingMessage.messageId === chatMessage.id;
+                          const isFollowup = shouldGroupMessage(
+                            chatMessage,
+                            directMessages[messageIndex - 1],
+                          );
 
                           return (
                             <article
@@ -2344,21 +2367,33 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              className="group relative flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
+                              className={`group relative flex items-start gap-3 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
                             >
-                              <ProfileAvatar
-                                user={author}
-                                className="mt-1 h-10 w-10"
-                              />
+                              {isFollowup ? (
+                                <time
+                                  dateTime={chatMessage.createdAt.toISOString()}
+                                  className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
+                                  aria-label={`${getDisplayName(author)}、${formatTime(chatMessage.createdAt)}`}
+                                >
+                                  {formatTime(chatMessage.createdAt)}
+                                </time>
+                              ) : (
+                                <ProfileAvatar
+                                  user={author}
+                                  className="mt-1 h-10 w-10"
+                                />
+                              )}
                               <div className="min-w-0 flex-1 text-left">
-                                <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                                  <span className="text-sm font-semibold text-[#18221f]">
-                                    {getDisplayName(author)}
-                                  </span>
-                                  <time className="text-xs text-[#68716b]">
-                                    {formatTime(chatMessage.createdAt)}
-                                  </time>
-                                </div>
+                                {!isFollowup && (
+                                  <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                                    <span className="text-sm font-semibold text-[#18221f]">
+                                      {getDisplayName(author)}
+                                    </span>
+                                    <time className="text-xs text-[#68716b]">
+                                      {formatTime(chatMessage.createdAt)}
+                                    </time>
+                                  </div>
+                                )}
                                 {isEditing ? (
                                   <form
                                     onSubmit={handleMessageEditSubmit}
