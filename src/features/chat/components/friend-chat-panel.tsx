@@ -2003,24 +2003,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
-                              isMine ? "flex-row-reverse" : ""
-                            }`}
+                            className="group flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                           >
                             <Avatar
                               user={author}
                               className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
                             />
-                            <div
-                              className={`max-w-[min(760px,82%)] min-w-0 ${
-                                isMine ? "text-right" : ""
-                              }`}
-                            >
-                              <div
-                                className={`mb-1 flex items-baseline gap-2 ${
-                                  isMine ? "justify-end" : ""
-                                }`}
-                              >
+                            <div className="min-w-0 flex-1 text-left">
+                              <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
                                 <span className="text-sm font-semibold text-[#18221f]">
                                   {getDisplayName(author)}
                                 </span>
@@ -2054,11 +2044,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     maxLength={1000}
                                     autoFocus
                                   />
-                                  <div
-                                    className={`flex gap-2 ${
-                                      isMine ? "justify-end" : ""
-                                    }`}
-                                  >
+                                  <div className="flex gap-2">
                                     <button
                                       type="button"
                                       onClick={() => setEditingMessage(null)}
@@ -2088,39 +2074,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                   </p>
                                 </details>
                               ) : (
-                                <p
-                                  className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                    isMine
-                                      ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                      : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                  }`}
-                                >
+                                <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
                                   {chatMessage.content}
                                 </p>
                               )}
                             </div>
-                            {(isMine || isSelectedServerOwner) && (
-                              <button
-                                type="button"
-                                onClick={(event) =>
-                                  openServerMessageMenu(event, chatMessage)
-                                }
-                                className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#18221f]/10 bg-[#fff8ed] text-[#53615a] shadow-sm transition hover:bg-white hover:text-[#18221f] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                                aria-label="メッセージ操作"
-                                aria-haspopup="menu"
-                                aria-expanded={
-                                  messageContextMenu?.kind === "server" &&
-                                  messageContextMenu.messageId ===
-                                    chatMessage.id
-                                }
-                                title="メッセージ操作"
-                              >
-                                <Ellipsis
-                                  className="h-4 w-4"
-                                  aria-hidden="true"
-                                />
-                              </button>
-                            )}
                           </article>
                         );
                       })}
@@ -2241,24 +2199,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              className={`group flex gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4] ${
-                                isMine ? "flex-row-reverse" : ""
-                              }`}
+                              className="group flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-[#f6f0e4]"
                             >
                               <Avatar
                                 user={author}
                                 className="mt-1 h-10 w-10 shrink-0 rounded-full border border-black/10"
                               />
-                              <div
-                                className={`max-w-[min(760px,82%)] min-w-0 ${
-                                  isMine ? "text-right" : ""
-                                }`}
-                              >
-                                <div
-                                  className={`mb-1 flex items-baseline gap-2 ${
-                                    isMine ? "justify-end" : ""
-                                  }`}
-                                >
+                              <div className="min-w-0 flex-1 text-left">
+                                <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
                                   <span className="text-sm font-semibold text-[#18221f]">
                                     {getDisplayName(author)}
                                   </span>
@@ -2283,11 +2231,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                       maxLength={1000}
                                       autoFocus
                                     />
-                                    <div
-                                      className={`flex gap-2 ${
-                                        isMine ? "justify-end" : ""
-                                      }`}
-                                    >
+                                    <div className="flex gap-2">
                                       <button
                                         type="button"
                                         onClick={() => setEditingMessage(null)}
@@ -2308,39 +2252,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     </div>
                                   </form>
                                 ) : (
-                                  <p
-                                    className={`rounded-2xl px-4 py-2 text-left leading-7 break-words whitespace-pre-wrap ${
-                                      isMine
-                                        ? "rounded-tr-md bg-[#114744] text-[#f6f0e4]"
-                                        : "rounded-tl-md border border-[#18221f]/10 bg-white text-[#18221f]"
-                                    }`}
-                                  >
+                                  <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
                                     {chatMessage.content}
                                   </p>
                                 )}
                               </div>
-                              {isMine && (
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    openDirectMessageMenu(event, chatMessage)
-                                  }
-                                  className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#18221f]/10 bg-[#fff8ed] text-[#53615a] shadow-sm transition hover:bg-white hover:text-[#18221f] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                                  aria-label="メッセージ操作"
-                                  aria-haspopup="menu"
-                                  aria-expanded={
-                                    messageContextMenu?.kind === "direct" &&
-                                    messageContextMenu.messageId ===
-                                      chatMessage.id
-                                  }
-                                  title="メッセージ操作"
-                                >
-                                  <Ellipsis
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                </button>
-                              )}
                             </article>
                           );
                         })}
@@ -2361,7 +2277,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   )}
                   <form
                     onSubmit={handleServerSubmit}
-                    className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
+                    className="flex items-end gap-2 rounded-md border border-[#18221f]/15 bg-[#f6f0e4] px-3 py-1.5"
                   >
                     <textarea
                       data-chat-input
@@ -2377,7 +2293,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           event.currentTarget.form?.requestSubmit();
                         }
                       }}
-                      className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
+                      className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                       placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
                       disabled={
                         !selectedServerChannel?.id ||
@@ -2392,7 +2308,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         !serverDraft.trim() ||
                         sendServerMessage.isPending
                       }
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
                       aria-label="送信"
                     >
                       <Send className="h-5 w-5" aria-hidden="true" />
@@ -2479,7 +2395,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       </div>
                       <form
                         onSubmit={handleSubmit}
-                        className="flex items-end gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee]"
+                        className="flex items-end gap-2 rounded-md border border-[#18221f]/15 bg-[#f6f0e4] px-3 py-1.5"
                       >
                         <textarea
                           data-chat-input
@@ -2497,7 +2413,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               event.currentTarget.form?.requestSubmit();
                             }
                           }}
-                          className="max-h-36 min-h-11 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
+                          className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                           placeholder={
                             !canSendDirectMessage
                               ? "この会話には送信できません"
@@ -2520,7 +2436,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             !draft.trim() ||
                             sendMessage.isPending
                           }
-                          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
                           aria-label="送信"
                         >
                           <Send className="h-5 w-5" aria-hidden="true" />
@@ -2572,7 +2488,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     return (
                       <div
                         key={member.id}
-                        className="group flex items-center gap-2 rounded-md border border-[#d8efee]/25 bg-[#18221f] px-3 py-2 text-[#f6f0e4] transition-colors hover:border-[#18221f]/10 hover:bg-[#fff8ed] hover:text-[#18221f]"
+                        className="group flex items-center gap-2 rounded-md border border-transparent bg-[#18221f] px-3 py-2 text-[#f6f0e4] transition-colors hover:border-[#2f756f] hover:bg-[#fff8ed] hover:text-[#18221f]"
                       >
                         <UserProfileDialog
                           userId={member.user.userId}
