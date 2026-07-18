@@ -22,6 +22,22 @@ export function createRateLimitKey(scope: string, subject: string) {
   return `${scope}:${subjectHash}`;
 }
 
+export function getRateLimitSubjectFromHeaders(
+  forwardedFor: string | null,
+  realAddress: string | null,
+) {
+  const forwardedAddress = forwardedFor
+    ?.split(",")
+    .map((address) => address.trim())
+    .filter(Boolean)
+    .at(-1);
+  let normalizedRealAddress = realAddress?.trim();
+  if (normalizedRealAddress?.length === 0) normalizedRealAddress = undefined;
+  const address = forwardedAddress ?? normalizedRealAddress ?? "unknown";
+
+  return address.slice(0, 128);
+}
+
 export function getRetryAfterSeconds(resetAt: Date, now = Date.now()) {
   return Math.max(1, Math.ceil((resetAt.getTime() - now) / 1000));
 }

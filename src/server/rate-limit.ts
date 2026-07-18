@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Prisma } from "../../generated/prisma";
 import {
   createRateLimitKey,
+  getRateLimitSubjectFromHeaders,
   getRetryAfterSeconds,
   RateLimitExceededError,
   type RateLimitRule,
@@ -71,15 +72,8 @@ export async function enforceRateLimits(rules: RateLimitRule[]) {
 
 export async function getRequestRateLimitSubject() {
   const requestHeaders = await headers();
-  const forwardedFor = requestHeaders
-    .get("x-forwarded-for")
-    ?.split(",")[0]
-    ?.trim();
-  const realAddress = requestHeaders.get("x-real-ip")?.trim();
-  const address =
-    [forwardedFor, realAddress].find(
-      (candidate) => candidate !== undefined && candidate.length > 0,
-    ) ?? "unknown";
-
-  return address.slice(0, 128);
+  return getRateLimitSubjectFromHeaders(
+    requestHeaders.get("x-forwarded-for"),
+    requestHeaders.get("x-real-ip"),
+  );
 }

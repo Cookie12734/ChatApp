@@ -3,10 +3,26 @@ import test from "node:test";
 
 import {
   createRateLimitKey,
+  getRateLimitSubjectFromHeaders,
   getRateLimitMessage,
   getRetryAfterSeconds,
   RateLimitExceededError,
 } from "./rate-limit-policy.ts";
+
+test("proxy addresses use the closest forwarded hop", () => {
+  assert.equal(
+    getRateLimitSubjectFromHeaders(
+      "spoofed-by-client, 203.0.113.10",
+      "198.51.100.20",
+    ),
+    "203.0.113.10",
+  );
+  assert.equal(
+    getRateLimitSubjectFromHeaders(null, "198.51.100.20"),
+    "198.51.100.20",
+  );
+  assert.equal(getRateLimitSubjectFromHeaders(null, null), "unknown");
+});
 
 test("rate limit keys are deterministic without storing their subject", () => {
   const key = createRateLimitKey("auth:login", "person@example.com");
