@@ -18,6 +18,7 @@ import {
 } from "~/features/server/server/message-permissions";
 import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
+import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const serverInput = z.object({
@@ -599,7 +600,7 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.serverMessage.create({
+      const message = await ctx.db.serverMessage.create({
         data: {
           channelId: channel.id,
           content: input.content.trim(),
@@ -607,6 +608,9 @@ export const serverRouter = createTRPCRouter({
           serverId: input.serverId,
         },
       });
+
+      publishChatEvent({ kind: "server", serverId: input.serverId });
+      return message;
     }),
 
   updateMessage: protectedProcedure
@@ -649,11 +653,14 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.serverMessage.update({
+      const updatedMessage = await ctx.db.serverMessage.update({
         where: { id: message.id },
         data: { content: input.content },
         select: { id: true, content: true },
       });
+
+      publishChatEvent({ kind: "server", serverId: input.serverId });
+      return updatedMessage;
     }),
 
   toggleMessagePin: protectedProcedure
@@ -690,11 +697,14 @@ export const serverRouter = createTRPCRouter({
 
       const pinnedAt = message.pinnedAt ? null : new Date();
 
-      return ctx.db.serverMessage.update({
+      const updatedMessage = await ctx.db.serverMessage.update({
         where: { id: message.id },
         data: { pinnedAt },
         select: { id: true, pinnedAt: true },
       });
+
+      publishChatEvent({ kind: "server", serverId: input.serverId });
+      return updatedMessage;
     }),
 
   deleteMessage: protectedProcedure
@@ -744,6 +754,7 @@ export const serverRouter = createTRPCRouter({
       }
 
       await ctx.db.serverMessage.delete({ where: { id: message.id } });
+      publishChatEvent({ kind: "server", serverId: input.serverId });
       return { id: message.id };
     }),
 

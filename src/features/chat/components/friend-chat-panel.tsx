@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
-import { type RealtimeChannel } from "@supabase/supabase-js";
 
 import {
   Dialog,
@@ -38,10 +37,6 @@ import {
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
-import {
-  getDirectChatChannelName,
-  getSupabaseRealtimeClient,
-} from "~/lib/supabase/realtime";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
 import {
   getPresenceDisplayLabel,
@@ -56,18 +51,16 @@ import { type RouterOutputs, api } from "~/trpc/react";
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
 type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
-type DirectChatBroadcastPayload = {
-  messageId: string;
-  receiverId: string;
-  senderId: string;
-  sentAt: string;
-};
-type TypingBroadcastPayload = {
-  at: number;
-  isTyping: boolean;
-  userId: string;
-  userName: string;
-};
+type ChatEventPayload =
+  | { kind: "direct"; userIds: string[] }
+  | { kind: "server"; serverId: string }
+  | {
+      isTyping: boolean;
+      kind: "typing";
+      senderId: string;
+      userIds: string[];
+      userName: string;
+    };
 type FriendChatPanelProps = {
   initialServerId?: string;
 };
@@ -238,9 +231,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const serverMessagesEndRef = useRef<HTMLDivElement | null>(null);
-  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
   const typingResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -248,15 +241,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     null,
   );
   const lastTypingSentAtRef = useRef(0);
-  const realtimeClient = useMemo(() => getSupabaseRealtimeClient(), []);
 
   const friends = api.chat.getFriends.useQuery(undefined, {
     refetchInterval: (query) =>
       query.state.status === "error"
         ? false
-        : matchingState === "waiting" || !realtimeClient
+        : matchingState === "waiting" || !isRealtimeConnected
           ? 5000
-          : false,
+          : 30000,
   });
   const filteredFriends = useMemo(
     () =>
@@ -275,7 +267,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   });
   const serverOverview = api.server.getOverview.useQuery(undefined, {
     refetchInterval: (query) =>
-      query.state.status === "error" ? false : 15000,
+      query.state.status === "error"
+        ? false
+        : isRealtimeConnected
+          ? 60000
+          : 15000,
   });
   const selectedServer = useMemo(() => {
     return (
@@ -324,7 +320,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         query.state.status === "error"
           ? false
           : selectedServerId && selectedServerChannel?.id
-            ? 3000
+            ? isRealtimeConnected
+              ? 30000
+              : 3000
             : false,
     },
   );
@@ -378,8 +376,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       refetchInterval: (query) =>
         query.state.status === "error"
           ? false
-          : selectedFriendId && !realtimeClient
-            ? 3000
+          : selectedFriendId
+            ? isRealtimeConnected
+              ? 30000
+              : 3000
             : false,
     },
   );
@@ -423,13 +423,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const latestDirectMessageId = directMessages.at(-1)?.id;
   const latestServerMessageId = serverMessages.at(-1)?.id;
   const isConversationVisible = isDesktopLayout || !isNavigationOpen;
-  const currentUser = directConversation?.currentUser ?? null;
-  const currentUserId = currentUser?.id;
-  const currentUserName = currentUser ? getDisplayName(currentUser) : null;
-  const selectedChannelName =
-    currentUserId && selectedFriendId
-      ? getDirectChatChannelName(currentUserId, selectedFriendId)
-      : null;
 
   const { mutate: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
@@ -582,49 +575,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     }
   }, [serverConversation.data, utils.server.getOverview]);
 
-  useEffect(() => {
-    if (!realtimeClient || !friends.data?.length) {
-      return;
-    }
-
-    const channelNames = [
-      ...new Set(
-        friends.data
-          .map((item) =>
-            getDirectChatChannelName(item.currentUserId, item.friend.id),
-          )
-          .filter((channelName) => channelName !== selectedChannelName),
-      ),
-    ];
-
-    const channels = channelNames.map((channelName) => {
-      const channel = realtimeClient.channel(channelName, {
-        config: {
-          broadcast: { self: false },
-        },
-      });
-
-      channel
-        .on("broadcast", { event: "direct-message" }, () => {
-          void utils.chat.getFriends.invalidate();
-        })
-        .subscribe();
-
-      return channel;
-    });
-
-    return () => {
-      channels.forEach((channel) => {
-        void realtimeClient.removeChannel(channel);
-      });
-    };
-  }, [
-    friends.data,
-    realtimeClient,
-    selectedChannelName,
-    utils.chat.getFriends,
-  ]);
-
   const selectedFriendContact = useMemo(
     () =>
       friends.data?.find((item) => item.friend.id === selectedFriendId) ?? null,
@@ -638,95 +588,85 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     Boolean(
       selectedFriendContact?.isFriend && !selectedFriendContact.isBlocked,
     );
+  const { mutate: publishTyping } = api.chat.setTyping.useMutation();
 
   useEffect(() => {
-    if (
-      !realtimeClient ||
-      !selectedChannelName ||
-      !selectedFriendId ||
-      !currentUserId
-    ) {
-      setTypingUserName(null);
-      return;
-    }
+    const events = new EventSource("/api/chat/events");
+    events.onopen = () => setIsRealtimeConnected(true);
+    events.onerror = () => setIsRealtimeConnected(false);
+    const handleChatEvent = (event: MessageEvent<string>) => {
+      let payload: ChatEventPayload;
 
-    const channel = realtimeClient.channel(selectedChannelName, {
-      config: {
-        broadcast: { self: false },
-      },
-    });
+      try {
+        payload = JSON.parse(event.data) as ChatEventPayload;
+      } catch {
+        return;
+      }
 
-    realtimeChannelRef.current = channel;
-
-    channel
-      .on("broadcast", { event: "direct-message" }, ({ payload }) => {
-        const data = payload as DirectChatBroadcastPayload;
-        if (data.senderId === currentUserId) return;
-
-        void Promise.all([
-          utils.chat.getConversation.invalidate({ friendId: selectedFriendId }),
-          utils.chat.getFriends.invalidate(),
-        ]);
-      })
-      .on("broadcast", { event: "typing" }, ({ payload }) => {
-        const data = payload as TypingBroadcastPayload;
-        if (data.userId === currentUserId) return;
-
-        if (typingResetTimerRef.current) {
-          clearTimeout(typingResetTimerRef.current);
+      if (payload.kind === "direct") {
+        void utils.chat.getFriends.invalidate();
+        if (selectedFriendId && payload.userIds.includes(selectedFriendId)) {
+          void utils.chat.getConversation.invalidate({
+            friendId: selectedFriendId,
+          });
         }
+        return;
+      }
 
-        if (data.isTyping) {
-          setTypingUserName(data.userName);
-          typingResetTimerRef.current = setTimeout(() => {
-            setTypingUserName(null);
-          }, 2500);
-        } else {
+      if (payload.kind === "server") {
+        void utils.server.getOverview.invalidate();
+        if (
+          payload.serverId === selectedServerId &&
+          selectedServerChannel?.id
+        ) {
+          void utils.server.getConversation.invalidate({
+            channelId: selectedServerChannel.id,
+            serverId: payload.serverId,
+          });
+        }
+        return;
+      }
+
+      if (payload.senderId !== selectedFriendId) return;
+      if (typingResetTimerRef.current) {
+        clearTimeout(typingResetTimerRef.current);
+      }
+
+      if (payload.isTyping) {
+        setTypingUserName(payload.userName);
+        typingResetTimerRef.current = setTimeout(() => {
           setTypingUserName(null);
-        }
-      })
-      .subscribe();
+        }, 2500);
+      } else {
+        setTypingUserName(null);
+      }
+    };
+    events.addEventListener("chat", handleChatEvent as EventListener);
 
     return () => {
+      events.close();
+      setIsRealtimeConnected(false);
       if (typingResetTimerRef.current) {
         clearTimeout(typingResetTimerRef.current);
       }
       setTypingUserName(null);
-      realtimeChannelRef.current = null;
-      void realtimeClient.removeChannel(channel);
     };
   }, [
-    currentUserId,
-    realtimeClient,
-    selectedChannelName,
     selectedFriendId,
+    selectedServerChannel?.id,
+    selectedServerId,
     utils.chat.getConversation,
     utils.chat.getFriends,
+    utils.server.getConversation,
+    utils.server.getOverview,
   ]);
 
   const broadcastTyping = useCallback(
     (isTyping: boolean) => {
-      if (
-        !realtimeChannelRef.current ||
-        !currentUserId ||
-        !currentUserName ||
-        !selectedFriendId
-      ) {
-        return;
-      }
-
-      void realtimeChannelRef.current.send({
-        type: "broadcast",
-        event: "typing",
-        payload: {
-          at: Date.now(),
-          isTyping,
-          userId: currentUserId,
-          userName: currentUserName,
-        } satisfies TypingBroadcastPayload,
-      });
+      if (!canSendDirectMessage || !selectedFriendId) return;
+      publishTyping({ friendId: selectedFriendId, isTyping });
     },
-    [currentUserId, currentUserName, selectedFriendId],
+    [canSendDirectMessage, publishTyping, selectedFriendId],
   );
 
   const openDirectFriend = useCallback((friendId: string) => {
@@ -845,7 +785,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   ]);
 
   const sendMessage = api.chat.sendMessage.useMutation({
-    onSuccess: async (createdMessage, variables) => {
+    onSuccess: async () => {
       setDraft("");
       setMessage(null);
       lastTypingSentAtRef.current = 0;
@@ -859,16 +799,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         }),
         utils.chat.getFriends.invalidate(),
       ]);
-      await realtimeChannelRef.current?.send({
-        type: "broadcast",
-        event: "direct-message",
-        payload: {
-          messageId: createdMessage.id,
-          receiverId: variables.friendId,
-          senderId: createdMessage.senderId,
-          sentAt: createdMessage.createdAt.toISOString(),
-        } satisfies DirectChatBroadcastPayload,
-      });
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });

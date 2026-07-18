@@ -16,6 +16,7 @@ import {
   sortFriendsByLatestMessage,
 } from "~/features/chat/friend-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
+import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const friendIdInput = z.object({
@@ -44,6 +45,10 @@ const sendMessageInput = friendIdInput.extend({
 
 const updateMessageInput = messageIdInput.extend({
   content: sendMessageInput.shape.content,
+});
+
+const typingInput = friendIdInput.extend({
+  isTyping: z.boolean(),
 });
 
 const matchingTopicInput = z.object({
@@ -423,6 +428,54 @@ export const chatRouter = createTRPCRouter({
       return { count: result.count };
     }),
 
+  setTyping: protectedProcedure
+    .input(typingInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "chat:typing:user",
+          subject: currentUserId,
+          windowMs: 10 * 1000,
+        },
+      ]);
+      const [friendship, currentUser] = await Promise.all([
+        ctx.db.friendship.findUnique({
+          where: {
+            userId_friendId: {
+              userId: currentUserId,
+              friendId: input.friendId,
+            },
+          },
+          select: { id: true },
+        }),
+        ctx.db.user.findUniqueOrThrow({
+          where: { id: currentUserId },
+          select: { name: true, userId: true },
+        }),
+      ]);
+
+      if (!friendship) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "フレンドにだけ入力状態を送れます",
+        });
+      }
+      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
+      const userName = currentUser.name?.trim() ?? currentUser.userId;
+
+      publishChatEvent({
+        isTyping: input.isTyping,
+        kind: "typing",
+        senderId: currentUserId,
+        userIds: [currentUserId, input.friendId],
+        userName,
+      });
+
+      return { ok: true };
+    }),
+
   sendMessage: protectedProcedure
     .input(sendMessageInput)
     .mutation(async ({ ctx, input }) => {
@@ -455,13 +508,19 @@ export const chatRouter = createTRPCRouter({
       }
       await assertNotBlocked(ctx.db, currentUserId, input.friendId);
 
-      return ctx.db.directMessage.create({
+      const message = await ctx.db.directMessage.create({
         data: {
           content: input.content.trim(),
           receiverId: input.friendId,
           senderId: currentUserId,
         },
       });
+
+      publishChatEvent({
+        kind: "direct",
+        userIds: [currentUserId, input.friendId],
+      });
+      return message;
     }),
 
   updateMessage: protectedProcedure
@@ -470,7 +529,7 @@ export const chatRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, senderId: true },
+        select: { id: true, receiverId: true, senderId: true },
       });
 
       if (message?.senderId !== currentUserId) {
@@ -492,11 +551,17 @@ export const chatRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.directMessage.update({
+      const updatedMessage = await ctx.db.directMessage.update({
         where: { id: message.id },
         data: { content: input.content },
         select: { id: true, content: true },
       });
+
+      publishChatEvent({
+        kind: "direct",
+        userIds: [currentUserId, message.receiverId],
+      });
+      return updatedMessage;
     }),
 
   deleteMessage: protectedProcedure
@@ -505,7 +570,7 @@ export const chatRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       const message = await ctx.db.directMessage.findUnique({
         where: { id: input.messageId },
-        select: { id: true, senderId: true },
+        select: { id: true, receiverId: true, senderId: true },
       });
 
       if (message?.senderId !== currentUserId) {
@@ -528,6 +593,10 @@ export const chatRouter = createTRPCRouter({
       }
 
       await ctx.db.directMessage.delete({ where: { id: message.id } });
+      publishChatEvent({
+        kind: "direct",
+        userIds: [currentUserId, message.receiverId],
+      });
       return { id: message.id };
     }),
 });

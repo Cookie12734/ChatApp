@@ -21,13 +21,12 @@
     "mailpit:down": "docker compose down",
     "preview": "next build && next start",
     "start": "next start",
-    "test": "node --test src/features/auth/lib/email-normalization.test.mjs src/features/auth/lib/oauth-user-id.test.mjs src/features/auth/lib/redirect-path.test.mjs src/features/auth/lib/session-user.test.mjs src/features/chat/friend-overview.test.mjs src/features/chat/friend-search.test.mjs src/features/chat/message-page.test.mjs src/features/chat/server/direct-message-permissions.test.mjs src/features/chat/server/matching-permissions.test.mjs src/features/friend/server/blocking.test.mjs src/features/friend/server/friend-request-permissions.test.mjs src/features/profile/presence.test.mjs src/features/profile/server/profile-permissions.test.mjs src/features/server/server/invite-access.test.mjs src/features/server/server/message-permissions.test.mjs src/features/server/server/server-overview.test.mjs src/lib/static-image.test.mjs src/server/rate-limit-policy.test.mjs",
+    "test": "node --test src/features/auth/lib/email-normalization.test.mjs src/features/auth/lib/oauth-user-id.test.mjs src/features/auth/lib/redirect-path.test.mjs src/features/auth/lib/session-user.test.mjs src/features/chat/friend-overview.test.mjs src/features/chat/friend-search.test.mjs src/features/chat/message-page.test.mjs src/features/chat/server/direct-message-permissions.test.mjs src/features/chat/server/matching-permissions.test.mjs src/features/friend/server/blocking.test.mjs src/features/friend/server/friend-request-permissions.test.mjs src/features/profile/presence.test.mjs src/features/profile/server/profile-permissions.test.mjs src/features/server/server/invite-access.test.mjs src/features/server/server/message-permissions.test.mjs src/features/server/server/server-overview.test.mjs src/lib/static-image.test.mjs src/server/chat-events.test.mjs src/server/rate-limit-policy.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@prisma/client": "^6.6.0",
-    "@supabase/supabase-js": "^2.108.2",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "^5.69.0",
     "@trpc/client": "^11.0.0",
