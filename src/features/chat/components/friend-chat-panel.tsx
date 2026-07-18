@@ -25,7 +25,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type FormEvent, type MouseEvent } from "react";
 
@@ -48,6 +47,7 @@ import {
 import { PresenceStatusMenu } from "~/features/profile/components/presence-status-menu";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
+import { ServerRail } from "~/features/server/components/server-rail";
 import { getRealtimeUnreadCount } from "~/features/server/server/server-overview";
 import { type RouterOutputs, api } from "~/trpc/react";
 
@@ -1547,95 +1547,43 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   return (
     <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
+      <ServerRail
+        memberships={serverOverview.data?.memberships}
+        onSelectHome={selectHome}
+        onSelectServer={selectServer}
+        selectedServerId={selectedServerId}
+      />
       <aside
         className={`${
           isNavigationOpen ? "flex" : "hidden"
-        } w-full shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px] md:max-w-[300px]`}
+        } w-[calc(100vw-4rem)] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px] md:max-w-[300px]`}
       >
-        <div className="relative border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setIsServerMenuOpen((isOpen) => !isOpen)}
-            className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-[#fff8ed]"
-            aria-label="サーバーとダイレクトメッセージを切り替え"
-            aria-expanded={isServerMenuOpen}
-          >
-            <span className="min-w-0">
-              <span className="block truncate text-lg font-semibold">
-                {selectedServer?.server.name ?? "ダイレクトメッセージ"}
-              </span>
-              <span className="mt-1 block text-xs text-[#53615a]">
-                {selectedServer
-                  ? `${selectedServer.server.members.length} メンバー`
-                  : `${serverOverview.data?.memberships.length ?? 0} サーバー`}
-              </span>
-            </span>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-[#53615a] transition ${
-                isServerMenuOpen ? "rotate-180" : ""
-              }`}
-              aria-hidden="true"
-            />
-          </button>
-          {isServerMenuOpen && (
-            <div className="absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 max-h-[70dvh] overflow-y-auto rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm shadow-xl">
+        {selectedServer ? (
+          <>
+            <div className="relative border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
               <button
                 type="button"
-                onClick={selectHome}
-                className={`flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition ${
-                  selectedServer
-                    ? "hover:bg-[#e4f2dc]"
-                    : "bg-[#18221f] text-[#f6f0e4]"
-                }`}
+                onClick={() => setIsServerMenuOpen((isOpen) => !isOpen)}
+                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-[#fff8ed]"
+                aria-expanded={isServerMenuOpen}
               >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                ダイレクトメッセージ
+                <span className="min-w-0">
+                  <span className="block truncate text-lg font-semibold">
+                    {selectedServer.server.name}
+                  </span>
+                  <span className="mt-1 block text-xs text-[#53615a]">
+                    {selectedServer.server.members.length} メンバー
+                  </span>
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-[#53615a] transition ${
+                    isServerMenuOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                />
               </button>
-              <p className="px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-[#68716b] uppercase">
-                サーバー
-              </p>
-              {serverOverview.data?.memberships.map((membership) => {
-                const unreadCount = membership.server.channels.reduce(
-                  (total, channel) => total + channel.unreadCount,
-                  0,
-                );
-                const isSelected =
-                  membership.server.id === selectedServer?.server.id;
-
-                return (
-                  <button
-                    key={membership.id}
-                    type="button"
-                    onClick={() => selectServer(membership)}
-                    className={`flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition ${
-                      isSelected
-                        ? "bg-[#18221f] text-[#f6f0e4]"
-                        : "hover:bg-[#e4f2dc]"
-                    }`}
-                  >
-                    <Hash className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate">
-                      {membership.server.name}
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#9f4122] px-1 text-[11px] font-semibold text-white">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-              <Link
-                href="/servers/new"
-                onClick={() => setIsServerMenuOpen(false)}
-                className="flex min-h-10 w-full items-center gap-2 rounded px-3 font-medium transition hover:bg-[#e4f2dc]"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                サーバーを作成
-              </Link>
-              {selectedServer && (
-                <>
-                  <div className="my-1 border-t border-[#18221f]/10" />
+              {isServerMenuOpen && (
+                <div className="absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm shadow-xl">
                   {isSelectedServerOwner && (
                     <button
                       type="button"
@@ -1663,21 +1611,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     <LogOut className="h-4 w-4" aria-hidden="true" />
                     {isSelectedServerOwner ? "所有権を移譲して退出" : "退出"}
                   </button>
-                </>
+                </div>
               )}
-              <div className="my-1 border-t border-[#18221f]/10" />
-              <Link
-                href="/api/auth/signout"
-                className="flex min-h-10 w-full items-center gap-2 rounded px-3 font-medium transition hover:bg-[#e4f2dc]"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                ログアウト
-              </Link>
             </div>
-          )}
-        </div>
-        {selectedServer ? (
-          <>
+
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
                 <p className="text-xs font-semibold tracking-wide text-[#53615a] uppercase">
@@ -2729,7 +2666,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   isMemberListOpen
                     ? "fixed inset-y-0 right-0 z-40 block shadow-xl"
                     : "hidden"
-                } w-64 shrink-0 overflow-y-auto border-l border-[#114744]/15 bg-[#e4f2dc] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
+                } w-64 shrink-0 overflow-y-auto border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
               >
                 <div className="mb-3 flex items-center gap-2">
                   <button
@@ -2741,7 +2678,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>
-                  <h2 className="text-xs font-semibold tracking-wide text-[#53615a] uppercase">
+                  <h2 className="text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
                     メンバー
                   </h2>
                 </div>
@@ -2770,7 +2707,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 className="h-9 w-9 rounded-full border border-black/10"
                               />
                               <span
-                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#e4f2dc] transition-colors group-hover:border-[#d9e6d1] ${getPresenceDotClassName(
+                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] transition-colors group-hover:border-[#e5d8c3] ${getPresenceDotClassName(
                                   member.user.presenceStatus,
                                 )}`}
                               />
