@@ -2729,7 +2729,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   isMemberListOpen
                     ? "fixed inset-y-0 right-0 z-40 block shadow-xl"
                     : "hidden"
-                } w-64 shrink-0 overflow-y-auto border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
+                } w-64 shrink-0 overflow-y-auto border-l border-[#114744]/15 bg-[#e4f2dc] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
               >
                 <div className="mb-3 flex items-center gap-2">
                   <button
@@ -2741,7 +2741,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>
-                  <h2 className="text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
+                  <h2 className="text-xs font-semibold tracking-wide text-[#53615a] uppercase">
                     メンバー
                   </h2>
                 </div>
@@ -2770,7 +2770,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 className="h-9 w-9 rounded-full border border-black/10"
                               />
                               <span
-                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] transition-colors group-hover:border-[#e5d8c3] ${getPresenceDotClassName(
+                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#e4f2dc] transition-colors group-hover:border-[#d9e6d1] ${getPresenceDotClassName(
                                   member.user.presenceStatus,
                                 )}`}
                               />
