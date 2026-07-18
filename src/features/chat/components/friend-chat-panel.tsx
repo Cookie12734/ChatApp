@@ -47,6 +47,7 @@ import { PresenceStatusMenu } from "~/features/profile/components/presence-statu
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
+import { getRealtimeUnreadCount } from "~/features/server/server/server-overview";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
@@ -54,7 +55,13 @@ type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
 type ChatEventPayload =
   | { kind: "direct"; userIds: string[] }
-  | { kind: "server"; serverId: string }
+  | {
+      change: "created" | "deleted" | "updated";
+      channelId: string | null;
+      kind: "server";
+      senderId: string;
+      serverId: string;
+    }
   | {
       isTyping: boolean;
       kind: "typing";
@@ -457,7 +464,26 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     });
   const { mutate: markServerChannelRead } =
     api.server.markChannelRead.useMutation({
-      onSuccess: () => void utils.server.getOverview.invalidate(),
+      onSuccess: (_result, variables) => {
+        utils.server.getOverview.setData(undefined, (overview) => {
+          if (!overview) return overview;
+
+          return {
+            ...overview,
+            memberships: overview.memberships.map((membership) => ({
+              ...membership,
+              server: {
+                ...membership.server,
+                channels: membership.server.channels.map((channel) =>
+                  channel.id === variables.channelId
+                    ? { ...channel, unreadCount: 0 }
+                    : channel,
+                ),
+              },
+            })),
+          };
+        });
+      },
     });
 
   useEffect(() => {
@@ -590,18 +616,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setIsMemberListOpen(false);
   }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
 
-  useEffect(() => {
-    if (conversation.data) {
-      void utils.chat.getFriends.invalidate();
-    }
-  }, [conversation.data, utils.chat.getFriends]);
-
-  useEffect(() => {
-    if (serverConversation.data) {
-      void utils.server.getOverview.invalidate();
-    }
-  }, [serverConversation.data, utils.server.getOverview]);
-
   const selectedFriendContact = useMemo(
     () =>
       friends.data?.find((item) => item.friend.id === selectedFriendId) ?? null,
@@ -641,14 +655,57 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       }
 
       if (payload.kind === "server") {
-        void utils.server.getOverview.invalidate();
-        if (
+        const isSelectedChannel =
           payload.serverId === selectedServerId &&
-          selectedServerChannel?.id
-        ) {
+          (payload.channelId === selectedServerChannel?.id ||
+            (payload.channelId === null &&
+              selectedServerChannel?.name === "general"));
+
+        if (isSelectedChannel && selectedServerChannel?.id) {
           void utils.server.getConversation.invalidate({
             channelId: selectedServerChannel.id,
             serverId: payload.serverId,
+          });
+        }
+        if (payload.change === "deleted" && !isSelectedChannel) {
+          void utils.server.getOverview.invalidate();
+          return;
+        }
+        if (payload.change === "created") {
+          utils.server.getOverview.setData(undefined, (overview) => {
+            if (!overview) return overview;
+
+            const isMine = payload.senderId === overview.currentUser.id;
+            return {
+              ...overview,
+              memberships: overview.memberships.map((membership) =>
+                membership.server.id !== payload.serverId
+                  ? membership
+                  : {
+                      ...membership,
+                      server: {
+                        ...membership.server,
+                        channels: membership.server.channels.map((channel) => {
+                          const isEventChannel =
+                            payload.channelId === channel.id ||
+                            (payload.channelId === null &&
+                              channel.name === "general");
+
+                          return isEventChannel
+                            ? {
+                                ...channel,
+                                unreadCount: getRealtimeUnreadCount(
+                                  channel.unreadCount,
+                                  { change: payload.change, isMine },
+                                  isSelectedChannel,
+                                ),
+                              }
+                            : channel;
+                        }),
+                      },
+                    },
+              ),
+            };
           });
         }
         return;
@@ -681,6 +738,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   }, [
     selectedFriendId,
     selectedServerChannel?.id,
+    selectedServerChannel?.name,
     selectedServerId,
     utils.chat.getConversation,
     utils.chat.getFriends,

@@ -13,14 +13,26 @@ test("chat event records target direct participants and server members", () => {
     },
   );
   assert.deepEqual(
-    getChatEventRecord({ kind: "server", serverId: "server-a" }, [
-      "owner",
-      "member",
-    ]),
+    getChatEventRecord(
+      {
+        change: "created",
+        channelId: "general",
+        kind: "server",
+        senderId: "owner",
+        serverId: "server-a",
+      },
+      ["owner", "member"],
+    ),
     {
       audienceIds: ["owner", "member"],
       kind: "server",
-      payload: { kind: "server", serverId: "server-a" },
+      payload: {
+        change: "created",
+        channelId: "general",
+        kind: "server",
+        senderId: "owner",
+        serverId: "server-a",
+      },
     },
   );
 });

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { addUnreadCountsToServerChannels } from "./server-overview.ts";
+import {
+  addUnreadCountsToServerChannels,
+  getRealtimeUnreadCount,
+} from "./server-overview.ts";
 
 test("addUnreadCountsToServerChannels merges legacy null messages into general", () => {
   const channels = [
@@ -39,5 +42,24 @@ test("addUnreadCountsToServerChannels defaults channels without messages to zero
       [],
     ),
     [{ id: "quiet", name: "quiet", serverId: "server", unreadCount: 0 }],
+  );
+});
+
+test("realtime unread counts increment only for new messages in other channels", () => {
+  assert.equal(
+    getRealtimeUnreadCount(2, { change: "created", isMine: false }, false),
+    3,
+  );
+  assert.equal(
+    getRealtimeUnreadCount(2, { change: "created", isMine: true }, false),
+    2,
+  );
+  assert.equal(
+    getRealtimeUnreadCount(2, { change: "updated", isMine: false }, false),
+    2,
+  );
+  assert.equal(
+    getRealtimeUnreadCount(2, { change: "created", isMine: false }, true),
+    0,
   );
 });

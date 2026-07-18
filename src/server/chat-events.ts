@@ -2,7 +2,13 @@ import type { PrismaClient } from "../../generated/prisma";
 
 export type ChatEvent =
   | { kind: "direct"; userIds: string[] }
-  | { kind: "server"; serverId: string }
+  | {
+      change: "created" | "deleted" | "updated";
+      channelId: string | null;
+      kind: "server";
+      senderId: string;
+      serverId: string;
+    }
   | {
       isTyping: boolean;
       kind: "typing";

@@ -610,7 +610,10 @@ export const serverRouter = createTRPCRouter({
       });
 
       await publishChatEvent(ctx.db, {
+        change: "created",
+        channelId: channel.id,
         kind: "server",
+        senderId: currentUserId,
         serverId: input.serverId,
       });
       return message;
@@ -639,7 +642,7 @@ export const serverRouter = createTRPCRouter({
 
       const message = await ctx.db.serverMessage.findFirst({
         where: { id: input.messageId, serverId: input.serverId },
-        select: { id: true, senderId: true },
+        select: { channelId: true, id: true, senderId: true },
       });
 
       if (!message) {
@@ -663,7 +666,10 @@ export const serverRouter = createTRPCRouter({
       });
 
       await publishChatEvent(ctx.db, {
+        change: "updated",
+        channelId: message.channelId,
         kind: "server",
+        senderId: message.senderId,
         serverId: input.serverId,
       });
       return updatedMessage;
@@ -691,7 +697,7 @@ export const serverRouter = createTRPCRouter({
 
       const message = await ctx.db.serverMessage.findFirst({
         where: { id: input.messageId, serverId: input.serverId },
-        select: { id: true, pinnedAt: true },
+        select: { channelId: true, id: true, pinnedAt: true, senderId: true },
       });
 
       if (!message) {
@@ -710,7 +716,10 @@ export const serverRouter = createTRPCRouter({
       });
 
       await publishChatEvent(ctx.db, {
+        change: "updated",
+        channelId: message.channelId,
         kind: "server",
+        senderId: message.senderId,
         serverId: input.serverId,
       });
       return updatedMessage;
@@ -739,7 +748,7 @@ export const serverRouter = createTRPCRouter({
 
       const message = await ctx.db.serverMessage.findFirst({
         where: { id: input.messageId, serverId: input.serverId },
-        select: { id: true, senderId: true },
+        select: { channelId: true, id: true, senderId: true },
       });
 
       if (!message) {
@@ -764,7 +773,10 @@ export const serverRouter = createTRPCRouter({
 
       await ctx.db.serverMessage.delete({ where: { id: message.id } });
       await publishChatEvent(ctx.db, {
+        change: "deleted",
+        channelId: message.channelId,
         kind: "server",
+        senderId: message.senderId,
         serverId: input.serverId,
       });
       return { id: message.id };

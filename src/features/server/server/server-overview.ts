@@ -33,3 +33,14 @@ export function addUnreadCountsToServerChannels<
         : 0),
   }));
 }
+
+export function getRealtimeUnreadCount(
+  currentCount: number,
+  event: { change: "created" | "deleted" | "updated"; isMine: boolean },
+  isSelectedChannel: boolean,
+) {
+  if (isSelectedChannel) return 0;
+  return event.change === "created" && !event.isMine
+    ? currentCount + 1
+    : currentCount;
+}
