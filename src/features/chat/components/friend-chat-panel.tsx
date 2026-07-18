@@ -17,11 +17,8 @@ import {
   Search,
   Send,
   Settings,
-  Shield,
-  ShieldOff,
   Shuffle,
   Trash2,
-  UserMinus,
   Users,
   X,
 } from "lucide-react";
@@ -36,9 +33,24 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
+import {
+  ExternalLinkDialog,
+  PinnedMessagesDialog,
+} from "~/features/chat/components/chat-dialogs";
+import {
+  Avatar,
+  formatMessageTime,
+  getDisplayName,
+  getServerDisplayName,
+  MessageText,
+  NewMessagesSeparator,
+  PendingMessageRow,
+  ProfileAvatar,
+} from "~/features/chat/components/chat-message";
+import { ServerMemberList } from "~/features/chat/components/server-member-list";
+import { useMessageViewport } from "~/features/chat/components/use-message-viewport";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
 import { shouldGroupMessage } from "~/features/chat/message-grouping";
-import { splitMessageLinks } from "~/features/chat/message-links";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
 import {
   getPresenceDisplayLabel,
@@ -46,7 +58,6 @@ import {
 } from "~/features/profile/presence";
 import { PresenceStatusMenu } from "~/features/profile/components/presence-status-menu";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
-import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { getRealtimeUnreadCount } from "~/features/server/server/server-overview";
 import { type RouterOutputs, api } from "~/trpc/react";
@@ -79,6 +90,18 @@ type EditingMessage =
 type MessageContextMenu =
   | { kind: "direct"; messageId: string; x: number; y: number }
   | { kind: "server"; messageId: string; x: number; y: number };
+type PendingMessage = {
+  clientId: string;
+  content: string;
+  createdAt: Date;
+  messageId?: string;
+  status: "confirmed" | "pending";
+};
+type PendingDirectMessage = PendingMessage & { friendId: string };
+type PendingServerMessage = PendingMessage & {
+  channelId: string;
+  serverId: string;
+};
 const matchingTopics = [
   { label: "雑談", value: "CASUAL" },
   { label: "ゲーム", value: "GAME" },
@@ -92,104 +115,6 @@ function getErrorMessage(error: unknown) {
   }
 
   return "処理に失敗しました";
-}
-
-function getDisplayName(user: { name?: string | null; userId: string }) {
-  const name = user.name?.trim();
-
-  if (name === undefined || name.length === 0) {
-    return user.userId;
-  }
-
-  return name;
-}
-
-function MessageText({
-  content,
-  onOpenLink,
-}: {
-  content: string;
-  onOpenLink: (url: string) => void;
-}) {
-  return splitMessageLinks(content).map((part, index) =>
-    part.kind === "link" ? (
-      <button
-        key={`${index}:${part.value}`}
-        type="button"
-        onClick={() => onOpenLink(part.value)}
-        className="inline cursor-pointer border-0 bg-transparent p-0 align-baseline font-medium text-[#0b5f89] underline decoration-[#0b5f89]/45 underline-offset-2 hover:decoration-current"
-      >
-        {part.value}
-      </button>
-    ) : (
-      <span key={`${index}:${part.value}`}>{part.value}</span>
-    ),
-  );
-}
-
-function getServerDisplayName(member: {
-  nickname?: string | null;
-  user: { name?: string | null; userId: string };
-}) {
-  const nickname = member.nickname?.trim();
-
-  return nickname ?? getDisplayName(member.user);
-}
-
-function getInitial(user: { name?: string | null; userId: string }) {
-  return getDisplayName(user).slice(0, 1).toUpperCase();
-}
-
-function formatTime(value: Date) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
-}
-
-function Avatar({
-  className,
-  user,
-}: {
-  className: string;
-  user: { image?: string | null; name?: string | null; userId: string };
-}) {
-  if (user.image) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={user.image} alt="" className={`${className} object-cover`} />
-    );
-  }
-
-  return (
-    <span
-      className={`${className} flex items-center justify-center bg-[#114744] font-semibold text-[#f6f0e4]`}
-    >
-      {getInitial(user)}
-    </span>
-  );
-}
-
-function ProfileAvatar({
-  className,
-  serverId,
-  user,
-}: {
-  className: string;
-  serverId?: string;
-  user: { image?: string | null; name?: string | null; userId: string };
-}) {
-  return (
-    <UserProfileDialog serverId={serverId} userId={user.userId}>
-      <button
-        type="button"
-        className={`${className} inline-flex shrink-0 overflow-hidden rounded-full border border-black/10 focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none`}
-        aria-label={`${getDisplayName(user)}のプロフィールを開く`}
-      >
-        <Avatar user={user} className="h-full w-full rounded-full" />
-      </button>
-    </UserProfileDialog>
-  );
 }
 
 function FriendListItem({
@@ -248,7 +173,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   >(null);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [isNavigationOpen, setIsNavigationOpen] = useState(!initialServerId);
-  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const [friendSearch, setFriendSearch] = useState("");
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
@@ -287,10 +211,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   >(null);
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [pendingDirectMessages, setPendingDirectMessages] = useState<
+    PendingDirectMessage[]
+  >([]);
+  const [pendingServerMessages, setPendingServerMessages] = useState<
+    PendingServerMessage[]
+  >([]);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const serverMessagesEndRef = useRef<HTMLDivElement | null>(null);
   const typingResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -349,16 +277,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       null
     );
   }, [selectedServer, selectedServerChannelId]);
+  const serverMembers = api.server.getMembers.useQuery(
+    { serverId: selectedServerId ?? "" },
+    {
+      enabled: Boolean(selectedServerId),
+      refetchInterval: (query) =>
+        query.state.status === "error"
+          ? false
+          : isRealtimeConnected
+            ? 60000
+            : 15000,
+    },
+  );
   const selectedServerMembers = useMemo(() => {
-    if (!selectedServer) return [];
+    if (!serverMembers.data) return [];
 
-    return [...selectedServer.server.members].sort((memberA, memberB) =>
+    return [...serverMembers.data].sort((memberA, memberB) =>
       getServerDisplayName(memberA).localeCompare(
         getServerDisplayName(memberB),
         "ja",
       ),
     );
-  }, [selectedServer]);
+  }, [serverMembers.data]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
@@ -445,6 +385,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     friends.isError ||
     matchingStatus.isError ||
     serverOverview.isError ||
+    (Boolean(selectedServerId) && serverMembers.isError) ||
     (Boolean(selectedServerId && selectedServerChannel?.id) &&
       serverConversation.isError) ||
     (Boolean(selectedFriendId) && conversation.isError);
@@ -458,6 +399,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
     if (selectedServerId && selectedServerChannel?.id) {
       requests.push(serverConversation.refetch());
+    }
+
+    if (selectedServerId) {
+      requests.push(serverMembers.refetch());
     }
 
     if (selectedFriendId) {
@@ -477,17 +422,87 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         : [],
     [conversation.data],
   );
+  const selectedFriendContact = useMemo(
+    () =>
+      friends.data?.find((item) => item.friend.id === selectedFriendId) ?? null,
+    [friends.data, selectedFriendId],
+  );
+  const activeDirectPendingMessages = useMemo(
+    () =>
+      pendingDirectMessages.filter(
+        (pendingMessage) => pendingMessage.friendId === selectedFriendId,
+      ),
+    [pendingDirectMessages, selectedFriendId],
+  );
+  const activeServerPendingMessages = useMemo(
+    () =>
+      pendingServerMessages.filter(
+        (pendingMessage) =>
+          pendingMessage.serverId === selectedServerId &&
+          pendingMessage.channelId === selectedServerChannel?.id,
+      ),
+    [pendingServerMessages, selectedServerChannel?.id, selectedServerId],
+  );
+  const hasDirectMessages =
+    directMessages.length > 0 || activeDirectPendingMessages.length > 0;
+  const hasServerMessages =
+    serverMessages.length > 0 || activeServerPendingMessages.length > 0;
   const latestDirectMessageId = directMessages.at(-1)?.id;
   const latestServerMessageId = serverMessages.at(-1)?.id;
-  const isConversationVisible = isDesktopLayout || !isNavigationOpen;
+  const directUnreadMessages = directConversation
+    ? directMessages.filter(
+        (chatMessage) =>
+          chatMessage.receiverId === directConversation.currentUserId &&
+          chatMessage.readAt === null,
+      )
+    : [];
+  const serverReadAt = serverConversationData?.readAt?.getTime() ?? -1;
+  const serverUnreadMessages = serverConversationData
+    ? serverMessages.filter(
+        (chatMessage) =>
+          chatMessage.senderId !== serverConversationData.currentUser.id &&
+          !chatMessage.isBlocked &&
+          chatMessage.createdAt.getTime() > serverReadAt,
+      )
+    : [];
+  const directUnreadCount = Math.max(
+    selectedFriendContact?.unreadCount ?? 0,
+    directUnreadMessages.length,
+  );
+  const serverUnreadCount = Math.max(
+    selectedServerChannel?.unreadCount ?? 0,
+    serverUnreadMessages.length,
+  );
+  const firstDirectUnreadMessageId = directUnreadMessages[0]?.id;
+  const firstServerUnreadMessageId = serverUnreadMessages[0]?.id;
 
   const { mutate: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
-      onSuccess: () => void utils.chat.getFriends.invalidate(),
+      onSuccess: (result, variables) => {
+        void utils.chat.getFriends.invalidate();
+        utils.chat.getConversation.setInfiniteData(
+          { friendId: variables.friendId },
+          (data) =>
+            data
+              ? {
+                  ...data,
+                  pages: data.pages.map((page) => ({
+                    ...page,
+                    messages: page.messages.map((chatMessage) =>
+                      chatMessage.receiverId === page.currentUserId &&
+                      chatMessage.createdAt <= result.readThrough
+                        ? { ...chatMessage, readAt: new Date() }
+                        : chatMessage,
+                    ),
+                  })),
+                }
+              : data,
+        );
+      },
     });
   const { mutate: markServerChannelRead } =
     api.server.markChannelRead.useMutation({
-      onSuccess: (_result, variables) => {
+      onSuccess: (result, variables) => {
         utils.server.getOverview.setData(undefined, (overview) => {
           if (!overview) return overview;
 
@@ -506,64 +521,89 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             })),
           };
         });
+        utils.server.getConversation.setInfiniteData(
+          {
+            channelId: variables.channelId,
+            serverId: variables.serverId,
+          },
+          (data) =>
+            data
+              ? {
+                  ...data,
+                  pages: data.pages.map((page) => ({
+                    ...page,
+                    readAt: result.readThrough,
+                  })),
+                }
+              : data,
+        );
       },
     });
 
-  useEffect(() => {
-    const desktopQuery = window.matchMedia("(min-width: 768px)");
-    const updateLayout = () => setIsDesktopLayout(desktopQuery.matches);
-
-    updateLayout();
-    desktopQuery.addEventListener("change", updateLayout);
-    return () => desktopQuery.removeEventListener("change", updateLayout);
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [latestDirectMessageId, selectedFriendId]);
-
-  useEffect(() => {
-    serverMessagesEndRef.current?.scrollIntoView({ block: "end" });
-  }, [latestServerMessageId, selectedServerChannel?.id, selectedServerId]);
-
-  useEffect(() => {
-    if (!isConversationVisible || !selectedFriendId || !latestDirectMessageId) {
-      return;
-    }
-
-    markDirectConversationRead({
-      friendId: selectedFriendId,
-      messageId: latestDirectMessageId,
-    });
-  }, [
-    isConversationVisible,
-    latestDirectMessageId,
-    markDirectConversationRead,
-    selectedFriendId,
-  ]);
-
-  useEffect(() => {
+  const markLatestMessageRead = useCallback(() => {
     if (
-      !isConversationVisible ||
-      !selectedServerId ||
-      !selectedServerChannel?.id ||
-      !latestServerMessageId
+      selectedServerId &&
+      selectedServerChannel?.id &&
+      latestServerMessageId
     ) {
+      markServerChannelRead({
+        channelId: selectedServerChannel.id,
+        messageId: latestServerMessageId,
+        serverId: selectedServerId,
+      });
       return;
     }
 
-    markServerChannelRead({
-      channelId: selectedServerChannel.id,
-      messageId: latestServerMessageId,
-      serverId: selectedServerId,
-    });
+    if (selectedFriendId && latestDirectMessageId) {
+      markDirectConversationRead({
+        friendId: selectedFriendId,
+        messageId: latestDirectMessageId,
+      });
+    }
   }, [
-    isConversationVisible,
+    latestDirectMessageId,
     latestServerMessageId,
+    markDirectConversationRead,
     markServerChannelRead,
+    selectedFriendId,
     selectedServerChannel?.id,
     selectedServerId,
   ]);
+  const messageViewport = useMessageViewport({
+    conversationKey: selectedServerId
+      ? `server:${selectedServerId}:${selectedServerChannel?.id ?? ""}`
+      : selectedFriendId
+        ? `direct:${selectedFriendId}`
+        : null,
+    firstUnreadMessageId: selectedServerId
+      ? firstServerUnreadMessageId
+      : firstDirectUnreadMessageId,
+    latestMessageId: selectedServerId
+      ? (activeServerPendingMessages.at(-1)?.clientId ?? latestServerMessageId)
+      : (activeDirectPendingMessages.at(-1)?.clientId ?? latestDirectMessageId),
+    onReadLatest: markLatestMessageRead,
+    unreadCount: selectedServerId ? serverUnreadCount : directUnreadCount,
+  });
+
+  useEffect(() => {
+    const loadedIds = new Set(directMessages.map(({ id }) => id));
+    setPendingDirectMessages((messages) => {
+      const next = messages.filter(
+        ({ messageId }) => !messageId || !loadedIds.has(messageId),
+      );
+      return next.length === messages.length ? messages : next;
+    });
+  }, [directMessages]);
+
+  useEffect(() => {
+    const loadedIds = new Set(serverMessages.map(({ id }) => id));
+    setPendingServerMessages((messages) => {
+      const next = messages.filter(
+        ({ messageId }) => !messageId || !loadedIds.has(messageId),
+      );
+      return next.length === messages.length ? messages : next;
+    });
+  }, [serverMessages]);
 
   useEffect(() => {
     if (!selectedServer) {
@@ -639,11 +679,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setIsMemberListOpen(false);
   }, [selectedFriendId, selectedServerChannel?.id, selectedServerId]);
 
-  const selectedFriendContact = useMemo(
-    () =>
-      friends.data?.find((item) => item.friend.id === selectedFriendId) ?? null,
-    [friends.data, selectedFriendId],
-  );
   const selectedFriend = useMemo(() => {
     return directConversation?.friend ?? selectedFriendContact?.friend ?? null;
   }, [directConversation?.friend, selectedFriendContact?.friend]);
@@ -892,36 +927,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     utils.chat.getFriends,
   ]);
 
-  const sendMessage = api.chat.sendMessage.useMutation({
-    onSuccess: async () => {
-      setDraft("");
-      setMessage(null);
-      lastTypingSentAtRef.current = 0;
-      if (localTypingStopTimerRef.current) {
-        clearTimeout(localTypingStopTimerRef.current);
-      }
-      broadcastTyping(false);
-      await Promise.all([
-        utils.chat.getConversation.invalidate({
-          friendId: selectedFriendId ?? "",
-        }),
-        utils.chat.getFriends.invalidate(),
-      ]);
-    },
-    onError: (error) => setMessage(getErrorMessage(error)),
-  });
-
-  const sendServerMessage = api.server.sendMessage.useMutation({
-    onSuccess: async () => {
-      setServerDraft("");
-      setServerMessage(null);
-      await utils.server.getConversation.invalidate({
-        channelId: selectedServerChannel?.id,
-        serverId: selectedServerId ?? "",
-      });
-    },
-    onError: (error) => setServerMessage(getErrorMessage(error)),
-  });
+  const sendMessage = api.chat.sendMessage.useMutation();
+  const sendServerMessage = api.server.sendMessage.useMutation();
 
   const createChannel = api.server.createChannel.useMutation({
     onSuccess: async (channel) => {
@@ -1074,7 +1081,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const updateServerMemberRole = api.server.updateMemberRole.useMutation({
     onSuccess: async () => {
       setServerMessage(null);
-      await utils.server.getOverview.invalidate();
+      await Promise.all([
+        utils.server.getMembers.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
@@ -1082,7 +1092,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const removeServerMember = api.server.removeMember.useMutation({
     onSuccess: async () => {
       setServerMessage(null);
-      await utils.server.getOverview.invalidate();
+      await Promise.all([
+        utils.server.getMembers.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
@@ -1309,12 +1322,60 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedFriendId || !canSendDirectMessage || !draft.trim()) return;
-    broadcastTyping(false);
+    const clientId = crypto.randomUUID();
+    const content = draft.trim();
+    const friendId = selectedFriendId;
 
-    sendMessage.mutate({
-      friendId: selectedFriendId,
-      content: draft,
-    });
+    broadcastTyping(false);
+    setDraft("");
+    setMessage(null);
+    setPendingDirectMessages((messages) => [
+      ...messages,
+      {
+        clientId,
+        content,
+        createdAt: new Date(),
+        friendId,
+        status: "pending",
+      },
+    ]);
+    requestAnimationFrame(messageViewport.scrollToBottom);
+    lastTypingSentAtRef.current = 0;
+    if (localTypingStopTimerRef.current) {
+      clearTimeout(localTypingStopTimerRef.current);
+    }
+
+    sendMessage.mutate(
+      { content, friendId },
+      {
+        onError: (error) => {
+          setPendingDirectMessages((messages) =>
+            messages.filter(
+              (pendingMessage) => pendingMessage.clientId !== clientId,
+            ),
+          );
+          setDraft((current) => current || content);
+          setMessage(getErrorMessage(error));
+        },
+        onSuccess: (savedMessage) => {
+          setPendingDirectMessages((messages) =>
+            messages.map((pendingMessage) =>
+              pendingMessage.clientId === clientId
+                ? {
+                    ...pendingMessage,
+                    messageId: savedMessage.id,
+                    status: "confirmed",
+                  }
+                : pendingMessage,
+            ),
+          );
+          void Promise.all([
+            utils.chat.getConversation.invalidate({ friendId }),
+            utils.chat.getFriends.invalidate(),
+          ]);
+        },
+      },
+    );
   };
 
   const handleServerSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -1326,12 +1387,53 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     ) {
       return;
     }
+    const channelId = selectedServerChannel.id;
+    const clientId = crypto.randomUUID();
+    const content = serverDraft.trim();
+    const serverId = selectedServerId;
 
-    sendServerMessage.mutate({
-      channelId: selectedServerChannel.id,
-      content: serverDraft,
-      serverId: selectedServerId,
-    });
+    setServerDraft("");
+    setServerMessage(null);
+    setPendingServerMessages((messages) => [
+      ...messages,
+      {
+        channelId,
+        clientId,
+        content,
+        createdAt: new Date(),
+        serverId,
+        status: "pending",
+      },
+    ]);
+    requestAnimationFrame(messageViewport.scrollToBottom);
+    sendServerMessage.mutate(
+      { channelId, content, serverId },
+      {
+        onError: (error) => {
+          setPendingServerMessages((messages) =>
+            messages.filter(
+              (pendingMessage) => pendingMessage.clientId !== clientId,
+            ),
+          );
+          setServerDraft((current) => current || content);
+          setServerMessage(getErrorMessage(error));
+        },
+        onSuccess: (savedMessage) => {
+          setPendingServerMessages((messages) =>
+            messages.map((pendingMessage) =>
+              pendingMessage.clientId === clientId
+                ? {
+                    ...pendingMessage,
+                    messageId: savedMessage.id,
+                    status: "confirmed",
+                  }
+                : pendingMessage,
+            ),
+          );
+          void utils.server.getConversation.invalidate({ channelId, serverId });
+        },
+      },
+    );
   };
 
   const handleCreateChannel = (event: FormEvent<HTMLFormElement>) => {
@@ -1572,7 +1674,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     {selectedServer.server.name}
                   </span>
                   <span className="mt-1 block text-xs text-[#53615a]">
-                    {selectedServer.server.members.length} メンバー
+                    {serverMembers.data?.length ?? 0} メンバー
                   </span>
                 </span>
                 <ChevronDown
@@ -2045,7 +2147,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5">
+            <div
+              ref={messageViewport.containerRef}
+              onScroll={messageViewport.handleScroll}
+              className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5"
+            >
               {selectedServer ? (
                 <>
                   {serverConversation.isLoading && (
@@ -2062,7 +2168,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     </div>
                   )}
 
-                  {serverConversationData && serverMessages.length === 0 && (
+                  {serverConversationData && !hasServerMessages && (
                     <div className="flex min-h-full items-end pb-8">
                       <div>
                         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#18221f] text-2xl font-semibold text-[#f6f0e4]">
@@ -2079,7 +2185,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     </div>
                   )}
 
-                  {serverConversationData && serverMessages.length > 0 && (
+                  {serverConversationData && hasServerMessages && (
                     <div>
                       {serverConversation.hasNextPage && (
                         <div className="flex justify-center pb-4">
@@ -2119,6 +2225,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           editingMessage.messageId === chatMessage.id;
                         const isFollowup =
                           !chatMessage.pinnedAt &&
+                          chatMessage.id !== firstServerUnreadMessageId &&
                           shouldGroupMessage(
                             chatMessage,
                             serverMessages[messageIndex - 1],
@@ -2130,15 +2237,20 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            className={`group relative flex items-start gap-3 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                            className={`group relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
                           >
+                            {chatMessage.id === firstServerUnreadMessageId && (
+                              <NewMessagesSeparator
+                                separatorRef={messageViewport.unreadRef}
+                              />
+                            )}
                             {isFollowup ? (
                               <time
                                 dateTime={chatMessage.createdAt.toISOString()}
                                 className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
-                                aria-label={`${getDisplayName(author)}、${formatTime(chatMessage.createdAt)}`}
+                                aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
                               >
-                                {formatTime(chatMessage.createdAt)}
+                                {formatMessageTime(chatMessage.createdAt)}
                               </time>
                             ) : (
                               <ProfileAvatar
@@ -2154,7 +2266,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     {getDisplayName(author)}
                                   </span>
                                   <time className="text-xs text-[#68716b]">
-                                    {formatTime(chatMessage.createdAt)}
+                                    {formatMessageTime(chatMessage.createdAt)}
                                   </time>
                                   {chatMessage.pinnedAt && (
                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
@@ -2246,7 +2358,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           </article>
                         );
                       })}
-                      <div ref={serverMessagesEndRef} />
+                      {activeServerPendingMessages.map((pendingMessage) => (
+                        <PendingMessageRow
+                          key={pendingMessage.clientId}
+                          author={{
+                            ...serverConversationData.currentUser,
+                            name:
+                              selectedServer.nickname?.trim() ??
+                              serverConversationData.currentUser.name,
+                          }}
+                          message={pendingMessage}
+                          onOpenLink={setPendingExternalLink}
+                          serverId={selectedServer.server.id}
+                        />
+                      ))}
+                      <div ref={messageViewport.endRef} />
                     </div>
                   )}
                 </>
@@ -2310,7 +2436,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
                   {!isFriendsOpen &&
                     directConversation &&
-                    directMessages.length === 0 && (
+                    !hasDirectMessages && (
                       <div className="flex min-h-full items-end pb-8">
                         <div>
                           <ProfileAvatar
@@ -2330,7 +2456,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
                   {!isFriendsOpen &&
                     directConversation &&
-                    directMessages.length > 0 && (
+                    hasDirectMessages && (
                       <div>
                         {conversation.hasNextPage && (
                           <div className="flex justify-center pb-4">
@@ -2358,7 +2484,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             editingMessage.messageId === chatMessage.id;
                           const isFollowup = shouldGroupMessage(
                             chatMessage,
-                            directMessages[messageIndex - 1],
+                            chatMessage.id === firstDirectUnreadMessageId
+                              ? undefined
+                              : directMessages[messageIndex - 1],
                           );
 
                           return (
@@ -2367,15 +2495,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              className={`group relative flex items-start gap-3 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                              className={`group relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
                             >
+                              {chatMessage.id ===
+                                firstDirectUnreadMessageId && (
+                                <NewMessagesSeparator
+                                  separatorRef={messageViewport.unreadRef}
+                                />
+                              )}
                               {isFollowup ? (
                                 <time
                                   dateTime={chatMessage.createdAt.toISOString()}
                                   className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
-                                  aria-label={`${getDisplayName(author)}、${formatTime(chatMessage.createdAt)}`}
+                                  aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
                                 >
-                                  {formatTime(chatMessage.createdAt)}
+                                  {formatMessageTime(chatMessage.createdAt)}
                                 </time>
                               ) : (
                                 <ProfileAvatar
@@ -2390,7 +2524,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                       {getDisplayName(author)}
                                     </span>
                                     <time className="text-xs text-[#68716b]">
-                                      {formatTime(chatMessage.createdAt)}
+                                      {formatMessageTime(chatMessage.createdAt)}
                                     </time>
                                   </div>
                                 )}
@@ -2462,12 +2596,32 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             </article>
                           );
                         })}
-                        <div ref={messagesEndRef} />
+                        {activeDirectPendingMessages.map((pendingMessage) => (
+                          <PendingMessageRow
+                            key={pendingMessage.clientId}
+                            author={directConversation.currentUser}
+                            message={pendingMessage}
+                            onOpenLink={setPendingExternalLink}
+                          />
+                        ))}
+                        <div ref={messageViewport.endRef} />
                       </div>
                     )}
                 </>
               )}
             </div>
+            {messageViewport.newMessageCount > 0 && (
+              <div className="pointer-events-none relative z-20 -mt-14 flex h-14 shrink-0 items-center justify-end px-4">
+                <button
+                  type="button"
+                  onClick={messageViewport.scrollToNewMessages}
+                  className="pointer-events-auto inline-flex min-h-10 items-center gap-2 rounded-md bg-[#18221f] px-4 text-sm font-semibold text-[#f6f0e4] shadow-lg transition hover:bg-[#2f3c37] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                  新しいメッセージ {messageViewport.newMessageCount}件
+                </button>
+              </div>
+            )}
 
             <div className="shrink-0 px-4 pb-5">
               {selectedServer ? (
@@ -2497,18 +2651,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       }}
                       className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
                       placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
-                      disabled={
-                        !selectedServerChannel?.id ||
-                        sendServerMessage.isPending
-                      }
+                      disabled={!selectedServerChannel?.id}
                       maxLength={1000}
                     />
                     <button
                       type="submit"
                       disabled={
-                        !selectedServerChannel?.id ||
-                        !serverDraft.trim() ||
-                        sendServerMessage.isPending
+                        !selectedServerChannel?.id || !serverDraft.trim()
                       }
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
                       aria-label="送信"
@@ -2623,11 +2772,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 ? `${getDisplayName(selectedFriend)} へメッセージを送信`
                                 : "フレンドを選択してください"
                           }
-                          disabled={
-                            !selectedFriendId ||
-                            !canSendDirectMessage ||
-                            sendMessage.isPending
-                          }
+                          disabled={!selectedFriendId || !canSendDirectMessage}
                           maxLength={1000}
                         />
                         <button
@@ -2635,8 +2780,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           disabled={
                             !selectedFriendId ||
                             !canSendDirectMessage ||
-                            !draft.trim() ||
-                            sendMessage.isPending
+                            !draft.trim()
                           }
                           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
                           aria-label="送信"
@@ -2652,143 +2796,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           </div>
 
           {selectedServer && (
-            <>
-              {isMemberListOpen && (
-                <button
-                  type="button"
-                  onClick={() => setIsMemberListOpen(false)}
-                  className="fixed inset-0 z-30 bg-black/35 lg:hidden"
-                  aria-label="メンバー一覧を閉じる"
-                />
-              )}
-              <aside
-                className={`${
-                  isMemberListOpen
-                    ? "fixed inset-y-0 right-0 z-40 block shadow-xl"
-                    : "hidden"
-                } w-64 shrink-0 overflow-y-auto border-l border-[#18221f]/15 bg-[#f1e4d0] px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
-              >
-                <div className="mb-3 flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsMemberListOpen(false)}
-                    className="flex h-8 w-8 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
-                    aria-label="メンバー一覧を閉じる"
-                    title="メンバー一覧を閉じる"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </button>
-                  <h2 className="text-xs font-semibold tracking-wide text-[#7b6757] uppercase">
-                    メンバー
-                  </h2>
-                </div>
-                <div className="space-y-2">
-                  {selectedServerMembers.map((member) => {
-                    const isCurrentUser =
-                      member.user.id === currentServerUser?.id;
-
-                    return (
-                      <div
-                        key={member.id}
-                        className="group flex items-center gap-2 rounded-md px-3 py-2 text-[#18221f] transition-colors hover:bg-black/5"
-                      >
-                        <UserProfileDialog
-                          userId={member.user.userId}
-                          serverId={selectedServer.server.id}
-                        >
-                          <button
-                            type="button"
-                            className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#d8efee] focus-visible:outline-none"
-                            aria-label={`${getServerDisplayName(member)}のプロフィールを開く`}
-                          >
-                            <span className="relative shrink-0">
-                              <Avatar
-                                user={member.user}
-                                className="h-9 w-9 rounded-full border border-black/10"
-                              />
-                              <span
-                                className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] transition-colors group-hover:border-[#e5d8c3] ${getPresenceDotClassName(
-                                  member.user.presenceStatus,
-                                )}`}
-                              />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm font-semibold">
-                                {getServerDisplayName(member)}
-                              </span>
-                              <span className="block truncate text-xs text-[#68716b]">
-                                {getPresenceDisplayLabel(
-                                  member.user.presenceStatus,
-                                )}{" "}
-                                ・
-                                {member.role === "OWNER"
-                                  ? "所有者"
-                                  : "メンバー"}
-                              </span>
-                            </span>
-                          </button>
-                        </UserProfileDialog>
-                        {isSelectedServerOwner && !isCurrentUser && (
-                          <div className="flex shrink-0 items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleUpdateServerMemberRole(
-                                  member.id,
-                                  member.role === "OWNER" ? "MEMBER" : "OWNER",
-                                )
-                              }
-                              disabled={updateServerMemberRole.isPending}
-                              className="flex h-8 w-8 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] hover:text-[#114744] disabled:opacity-45"
-                              aria-label={
-                                member.role === "OWNER"
-                                  ? "メンバーに戻す"
-                                  : "所有権を移譲"
-                              }
-                              title={
-                                member.role === "OWNER"
-                                  ? "メンバーに戻す"
-                                  : "所有権を移譲"
-                              }
-                            >
-                              {member.role === "OWNER" ? (
-                                <ShieldOff
-                                  className="h-4 w-4"
-                                  aria-hidden="true"
-                                />
-                              ) : (
-                                <Shield
-                                  className="h-4 w-4"
-                                  aria-hidden="true"
-                                />
-                              )}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleRemoveServerMember(
-                                  member.id,
-                                  getServerDisplayName(member),
-                                )
-                              }
-                              disabled={removeServerMember.isPending}
-                              className="flex h-8 w-8 items-center justify-center rounded-md text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-45"
-                              aria-label="退出させる"
-                              title="退出させる"
-                            >
-                              <UserMinus
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </aside>
-            </>
+            <ServerMemberList
+              currentUserId={currentServerUser?.id}
+              isOpen={isMemberListOpen}
+              isOwner={Boolean(isSelectedServerOwner)}
+              isRemoving={removeServerMember.isPending}
+              isUpdatingRole={updateServerMemberRole.isPending}
+              members={selectedServerMembers}
+              onClose={() => setIsMemberListOpen(false)}
+              onRemove={handleRemoveServerMember}
+              onUpdateRole={handleUpdateServerMemberRole}
+              serverId={selectedServer.server.id}
+            />
           )}
         </div>
       </section>
@@ -2933,116 +2952,19 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={isPinnedMessagesOpen}
+      <PinnedMessagesDialog
+        isLoading={serverConversation.isLoading}
+        messages={serverConversationData?.pinnedMessages}
         onOpenChange={setIsPinnedMessagesOpen}
-      >
-        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-xl">
-          <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
-            <DialogTitle>ピン留めしたメッセージ</DialogTitle>
-            <DialogDescription className="sr-only">
-              このチャンネルでピン留めされているメッセージの一覧です。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="divide-y divide-[#18221f]/10 px-5 py-2">
-            {serverConversation.isLoading && (
-              <p className="py-6 text-sm text-[#68716b]">読み込み中...</p>
-            )}
-            {serverConversationData?.pinnedMessages.map((chatMessage) => {
-              const author = {
-                ...chatMessage.sender,
-                name:
-                  chatMessage.sender.serverMemberships[0]?.nickname ??
-                  chatMessage.sender.name,
-              };
+        onOpenLink={setPendingExternalLink}
+        open={isPinnedMessagesOpen}
+        serverId={selectedServer?.server.id}
+      />
 
-              return (
-                <article key={chatMessage.id} className="flex gap-3 py-4">
-                  <ProfileAvatar
-                    user={author}
-                    serverId={selectedServer?.server.id}
-                    className="h-10 w-10"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                      <span className="text-sm font-semibold">
-                        {getDisplayName(author)}
-                      </span>
-                      <time className="text-xs text-[#68716b]">
-                        {formatTime(chatMessage.createdAt)}
-                      </time>
-                    </div>
-                    {chatMessage.isBlocked ? (
-                      <details className="rounded-md border border-[#18221f]/10 bg-[#f1e4d0] px-3 py-2 text-sm text-[#53615a]">
-                        <summary className="cursor-pointer font-medium">
-                          ブロック関係にあるユーザーのメッセージ
-                        </summary>
-                        <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                          <MessageText
-                            content={chatMessage.content}
-                            onOpenLink={setPendingExternalLink}
-                          />
-                        </p>
-                      </details>
-                    ) : (
-                      <p className="leading-7 break-words whitespace-pre-wrap">
-                        <MessageText
-                          content={chatMessage.content}
-                          onOpenLink={setPendingExternalLink}
-                        />
-                      </p>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-            {serverConversationData?.pinnedMessages.length === 0 && (
-              <p className="py-6 text-sm text-[#68716b]">
-                ピン留めされたメッセージはありません
-              </p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={pendingExternalLink !== null}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setPendingExternalLink(null);
-        }}
-      >
-        <DialogContent className="bg-[#fff8ed] text-[#18221f] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>外部リンクを開きますか？</DialogTitle>
-            <DialogDescription className="text-[#68716b]">
-              次のリンクを新しいタブで開きます。
-            </DialogDescription>
-          </DialogHeader>
-          <p className="max-h-32 overflow-y-auto rounded-md bg-[#f6f0e4] px-3 py-2 text-sm break-all text-[#53615a]">
-            {pendingExternalLink}
-          </p>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setPendingExternalLink(null)}
-              className="inline-flex min-h-10 items-center rounded-md border border-[#18221f]/15 px-4 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
-            >
-              キャンセル
-            </button>
-            {pendingExternalLink && (
-              <a
-                href={pendingExternalLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setPendingExternalLink(null)}
-                className="inline-flex min-h-10 items-center rounded-md bg-[#114744] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3936]"
-              >
-                開く
-              </a>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ExternalLinkDialog
+        onClose={() => setPendingExternalLink(null)}
+        url={pendingExternalLink}
+      />
 
       {channelContextMenu && channelContextTarget && selectedServer && (
         <div

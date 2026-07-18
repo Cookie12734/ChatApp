@@ -163,21 +163,6 @@ export const serverRouter = createTRPCRouter({
               channels: {
                 orderBy: { createdAt: "asc" },
               },
-              members: {
-                orderBy: { createdAt: "asc" },
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      userId: true,
-                      name: true,
-                      image: true,
-                      lastSeenAt: true,
-                      presenceStatus: true,
-                    },
-                  },
-                },
-              },
             },
           },
         },
@@ -286,25 +271,61 @@ export const serverRouter = createTRPCRouter({
             inviteCode: canManageServer(membership.role)
               ? membership.server.inviteCode
               : null,
-            members: membership.server.members.map((member) => {
-              const { lastSeenAt, ...user } = member.user;
-
-              return {
-                ...member,
-                user: {
-                  ...user,
-                  presenceStatus: getEffectivePresenceStatus(
-                    user.presenceStatus,
-                    lastSeenAt,
-                  ),
-                },
-              };
-            }),
           },
         };
       }),
     };
   }),
+
+  getMembers: protectedProcedure
+    .input(serverIdInput)
+    .query(async ({ ctx, input }) => {
+      const server = await ctx.db.chatServer.findFirst({
+        where: {
+          id: input.serverId,
+          members: { some: { userId: ctx.session.user.id } },
+        },
+        select: {
+          members: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  userId: true,
+                  name: true,
+                  image: true,
+                  lastSeenAt: true,
+                  presenceStatus: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!server) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "サーバーが見つかりません",
+        });
+      }
+
+      return server.members.map((member) => {
+        const { lastSeenAt, ...user } = member.user;
+
+        return {
+          ...member,
+          user: {
+            ...user,
+            presenceStatus: getEffectivePresenceStatus(
+              user.presenceStatus,
+              lastSeenAt,
+            ),
+          },
+        };
+      });
+    }),
 
   create: protectedProcedure
     .input(serverInput)
@@ -411,8 +432,8 @@ export const serverRouter = createTRPCRouter({
         },
       };
 
-      const [currentUser, server, messages, pinnedMessages] = await Promise.all(
-        [
+      const [currentUser, server, messages, pinnedMessages, channelRead] =
+        await Promise.all([
           ctx.db.user.findUniqueOrThrow({
             where: { id: currentUserId },
             select: { id: true, userId: true, name: true, image: true },
@@ -438,11 +459,20 @@ export const serverRouter = createTRPCRouter({
             take: 50,
             include: messageInclude,
           }),
-        ],
-      );
+          ctx.db.serverChannelRead.findUnique({
+            where: {
+              channelId_userId: {
+                channelId: channel.id,
+                userId: currentUserId,
+              },
+            },
+            select: { readAt: true },
+          }),
+        ]);
       return {
         channel,
         currentUser,
+        readAt: channelRead?.readAt ?? null,
         server,
         pinnedMessages: pinnedMessages.map((message) => ({
           ...message,
@@ -515,7 +545,7 @@ export const serverRouter = createTRPCRouter({
         }),
       ]);
 
-      return { ok: true };
+      return { ok: true, readThrough: message.createdAt };
     }),
 
   updateMyProfile: protectedProcedure
@@ -624,7 +654,7 @@ export const serverRouter = createTRPCRouter({
         },
       });
 
-      await publishChatEvent(ctx.db, {
+      void publishChatEvent(ctx.db, {
         change: "created",
         channelId: channel.id,
         kind: "server",
@@ -680,7 +710,7 @@ export const serverRouter = createTRPCRouter({
         select: { id: true, content: true },
       });
 
-      await publishChatEvent(ctx.db, {
+      void publishChatEvent(ctx.db, {
         change: "updated",
         channelId: message.channelId,
         kind: "server",
@@ -730,7 +760,7 @@ export const serverRouter = createTRPCRouter({
         select: { id: true, pinnedAt: true },
       });
 
-      await publishChatEvent(ctx.db, {
+      void publishChatEvent(ctx.db, {
         change: "updated",
         channelId: message.channelId,
         kind: "server",
@@ -787,7 +817,7 @@ export const serverRouter = createTRPCRouter({
       }
 
       await ctx.db.serverMessage.delete({ where: { id: message.id } });
-      await publishChatEvent(ctx.db, {
+      void publishChatEvent(ctx.db, {
         change: "deleted",
         channelId: message.channelId,
         kind: "server",
