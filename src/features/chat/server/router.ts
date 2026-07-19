@@ -141,18 +141,21 @@ export const chatRouter = createTRPCRouter({
       const { _count, receivedDirectMessages, sentDirectMessages, ...friend } =
         contact;
       const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
+      const isBlocked = blockedPeerIdSet.has(friend.id);
 
       return {
         currentUserId,
         friendshipId,
         friend,
-        isBlocked: blockedPeerIdSet.has(friend.id),
+        isBlocked,
         isFriend: friendshipId !== null,
-        lastMessage: getLatestFriendMessage(
-          sentDirectMessages[0],
-          receivedDirectMessages[0],
-        ),
-        unreadCount: _count.sentDirectMessages,
+        lastMessage: isBlocked
+          ? null
+          : getLatestFriendMessage(
+              sentDirectMessages[0],
+              receivedDirectMessages[0],
+            ),
+        unreadCount: isBlocked ? 0 : _count.sentDirectMessages,
       };
     });
 
@@ -357,31 +360,33 @@ export const chatRouter = createTRPCRouter({
           where: { id: currentUserId },
           select: { id: true, userId: true, name: true, image: true },
         }),
-        ctx.db.directMessage.findMany({
-          where: {
-            OR: [
-              {
-                receiverId: currentUserId,
-                senderId: input.friendId,
+        block
+          ? []
+          : ctx.db.directMessage.findMany({
+              where: {
+                OR: [
+                  {
+                    receiverId: currentUserId,
+                    senderId: input.friendId,
+                  },
+                  {
+                    receiverId: input.friendId,
+                    senderId: currentUserId,
+                  },
+                ],
               },
-              {
-                receiverId: input.friendId,
-                senderId: currentUserId,
+              cursor: input.cursor ? { id: input.cursor } : undefined,
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              take: MESSAGE_PAGE_SIZE + 1,
+              select: {
+                id: true,
+                content: true,
+                createdAt: true,
+                readAt: true,
+                receiverId: true,
+                senderId: true,
               },
-            ],
-          },
-          cursor: input.cursor ? { id: input.cursor } : undefined,
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: MESSAGE_PAGE_SIZE + 1,
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            readAt: true,
-            receiverId: true,
-            senderId: true,
-          },
-        }),
+            }),
       ]);
 
       return {

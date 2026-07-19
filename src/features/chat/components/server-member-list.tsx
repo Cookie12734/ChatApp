@@ -1,4 +1,5 @@
 import { Shield, ShieldOff, UserMinus, X } from "lucide-react";
+import type { MouseEvent } from "react";
 
 import {
   Avatar,
@@ -21,6 +22,10 @@ type ServerMemberListProps = {
   isUpdatingRole: boolean;
   members: ServerMember[];
   onClose: () => void;
+  onProfileContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    user: { name?: string | null; userId: string },
+  ) => void;
   onRemove: (memberId: string, displayName: string) => void;
   onUpdateRole: (memberId: string, role: "MEMBER" | "OWNER") => void;
   serverId: string;
@@ -34,6 +39,7 @@ export function ServerMemberList({
   isUpdatingRole,
   members,
   onClose,
+  onProfileContextMenu,
   onRemove,
   onUpdateRole,
   serverId,
@@ -83,6 +89,12 @@ export function ServerMemberList({
                 >
                   <button
                     type="button"
+                    onContextMenu={(event) =>
+                      onProfileContextMenu(event, {
+                        ...member.user,
+                        name: displayName,
+                      })
+                    }
                     className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:ring-[#d8efee] focus-visible:outline-none"
                     aria-label={`${displayName}のプロフィールを開く`}
                   >

@@ -5,6 +5,7 @@ import { PrismaClient } from "../generated/prisma/index.js";
 
 const prisma = new PrismaClient();
 const runId = `${Date.now()}-${process.pid}`;
+const userIdRunId = runId.replaceAll("-", "_");
 const password = "Connect-e2e-123";
 const ownerEmail = `codex-e2e-owner-${runId}@example.com`;
 const memberEmail = `codex-e2e-member-${runId}@example.com`;
@@ -41,7 +42,7 @@ test.beforeAll(async () => {
         emailVerified: new Date(),
         name: "E2E Owner",
         passwordHash,
-        userId: `e2e-owner-${runId}`,
+        userId: `e2e_owner_${userIdRunId}`,
       },
     }),
     prisma.user.create({
@@ -50,7 +51,7 @@ test.beforeAll(async () => {
         emailVerified: new Date(),
         name: "E2E Member",
         passwordHash,
-        userId: `e2e-member-${runId}`,
+        userId: `e2e_member_${userIdRunId}`,
       },
     }),
   ]);
@@ -73,6 +74,13 @@ test.beforeAll(async () => {
   });
   serverId = server.id;
   channelId = server.channels[0]?.id ?? "";
+
+  await prisma.friendship.createMany({
+    data: [
+      { friendId: memberId, userId: ownerId },
+      { friendId: ownerId, userId: memberId },
+    ],
+  });
 
   await prisma.serverMessage.createMany({
     data: Array.from({ length: 36 }, (_, index) => ({
@@ -188,4 +196,79 @@ test("スクロール中の新着件数と未読線を表示する", async ({ pa
 
   await newMessageButton.click();
   await expect(newMessageButton).toHaveCount(0, { timeout: 10_000 });
+});
+
+test("プロフィールアイコンからブロックしてメッセージとマッチングを除外する", async ({
+  page,
+}) => {
+  await prisma.matchingQueue.create({
+    data: { topic: "CASUAL", userId: memberId },
+  });
+  await login(page);
+
+  const memberAvatar = page
+    .getByRole("button", { name: "E2E Memberのプロフィールを開く" })
+    .first();
+  await memberAvatar.scrollIntoViewIfNeeded();
+  const avatarBounds = await memberAvatar.boundingBox();
+  if (!avatarBounds)
+    throw new Error("プロフィールアイコンが表示されていません");
+  await page.mouse.click(
+    avatarBounds.x + avatarBounds.width / 2,
+    avatarBounds.y + avatarBounds.height / 2,
+    { button: "right" },
+  );
+  const blockButton = page.getByRole("menuitem", {
+    name: "ブロック",
+    exact: true,
+  });
+  await expect(blockButton).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await blockButton.click();
+
+  await expect
+    .poll(() =>
+      prisma.userBlock.count({
+        where: { blockedId: memberId, blockerId: ownerId },
+      }),
+    )
+    .toBe(1);
+  await expect
+    .poll(() =>
+      prisma.friendship.count({
+        where: {
+          OR: [
+            { friendId: memberId, userId: ownerId },
+            { friendId: ownerId, userId: memberId },
+          ],
+        },
+      }),
+    )
+    .toBe(0);
+  await expect(
+    page.getByText(`new-message-${runId}`, { exact: true }),
+  ).toHaveCount(0, { timeout: 10_000 });
+
+  await page.getByRole("link", { name: "connect" }).click();
+  await page.getByRole("button", { name: "マッチング", exact: true }).click();
+  const matchingForm = page.locator("form").filter({
+    has: page.getByLabel("話したいこと"),
+  });
+  await matchingForm
+    .getByRole("button", { name: "マッチング", exact: true })
+    .click();
+  await expect(page.getByText("同じ話題の相手を探しています...")).toBeVisible();
+  await expect
+    .poll(async () => {
+      const queue = await prisma.matchingQueue.findUnique({
+        where: { userId: ownerId },
+      });
+      return queue ? (queue.matchedUserId ?? "waiting") : "missing";
+    })
+    .toBe("waiting");
+  await expect(
+    prisma.friendship.count({
+      where: { friendId: memberId, userId: ownerId },
+    }),
+  ).resolves.toBe(0);
 });

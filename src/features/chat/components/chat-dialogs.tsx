@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,7 @@ export function PinnedMessagesDialog({
   messages,
   onOpenChange,
   onOpenLink,
+  onProfileContextMenu,
   open,
   serverId,
 }: {
@@ -28,6 +31,10 @@ export function PinnedMessagesDialog({
   messages?: PinnedMessage[];
   onOpenChange: (open: boolean) => void;
   onOpenLink: (url: string) => void;
+  onProfileContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    user: { name?: string | null; userId: string },
+  ) => void;
   open: boolean;
   serverId?: string;
 }) {
@@ -58,6 +65,7 @@ export function PinnedMessagesDialog({
                   user={author}
                   serverId={serverId}
                   className="h-10 w-10"
+                  onContextMenu={(event) => onProfileContextMenu(event, author)}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
@@ -68,26 +76,12 @@ export function PinnedMessagesDialog({
                       {formatMessageTime(message.createdAt)}
                     </time>
                   </div>
-                  {message.isBlocked ? (
-                    <details className="rounded-md border border-[#18221f]/10 bg-[#f1e4d0] px-3 py-2 text-sm text-[#53615a]">
-                      <summary className="cursor-pointer font-medium">
-                        ブロック関係にあるユーザーのメッセージ
-                      </summary>
-                      <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                        <MessageText
-                          content={message.content}
-                          onOpenLink={onOpenLink}
-                        />
-                      </p>
-                    </details>
-                  ) : (
-                    <p className="leading-7 break-words whitespace-pre-wrap">
-                      <MessageText
-                        content={message.content}
-                        onOpenLink={onOpenLink}
-                      />
-                    </p>
-                  )}
+                  <p className="leading-7 break-words whitespace-pre-wrap">
+                    <MessageText
+                      content={message.content}
+                      onOpenLink={onOpenLink}
+                    />
+                  </p>
                 </div>
               </article>
             );

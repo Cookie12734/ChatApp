@@ -411,12 +411,17 @@ export const serverRouter = createTRPCRouter({
         },
         select: { blockedId: true, blockerId: true },
       });
-      const blockedPeerIds = new Set(getBlockedPeerIds(currentUserId, blocks));
-      const messageWhere = getServerMessageWhere({
-        channelId: channel.id,
-        channelName: channel.name,
-        serverId: input.serverId,
-      });
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const messageWhere = {
+        ...getServerMessageWhere({
+          channelId: channel.id,
+          channelName: channel.name,
+          serverId: input.serverId,
+        }),
+        ...(blockedPeerIds.length > 0
+          ? { senderId: { notIn: blockedPeerIds } }
+          : {}),
+      };
       const messageInclude = {
         sender: {
           select: {
@@ -474,16 +479,8 @@ export const serverRouter = createTRPCRouter({
         currentUser,
         readAt: channelRead?.readAt ?? null,
         server,
-        pinnedMessages: pinnedMessages.map((message) => ({
-          ...message,
-          isBlocked: blockedPeerIds.has(message.senderId),
-        })),
-        ...prepareMessagePage(
-          messages.map((message) => ({
-            ...message,
-            isBlocked: blockedPeerIds.has(message.senderId),
-          })),
-        ),
+        pinnedMessages,
+        ...prepareMessagePage(messages),
       };
     }),
 

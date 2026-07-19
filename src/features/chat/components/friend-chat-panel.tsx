@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Ban,
   Check,
   ChevronDown,
   Copy,
@@ -90,6 +91,14 @@ type EditingMessage =
 type MessageContextMenu =
   | { kind: "direct"; messageId: string; x: number; y: number }
   | { kind: "server"; messageId: string; x: number; y: number };
+type ProfileContextUser = {
+  name?: string | null;
+  userId: string;
+};
+type ProfileContextMenu = ProfileContextUser & {
+  x: number;
+  y: number;
+};
 type PendingMessage = {
   clientId: string;
   content: string;
@@ -134,10 +143,15 @@ function getErrorMessage(error: unknown) {
 
 function FriendListItem({
   item,
+  onProfileContextMenu,
   onSelect,
   selected,
 }: {
   item: ChatFriend;
+  onProfileContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    user: ProfileContextUser,
+  ) => void;
   onSelect: () => void;
   selected: boolean;
 }) {
@@ -157,7 +171,10 @@ function FriendListItem({
           : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
       }`}
     >
-      <div className="relative shrink-0">
+      <div
+        className="relative shrink-0"
+        onContextMenu={(event) => onProfileContextMenu(event, item.friend)}
+      >
         <Avatar
           user={item.friend}
           className="h-10 w-10 rounded-full border border-black/10"
@@ -209,6 +226,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   } | null>(null);
   const [messageContextMenu, setMessageContextMenu] =
     useState<MessageContextMenu | null>(null);
+  const [profileContextMenu, setProfileContextMenu] =
+    useState<ProfileContextMenu | null>(null);
   const [editingMessage, setEditingMessage] = useState<EditingMessage | null>(
     null,
   );
@@ -476,7 +495,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     ? serverMessages.filter(
         (chatMessage) =>
           chatMessage.senderId !== serverConversationData.currentUser.id &&
-          !chatMessage.isBlocked &&
           chatMessage.createdAt.getTime() > serverReadAt,
       )
     : [];
@@ -665,9 +683,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   }, [channelContextMenu]);
 
   useEffect(() => {
-    if (!messageContextMenu) return;
+    if (!messageContextMenu && !profileContextMenu) return;
 
-    const closeMenu = () => setMessageContextMenu(null);
+    const closeMenu = () => {
+      setMessageContextMenu(null);
+      setProfileContextMenu(null);
+    };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeMenu();
@@ -685,10 +706,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       window.removeEventListener("scroll", closeMenu, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [messageContextMenu]);
+  }, [messageContextMenu, profileContextMenu]);
 
   useEffect(() => {
     setMessageContextMenu(null);
+    setProfileContextMenu(null);
     setEditingMessage(null);
     setIsPinnedMessagesOpen(false);
     setIsMemberListOpen(false);
@@ -897,6 +919,32 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       await utils.chat.getMatchingStatus.invalidate();
     },
     onError: (error) => setMatchingMessage(getErrorMessage(error)),
+  });
+
+  const blockUser = api.friend.blockUser.useMutation({
+    onSuccess: async (result) => {
+      setProfileContextMenu(null);
+      if (selectedFriendId === result.blockedId) {
+        setSelectedFriendId(null);
+      }
+      await Promise.all([
+        utils.chat.getConversation.invalidate(),
+        utils.chat.getFriends.invalidate(),
+        utils.chat.getMatchingStatus.invalidate(),
+        utils.friend.getOverview.invalidate(),
+        utils.profile.getByUserId.invalidate(),
+        utils.server.getConversation.invalidate(),
+        utils.server.getOverview.invalidate(),
+      ]);
+    },
+    onError: (error) => {
+      const errorMessage = getErrorMessage(error);
+      if (selectedServerId) {
+        setServerMessage(errorMessage);
+      } else {
+        setMessage(errorMessage);
+      }
+    },
   });
 
   useEffect(() => {
@@ -1190,6 +1238,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event.preventDefault();
     event.stopPropagation();
     setSelectedServerChannelId(channel.id);
+    setMessageContextMenu(null);
+    setProfileContextMenu(null);
     setChannelContextMenu({
       channelId: channel.id,
       x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
@@ -1523,6 +1573,43 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     });
   };
 
+  const openProfileContextMenu = (
+    event: MouseEvent<HTMLElement>,
+    user: ProfileContextUser,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setChannelContextMenu(null);
+    setMessageContextMenu(null);
+    setProfileContextMenu(null);
+
+    const currentUserId =
+      currentServerUser?.userId ??
+      directConversation?.currentUser.userId ??
+      serverConversationData?.currentUser.userId;
+    if (user.userId === currentUserId) return;
+
+    setProfileContextMenu({
+      name: user.name,
+      userId: user.userId,
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - 192)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - 56)),
+    });
+  };
+
+  const handleBlockUser = () => {
+    if (!profileContextMenu) return;
+    if (
+      !window.confirm(
+        `${getDisplayName(profileContextMenu)}をブロックしますか？`,
+      )
+    ) {
+      return;
+    }
+
+    blockUser.mutate({ userId: profileContextMenu.userId });
+  };
+
   const openDirectMessageMenu = (
     event: MouseEvent<HTMLElement>,
     chatMessage: { id: string; senderId: string },
@@ -1530,6 +1617,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event.preventDefault();
     event.stopPropagation();
     setChannelContextMenu(null);
+    setProfileContextMenu(null);
     setMessageContextMenu({
       kind: "direct",
       messageId: chatMessage.id,
@@ -1545,6 +1633,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event.preventDefault();
     event.stopPropagation();
     setChannelContextMenu(null);
+    setProfileContextMenu(null);
     setMessageContextMenu({
       kind: "server",
       messageId: chatMessage.id,
@@ -2025,6 +2114,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <FriendListItem
                   key={item.friend.id}
                   item={item}
+                  onProfileContextMenu={openProfileContextMenu}
                   onSelect={() => selectFriend(item.friend.id)}
                   selected={item.friend.id === selectedFriendId}
                 />
@@ -2105,7 +2195,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </div>
             ) : selectedFriend ? (
               <>
-                <ProfileAvatar user={selectedFriend} className="h-8 w-8" />
+                <ProfileAvatar
+                  user={selectedFriend}
+                  className="h-8 w-8"
+                  onContextMenu={(event) =>
+                    openProfileContextMenu(event, selectedFriend)
+                  }
+                />
                 <div className="min-w-0">
                   <h1 className="truncate font-semibold">
                     {getDisplayName(selectedFriend)}
@@ -2272,6 +2368,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 user={author}
                                 serverId={selectedServer.server.id}
                                 className="mt-1 h-10 w-10"
+                                onContextMenu={(event) =>
+                                  openProfileContextMenu(event, author)
+                                }
                               />
                             )}
                             <div className="min-w-0 flex-1 text-left">
@@ -2331,18 +2430,6 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     </button>
                                   </div>
                                 </form>
-                              ) : chatMessage.isBlocked ? (
-                                <details className="rounded-md border border-[#18221f]/10 bg-[#f1e4d0] px-3 py-2 text-left text-sm text-[#53615a]">
-                                  <summary className="cursor-pointer font-medium">
-                                    ブロック関係にあるユーザーのメッセージ
-                                  </summary>
-                                  <p className="mt-2 leading-7 break-words whitespace-pre-wrap text-[#18221f]">
-                                    <MessageText
-                                      content={chatMessage.content}
-                                      onOpenLink={setPendingExternalLink}
-                                    />
-                                  </p>
-                                </details>
                               ) : (
                                 <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
                                   <MessageText
@@ -2465,6 +2552,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           <ProfileAvatar
                             user={directConversation.friend}
                             className="mb-4 h-20 w-20"
+                            onContextMenu={(event) =>
+                              openProfileContextMenu(
+                                event,
+                                directConversation.friend,
+                              )
+                            }
                           />
                           <h2 className="text-3xl font-semibold">
                             {getDisplayName(directConversation.friend)}
@@ -2538,6 +2631,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 <ProfileAvatar
                                   user={author}
                                   className="mt-1 h-10 w-10"
+                                  onContextMenu={(event) =>
+                                    openProfileContextMenu(event, author)
+                                  }
                                 />
                               )}
                               <div className="min-w-0 flex-1 text-left">
@@ -2835,6 +2931,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               isUpdatingRole={updateServerMemberRole.isPending}
               members={selectedServerMembers}
               onClose={() => setIsMemberListOpen(false)}
+              onProfileContextMenu={openProfileContextMenu}
               onRemove={handleRemoveServerMember}
               onUpdateRole={handleUpdateServerMemberRole}
               serverId={selectedServer.server.id}
@@ -2988,6 +3085,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         messages={serverConversationData?.pinnedMessages}
         onOpenChange={setIsPinnedMessagesOpen}
         onOpenLink={setPendingExternalLink}
+        onProfileContextMenu={openProfileContextMenu}
         open={isPinnedMessagesOpen}
         serverId={selectedServer?.server.id}
       />
@@ -3025,6 +3123,28 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             削除
+          </button>
+        </div>
+      )}
+
+      {profileContextMenu && (
+        <div
+          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          style={{ left: profileContextMenu.x, top: profileContextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+          onContextMenu={(event) => event.preventDefault()}
+          role="menu"
+          aria-label={`${getDisplayName(profileContextMenu)}のプロフィール操作`}
+        >
+          <button
+            type="button"
+            onClick={handleBlockUser}
+            disabled={blockUser.isPending}
+            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-wait disabled:opacity-45"
+            role="menuitem"
+          >
+            <Ban className="h-4 w-4" aria-hidden="true" />
+            {blockUser.isPending ? "ブロック中..." : "ブロック"}
           </button>
         </div>
       )}

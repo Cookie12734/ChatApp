@@ -1,4 +1,4 @@
-import type { RefObject } from "react";
+import type { MouseEvent, RefObject } from "react";
 
 import { splitMessageLinks } from "~/features/chat/message-links";
 import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
@@ -64,23 +64,27 @@ export function Avatar({
 
 export function ProfileAvatar({
   className,
+  onContextMenu,
   serverId,
   user,
 }: {
   className: string;
+  onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   serverId?: string;
   user: ChatUser;
 }) {
   return (
-    <UserProfileDialog serverId={serverId} userId={user.userId}>
-      <button
-        type="button"
-        className={`${className} inline-flex shrink-0 overflow-hidden rounded-full border border-black/10 focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none`}
-        aria-label={`${getDisplayName(user)}のプロフィールを開く`}
-      >
-        <Avatar user={user} className="h-full w-full rounded-full" />
-      </button>
-    </UserProfileDialog>
+    <span className="contents" onContextMenu={onContextMenu}>
+      <UserProfileDialog serverId={serverId} userId={user.userId}>
+        <button
+          type="button"
+          className={`${className} inline-flex shrink-0 overflow-hidden rounded-full border border-black/10 focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none`}
+          aria-label={`${getDisplayName(user)}のプロフィールを開く`}
+        >
+          <Avatar user={user} className="h-full w-full rounded-full" />
+        </button>
+      </UserProfileDialog>
+    </span>
   );
 }
 

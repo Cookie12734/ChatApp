@@ -460,9 +460,7 @@ export const friendRouter = createTRPCRouter({
           where: {
             OR: [
               { userId: currentUserId },
-              { userId: blocked.id },
-              { matchedUserId: currentUserId },
-              { matchedUserId: blocked.id },
+              { userId: blocked.id, matchedUserId: currentUserId },
             ],
           },
         });
