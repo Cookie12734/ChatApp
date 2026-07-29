@@ -6,9 +6,14 @@ import {
   getBlockedPeerIds,
   getVisibleFriendNotificationWhere,
 } from "~/features/friend/server/blocking";
-import { canCancelFriendRequest } from "~/features/friend/server/friend-request-permissions";
+import {
+  canCancelFriendRequest,
+  getFriendRequestLockIds,
+  getPendingFriendRequestWhere,
+} from "~/features/friend/server/friend-request-permissions";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { addProfileImageUrl } from "~/lib/static-image";
 
 const userIdSchema = z
   .string()
@@ -30,7 +35,7 @@ export const friendRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
       include: {
         blocked: {
-          select: { id: true, userId: true, name: true, image: true },
+          select: { id: true, userId: true, name: true },
         },
       },
     });
@@ -50,7 +55,7 @@ export const friendRouter = createTRPCRouter({
     ] = await Promise.all([
       ctx.db.user.findUniqueOrThrow({
         where: { id: currentUserId },
-        select: { id: true, userId: true, name: true, image: true },
+        select: { id: true, userId: true, name: true },
       }),
       ctx.db.friendship.findMany({
         where: {
@@ -62,7 +67,7 @@ export const friendRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         include: {
           friend: {
-            select: { id: true, userId: true, name: true, image: true },
+            select: { id: true, userId: true, name: true },
           },
         },
       }),
@@ -77,7 +82,7 @@ export const friendRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         include: {
           sender: {
-            select: { id: true, userId: true, name: true, image: true },
+            select: { id: true, userId: true, name: true },
           },
         },
       }),
@@ -92,7 +97,7 @@ export const friendRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         include: {
           receiver: {
-            select: { id: true, userId: true, name: true, image: true },
+            select: { id: true, userId: true, name: true },
           },
         },
       }),
@@ -107,12 +112,26 @@ export const friendRouter = createTRPCRouter({
     ]);
 
     return {
-      currentUser,
-      friends,
-      incomingRequests,
-      outgoingRequests,
+      currentUser: addProfileImageUrl(currentUser),
+      friends: friends.map((friendship) => ({
+        ...friendship,
+        friend: addProfileImageUrl(friendship.friend),
+      })),
+      incomingRequests: incomingRequests.map((request) => ({
+        ...request,
+        sender: addProfileImageUrl(request.sender),
+      })),
+      outgoingRequests: outgoingRequests.map((request) => ({
+        ...request,
+        receiver: addProfileImageUrl(request.receiver),
+      })),
       notifications,
-      blockedUsers: blocks.filter((block) => block.blockerId === currentUserId),
+      blockedUsers: blocks
+        .filter((block) => block.blockerId === currentUserId)
+        .map((block) => ({
+          ...block,
+          blocked: addProfileImageUrl(block.blocked),
+        })),
       unreadNotificationCount,
     };
   }),
@@ -150,46 +169,61 @@ export const friendRouter = createTRPCRouter({
           message: "自分自身にフレンド申請はできません",
         });
       }
-      await assertNotBlocked(ctx.db, currentUserId, receiver.id);
-
-      const existingFriendship = await ctx.db.friendship.findUnique({
-        where: {
-          userId_friendId: {
-            userId: currentUserId,
-            friendId: receiver.id,
-          },
-        },
-      });
-
-      if (existingFriendship) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "このユーザーはすでにフレンドです",
-        });
-      }
-
-      const reversePendingRequest = await ctx.db.friendRequest.findUnique({
-        where: {
-          senderId_receiverId: {
-            senderId: receiver.id,
-            receiverId: currentUserId,
-          },
-        },
-      });
-
-      if (reversePendingRequest?.status === "PENDING") {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "このユーザーからのフレンド申請が届いています",
-        });
-      }
-
-      const sender = await ctx.db.user.findUniqueOrThrow({
-        where: { id: currentUserId },
-        select: { userId: true, name: true },
-      });
+      const [firstUserId, secondUserId] = getFriendRequestLockIds(
+        currentUserId,
+        receiver.id,
+      );
 
       return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+        await assertNotBlocked(tx, currentUserId, receiver.id);
+
+        const [existingFriendship, reversePendingRequest, sender] =
+          await Promise.all([
+            tx.friendship.findUnique({
+              where: {
+                userId_friendId: {
+                  userId: currentUserId,
+                  friendId: receiver.id,
+                },
+              },
+              select: { id: true },
+            }),
+            tx.friendRequest.findUnique({
+              where: {
+                senderId_receiverId: {
+                  senderId: receiver.id,
+                  receiverId: currentUserId,
+                },
+              },
+              select: { status: true },
+            }),
+            tx.user.findUniqueOrThrow({
+              where: { id: currentUserId },
+              select: { userId: true, name: true },
+            }),
+          ]);
+
+        if (existingFriendship) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "このユーザーはすでにフレンドです",
+          });
+        }
+
+        if (reversePendingRequest?.status === "PENDING") {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "このユーザーからのフレンド申請が届いています",
+          });
+        }
+
         const request = await tx.friendRequest.upsert({
           where: {
             senderId_receiverId: {
@@ -242,13 +276,32 @@ export const friendRouter = createTRPCRouter({
           message: "このフレンド申請は処理済みです",
         });
       }
-      await assertNotBlocked(ctx.db, request.senderId, request.receiverId);
+      const [firstUserId, secondUserId] = getFriendRequestLockIds(
+        request.senderId,
+        request.receiverId,
+      );
 
       return ctx.db.$transaction(async (tx) => {
-        const acceptedRequest = await tx.friendRequest.update({
-          where: { id: request.id },
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+        await assertNotBlocked(tx, request.senderId, request.receiverId);
+
+        const transition = await tx.friendRequest.updateMany({
+          where: getPendingFriendRequestWhere(request.id, currentUserId),
           data: { status: "ACCEPTED" },
         });
+
+        if (transition.count !== 1) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "このフレンド申請は処理済みです",
+          });
+        }
 
         await tx.friendship.createMany({
           data: [
@@ -276,7 +329,9 @@ export const friendRouter = createTRPCRouter({
           data: { readAt: new Date() },
         });
 
-        return acceptedRequest;
+        return tx.friendRequest.findUniqueOrThrow({
+          where: { id: request.id },
+        });
       });
     }),
 
@@ -304,10 +359,17 @@ export const friendRouter = createTRPCRouter({
       }
 
       return ctx.db.$transaction(async (tx) => {
-        const declinedRequest = await tx.friendRequest.update({
-          where: { id: request.id },
+        const transition = await tx.friendRequest.updateMany({
+          where: getPendingFriendRequestWhere(request.id, currentUserId),
           data: { status: "DECLINED" },
         });
+
+        if (transition.count !== 1) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "このフレンド申請は処理済みです",
+          });
+        }
 
         await tx.notification.updateMany({
           where: {
@@ -318,7 +380,9 @@ export const friendRouter = createTRPCRouter({
           data: { readAt: new Date() },
         });
 
-        return declinedRequest;
+        return tx.friendRequest.findUniqueOrThrow({
+          where: { id: request.id },
+        });
       });
     }),
 
@@ -422,8 +486,20 @@ export const friendRouter = createTRPCRouter({
           message: "自分自身はブロックできません",
         });
       }
+      const [firstUserId, secondUserId] = getFriendRequestLockIds(
+        currentUserId,
+        blocked.id,
+      );
 
       return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+
         const block = await tx.userBlock.upsert({
           where: {
             blockerId_blockedId: {

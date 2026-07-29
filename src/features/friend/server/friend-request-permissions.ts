@@ -9,3 +9,14 @@ export function canCancelFriendRequest(
 ) {
   return request?.senderId === currentUserId && request.status === "PENDING";
 }
+
+export function getFriendRequestLockIds(userAId: string, userBId: string) {
+  return [userAId, userBId].sort();
+}
+
+export function getPendingFriendRequestWhere(
+  requestId: string,
+  receiverId: string,
+) {
+  return { id: requestId, receiverId, status: "PENDING" as const };
+}
