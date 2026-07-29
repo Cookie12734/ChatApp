@@ -5,7 +5,10 @@ import { z } from "zod";
 
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
 import { getEffectivePresenceStatus } from "~/features/profile/presence";
+import { isSameServerMessage } from "~/features/chat/server/message-idempotency";
 import {
+  decodeMessageCursor,
+  getMessageCursorWhere,
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
 } from "~/features/chat/message-page";
@@ -21,6 +24,11 @@ import { addUnreadCountsToServerChannels } from "~/features/server/server/server
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { addProfileImageUrl, getServerImageUrl } from "~/lib/static-image";
+
+const MAX_CREATED_SERVERS = 10;
+const MAX_JOINED_SERVERS = 100;
+const MAX_SERVER_CHANNELS = 50;
 
 const serverInput = z.object({
   name: z
@@ -90,6 +98,7 @@ const markChannelReadInput = channelIdInput.extend({
 
 const sendMessageInput = serverIdInput.extend({
   channelId: z.string().min(1).optional(),
+  clientId: z.string().uuid(),
   content: z
     .string()
     .trim()
@@ -150,7 +159,6 @@ export const serverRouter = createTRPCRouter({
           id: true,
           userId: true,
           name: true,
-          image: true,
           presenceStatus: true,
         },
       }),
@@ -159,7 +167,14 @@ export const serverRouter = createTRPCRouter({
         orderBy: { createdAt: "asc" },
         include: {
           server: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              inviteCode: true,
+              createdById: true,
+              createdAt: true,
+              updatedAt: true,
               channels: {
                 orderBy: { createdAt: "asc" },
               },
@@ -258,7 +273,7 @@ export const serverRouter = createTRPCRouter({
           });
 
     return {
-      currentUser,
+      currentUser: addProfileImageUrl(currentUser),
       memberships: normalizedMemberships.map((membership) => {
         return {
           ...membership,
@@ -271,6 +286,7 @@ export const serverRouter = createTRPCRouter({
             inviteCode: canManageServer(membership.role)
               ? membership.server.inviteCode
               : null,
+            image: getServerImageUrl(membership.server.id),
           },
         };
       }),
@@ -287,6 +303,7 @@ export const serverRouter = createTRPCRouter({
         },
         select: {
           members: {
+            take: 250,
             orderBy: { createdAt: "asc" },
             include: {
               user: {
@@ -294,7 +311,6 @@ export const serverRouter = createTRPCRouter({
                   id: true,
                   userId: true,
                   name: true,
-                  image: true,
                   lastSeenAt: true,
                   presenceStatus: true,
                 },
@@ -317,7 +333,7 @@ export const serverRouter = createTRPCRouter({
         return {
           ...member,
           user: {
-            ...user,
+            ...addProfileImageUrl(user),
             presenceStatus: getEffectivePresenceStatus(
               user.presenceStatus,
               lastSeenAt,
@@ -332,27 +348,63 @@ export const serverRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
 
-      const server = await ctx.db.chatServer.create({
-        data: {
-          name: input.name,
-          description: normalizeDescription(input.description),
-          createdById: currentUserId,
-          channels: {
-            create: {
-              name: "general",
-            },
-          },
-          members: {
-            create: {
-              userId: currentUserId,
-              role: "OWNER",
-            },
-          },
+      await enforceTRPCRateLimits([
+        {
+          limit: 3,
+          scope: "server:create:user",
+          subject: currentUserId,
+          windowMs: 10 * 60 * 1000,
         },
-        select: { id: true },
-      });
+      ]);
 
-      return server;
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" = ${currentUserId}
+          FOR UPDATE
+        `;
+
+        const [serverCount, membershipCount] = await Promise.all([
+          tx.chatServer.count({
+            where: { createdById: currentUserId },
+          }),
+          tx.serverMember.count({ where: { userId: currentUserId } }),
+        ]);
+
+        if (serverCount >= MAX_CREATED_SERVERS) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "作成できるサーバーは10件までです",
+          });
+        }
+        if (membershipCount >= MAX_JOINED_SERVERS) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "参加できるサーバーは100件までです",
+          });
+        }
+
+        return tx.chatServer.create({
+          data: {
+            name: input.name,
+            description: normalizeDescription(input.description),
+            createdById: currentUserId,
+            channels: {
+              create: {
+                name: "general",
+              },
+            },
+            members: {
+              create: {
+                userId: currentUserId,
+                role: "OWNER",
+              },
+            },
+          },
+          select: { id: true },
+        });
+      });
     }),
 
   getConversation: protectedProcedure
@@ -384,18 +436,9 @@ export const serverRouter = createTRPCRouter({
               serverId: input.serverId,
             },
           })
-        : await ctx.db.serverChannel.upsert({
-            where: {
-              serverId_name: {
-                serverId: input.serverId,
-                name: "general",
-              },
-            },
-            create: {
-              name: "general",
-              serverId: input.serverId,
-            },
-            update: {},
+        : await ctx.db.serverChannel.findFirst({
+            where: { serverId: input.serverId },
+            orderBy: { createdAt: "asc" },
           });
 
       if (!channel) {
@@ -428,7 +471,6 @@ export const serverRouter = createTRPCRouter({
             id: true,
             userId: true,
             name: true,
-            image: true,
             serverMemberships: {
               where: { serverId: input.serverId },
               select: { nickname: true },
@@ -436,12 +478,20 @@ export const serverRouter = createTRPCRouter({
           },
         },
       };
+      const stableCursor = decodeMessageCursor(input.cursor);
+      const legacyCursor =
+        input.cursor && !stableCursor
+          ? await ctx.db.serverMessage.findFirst({
+              where: { id: input.cursor, ...messageWhere },
+              select: { id: true },
+            })
+          : null;
 
       const [currentUser, server, messages, pinnedMessages, channelRead] =
         await Promise.all([
           ctx.db.user.findUniqueOrThrow({
             where: { id: currentUserId },
-            select: { id: true, userId: true, name: true, image: true },
+            select: { id: true, userId: true, name: true },
           }),
           ctx.db.chatServer.findUniqueOrThrow({
             where: { id: input.serverId },
@@ -452,8 +502,13 @@ export const serverRouter = createTRPCRouter({
             },
           }),
           ctx.db.serverMessage.findMany({
-            cursor: input.cursor ? { id: input.cursor } : undefined,
-            where: messageWhere,
+            cursor: legacyCursor ? { id: legacyCursor.id } : undefined,
+            where: {
+              ...messageWhere,
+              ...(stableCursor
+                ? { AND: [getMessageCursorWhere(stableCursor)] }
+                : {}),
+            },
             orderBy: [{ createdAt: "desc" }, { id: "desc" }],
             take: MESSAGE_PAGE_SIZE + 1,
             include: messageInclude,
@@ -476,11 +531,19 @@ export const serverRouter = createTRPCRouter({
         ]);
       return {
         channel,
-        currentUser,
+        currentUser: addProfileImageUrl(currentUser),
         readAt: channelRead?.readAt ?? null,
         server,
-        pinnedMessages,
-        ...prepareMessagePage(messages),
+        pinnedMessages: pinnedMessages.map((message) => ({
+          ...message,
+          sender: addProfileImageUrl(message.sender),
+        })),
+        ...prepareMessagePage(
+          messages.map((message) => ({
+            ...message,
+            sender: addProfileImageUrl(message.sender),
+          })),
+        ),
       };
     }),
 
@@ -620,18 +683,9 @@ export const serverRouter = createTRPCRouter({
             },
             select: { id: true },
           })
-        : await ctx.db.serverChannel.upsert({
-            where: {
-              serverId_name: {
-                serverId: input.serverId,
-                name: "general",
-              },
-            },
-            create: {
-              name: "general",
-              serverId: input.serverId,
-            },
-            update: {},
+        : await ctx.db.serverChannel.findFirst({
+            where: { serverId: input.serverId },
+            orderBy: { createdAt: "asc" },
             select: { id: true },
           });
 
@@ -642,14 +696,36 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      const message = await ctx.db.serverMessage.create({
-        data: {
+      const content = input.content.trim();
+      const message = await ctx.db.serverMessage.upsert({
+        where: {
+          senderId_clientId: {
+            clientId: input.clientId,
+            senderId: currentUserId,
+          },
+        },
+        create: {
           channelId: channel.id,
-          content: input.content.trim(),
+          clientId: input.clientId,
+          content,
           senderId: currentUserId,
           serverId: input.serverId,
         },
+        update: { clientId: input.clientId },
       });
+
+      if (
+        !isSameServerMessage(message, {
+          channelId: channel.id,
+          content,
+          serverId: input.serverId,
+        })
+      ) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "同じ送信IDを別のメッセージには使用できません",
+        });
+      }
 
       void publishChatEvent(ctx.db, {
         change: "created",
@@ -827,45 +903,65 @@ export const serverRouter = createTRPCRouter({
   createChannel: protectedProcedure
     .input(channelInput)
     .mutation(async ({ ctx, input }) => {
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: ctx.session.user.id,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: ctx.session.user.id,
+            },
           },
-        },
-        select: { role: true },
-      });
-
-      if (!canManageServer(membership?.role)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "チャンネルを追加できるのは管理者だけです",
+          select: { role: true },
         });
-      }
 
-      const existing = await ctx.db.serverChannel.findUnique({
-        where: {
-          serverId_name: {
-            serverId: input.serverId,
+        if (!canManageServer(membership?.role)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "チャンネルを追加できるのは管理者だけです",
+          });
+        }
+
+        const existing = await tx.serverChannel.findUnique({
+          where: {
+            serverId_name: {
+              serverId: input.serverId,
+              name: input.name,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (existing) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "同じ名前のチャンネルがあります",
+          });
+        }
+
+        const channelCount = await tx.serverChannel.count({
+          where: { serverId: input.serverId },
+        });
+
+        if (channelCount >= MAX_SERVER_CHANNELS) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "チャンネルは50件までです",
+          });
+        }
+
+        return tx.serverChannel.create({
+          data: {
             name: input.name,
+            serverId: input.serverId,
           },
-        },
-        select: { id: true },
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "同じ名前のチャンネルがあります",
         });
-      }
-
-      return ctx.db.serverChannel.create({
-        data: {
-          name: input.name,
-          serverId: input.serverId,
-        },
       });
     }),
 
@@ -932,51 +1028,60 @@ export const serverRouter = createTRPCRouter({
   deleteChannel: protectedProcedure
     .input(channelIdInput)
     .mutation(async ({ ctx, input }) => {
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: ctx.session.user.id,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: ctx.session.user.id,
+            },
           },
-        },
-        select: { role: true },
-      });
-
-      if (!canManageServer(membership?.role)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "チャンネルを削除できるのは管理者だけです",
+          select: { role: true },
         });
-      }
 
-      const channelCount = await ctx.db.serverChannel.count({
-        where: { serverId: input.serverId },
-      });
+        if (!canManageServer(membership?.role)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "チャンネルを削除できるのは管理者だけです",
+          });
+        }
 
-      if (channelCount <= 1) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "最後のチャンネルは削除できません",
+        const channelCount = await tx.serverChannel.count({
+          where: { serverId: input.serverId },
         });
-      }
 
-      const channel = await ctx.db.serverChannel.findFirst({
-        where: {
-          id: input.channelId,
-          serverId: input.serverId,
-        },
-        select: { id: true },
-      });
+        if (channelCount <= 1) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "最後のチャンネルは削除できません",
+          });
+        }
 
-      if (!channel) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "チャンネルが見つかりません",
+        const channel = await tx.serverChannel.findFirst({
+          where: {
+            id: input.channelId,
+            serverId: input.serverId,
+          },
+          select: { id: true },
         });
-      }
 
-      return ctx.db.serverChannel.delete({
-        where: { id: input.channelId },
+        if (!channel) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "チャンネルが見つかりません",
+          });
+        }
+
+        return tx.serverChannel.delete({
+          where: { id: input.channelId },
+        });
       });
     }),
 
@@ -1041,52 +1146,59 @@ export const serverRouter = createTRPCRouter({
     .input(memberRoleInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: currentUserId,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
           },
-        },
-        select: {
-          role: true,
-          server: { select: { createdById: true } },
-        },
-      });
-
-      if (
-        !membership ||
-        !isServerOwner(membership.server.createdById, currentUserId)
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "メンバー権限を変更できるのはサーバー所有者だけです",
+          select: {
+            role: true,
+            server: { select: { createdById: true } },
+          },
         });
-      }
 
-      const target = await ctx.db.serverMember.findFirst({
-        where: { id: input.memberId, serverId: input.serverId },
-        select: { id: true, userId: true },
-      });
+        if (
+          !membership ||
+          !isServerOwner(membership.server.createdById, currentUserId)
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "メンバー権限を変更できるのはサーバー所有者だけです",
+          });
+        }
 
-      if (!target) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "メンバーが見つかりません",
+        const target = await tx.serverMember.findFirst({
+          where: { id: input.memberId, serverId: input.serverId },
+          select: { id: true, userId: true },
         });
-      }
 
-      if (
-        !canManageServerMember(membership.role, currentUserId, target.userId)
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "自分の権限は変更できません",
-        });
-      }
+        if (!target) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "メンバーが見つかりません",
+          });
+        }
 
-      if (input.role === "OWNER") {
-        return ctx.db.$transaction(async (tx) => {
+        if (
+          !canManageServerMember(membership.role, currentUserId, target.userId)
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "自分の権限は変更できません",
+          });
+        }
+
+        if (input.role === "OWNER") {
           await tx.serverMember.updateMany({
             where: { role: "OWNER", serverId: input.serverId },
             data: { role: "MEMBER" },
@@ -1102,13 +1214,13 @@ export const serverRouter = createTRPCRouter({
           });
 
           return newOwner;
-        });
-      }
+        }
 
-      return ctx.db.serverMember.update({
-        where: { id: target.id },
-        data: { role: input.role },
-        select: { id: true, role: true },
+        return tx.serverMember.update({
+          where: { id: target.id },
+          data: { role: input.role },
+          select: { id: true, role: true },
+        });
       });
     }),
 
@@ -1116,138 +1228,161 @@ export const serverRouter = createTRPCRouter({
     .input(memberIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: currentUserId,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
           },
-        },
-        select: {
-          role: true,
-          server: { select: { createdById: true } },
-        },
-      });
-
-      if (
-        !membership ||
-        !isServerOwner(membership.server.createdById, currentUserId)
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "メンバーを退出させられるのはサーバー所有者だけです",
+          select: {
+            role: true,
+            server: { select: { createdById: true } },
+          },
         });
-      }
 
-      const target = await ctx.db.serverMember.findFirst({
-        where: { id: input.memberId, serverId: input.serverId },
-        select: { id: true, userId: true },
-      });
+        if (
+          !membership ||
+          !isServerOwner(membership.server.createdById, currentUserId)
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "メンバーを退出させられるのはサーバー所有者だけです",
+          });
+        }
 
-      if (!target) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "メンバーが見つかりません",
+        const target = await tx.serverMember.findFirst({
+          where: { id: input.memberId, serverId: input.serverId },
+          select: { id: true, userId: true },
         });
-      }
 
-      if (isServerOwner(membership.server.createdById, target.userId)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "サーバー所有者は退出させられません",
-        });
-      }
+        if (!target) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "メンバーが見つかりません",
+          });
+        }
 
-      if (
-        !canManageServerMember(membership.role, currentUserId, target.userId)
-      ) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "自分はサーバーメニューから退出してください",
-        });
-      }
+        if (isServerOwner(membership.server.createdById, target.userId)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "サーバー所有者は退出させられません",
+          });
+        }
 
-      await ctx.db.$transaction([
-        ctx.db.serverChannelRead.deleteMany({
+        if (
+          !canManageServerMember(membership.role, currentUserId, target.userId)
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "自分はサーバーメニューから退出してください",
+          });
+        }
+
+        await tx.serverChannelRead.deleteMany({
           where: {
             userId: target.userId,
             channel: { serverId: input.serverId },
           },
-        }),
-        ctx.db.serverMember.delete({ where: { id: target.id } }),
-      ]);
-      return { id: target.id };
+        });
+        await tx.serverMember.delete({ where: { id: target.id } });
+        return { id: target.id };
+      });
     }),
 
   deleteServer: protectedProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: currentUserId,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
           },
-        },
-        select: { server: { select: { createdById: true } } },
-      });
-
-      if (
-        !membership ||
-        !isServerOwner(membership.server.createdById, currentUserId)
-      ) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "サーバーを削除できるのはサーバー所有者だけです",
+          select: { server: { select: { createdById: true } } },
         });
-      }
 
-      await ctx.db.chatServer.delete({ where: { id: input.serverId } });
-      return { serverId: input.serverId };
+        if (
+          !membership ||
+          !isServerOwner(membership.server.createdById, currentUserId)
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "サーバーを削除できるのはサーバー所有者だけです",
+          });
+        }
+
+        await tx.chatServer.delete({ where: { id: input.serverId } });
+        return { serverId: input.serverId };
+      });
     }),
 
   leave: protectedProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
-      const membership = await ctx.db.serverMember.findUnique({
-        where: {
-          serverId_userId: {
-            serverId: input.serverId,
-            userId: currentUserId,
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+
+        const membership = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
           },
-        },
-        select: {
-          id: true,
-          server: { select: { createdById: true } },
-        },
-      });
-
-      if (!membership) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "参加しているサーバーが見つかりません",
+          select: {
+            id: true,
+            server: { select: { createdById: true } },
+          },
         });
-      }
 
-      if (isServerOwner(membership.server.createdById, currentUserId)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "所有権を別のメンバーへ移譲してから退出してください",
-        });
-      }
+        if (!membership) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "参加しているサーバーが見つかりません",
+          });
+        }
 
-      await ctx.db.$transaction([
-        ctx.db.serverChannelRead.deleteMany({
+        if (isServerOwner(membership.server.createdById, currentUserId)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "所有権を別のメンバーへ移譲してから退出してください",
+          });
+        }
+
+        await tx.serverChannelRead.deleteMany({
           where: {
             userId: currentUserId,
             channel: { serverId: input.serverId },
           },
-        }),
-        ctx.db.serverMember.delete({ where: { id: membership.id } }),
-      ]);
+        });
+        await tx.serverMember.delete({ where: { id: membership.id } });
 
-      return { serverId: input.serverId };
+        return { serverId: input.serverId };
+      });
     }),
 });

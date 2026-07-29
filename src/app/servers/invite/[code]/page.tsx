@@ -1,4 +1,4 @@
-import { ArrowRight, MessageCircle, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -6,6 +6,7 @@ import { notFound, redirect } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/features/auth";
 import { getAccessibleServerInviteWhere } from "~/features/server/server/invite-access";
+import { getServerImageUrl } from "~/lib/static-image";
 import { db } from "~/server/db";
 
 import { joinServerByInvite } from "./actions";
@@ -13,6 +14,7 @@ import { InviteJoinForm } from "./invite-join-form";
 
 type ServerInvitePageProps = {
   params: Promise<{ code: string }>;
+  searchParams: Promise<{ full?: string; limit?: string }>;
 };
 
 function getInvitePath(code: string) {
@@ -21,8 +23,10 @@ function getInvitePath(code: string) {
 
 export default async function ServerInvitePage({
   params,
+  searchParams,
 }: ServerInvitePageProps) {
   const { code } = await params;
+  const { full, limit } = await searchParams;
   const session = await auth();
   const userId = session?.user?.id;
 
@@ -38,7 +42,6 @@ export default async function ServerInvitePage({
       id: true,
       name: true,
       description: true,
-      image: true,
       _count: {
         select: { members: true },
       },
@@ -60,6 +63,7 @@ export default async function ServerInvitePage({
     server._count.members,
   );
   const description = server.description?.trim();
+  const serverImage = getServerImageUrl(server.id, code);
 
   return (
     <main className="flex min-h-dvh items-center justify-center overflow-x-hidden bg-[#f6f0e4] px-5 py-10 text-[#18221f]">
@@ -68,19 +72,15 @@ export default async function ServerInvitePage({
         aria-labelledby="invite-title"
       >
         <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.75rem] border-4 border-[#fff8ed] bg-[#18221f] text-[#f6f0e4] shadow-[0_0_0_1px_rgba(24,34,31,0.12)]">
-          {server.image ? (
-            <Image
-              src={server.image}
-              alt={`${server.name}のサーバーアイコン`}
-              width={96}
-              height={96}
-              unoptimized
-              priority
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <MessageCircle className="h-10 w-10" aria-hidden="true" />
-          )}
+          <Image
+            src={serverImage}
+            alt={`${server.name}のサーバーアイコン`}
+            width={96}
+            height={96}
+            unoptimized
+            priority
+            className="h-full w-full object-cover"
+          />
         </div>
 
         <p className="mt-6 text-sm font-semibold text-[#9f4122]">
@@ -105,6 +105,22 @@ export default async function ServerInvitePage({
         </p>
 
         <div className="mt-7 border-t border-[#18221f]/10 pt-6">
+          {full === "1" && (
+            <p
+              role="alert"
+              className="mb-4 text-sm font-semibold text-[#9f4122]"
+            >
+              このサーバーは定員（250人）に達しています。
+            </p>
+          )}
+          {limit === "1" && (
+            <p
+              role="alert"
+              className="mb-4 text-sm font-semibold text-[#9f4122]"
+            >
+              参加できるサーバー数の上限（100件）に達しています。
+            </p>
+          )}
           {isMember ? (
             <Button
               asChild
@@ -115,9 +131,9 @@ export default async function ServerInvitePage({
                 <ArrowRight aria-hidden="true" />
               </Link>
             </Button>
-          ) : (
+          ) : full !== "1" && limit !== "1" ? (
             <InviteJoinForm joinAction={joinAction} />
-          )}
+          ) : null}
 
           {!isMember && (
             <p className="mt-3 text-xs leading-5 text-[#68716b]">
