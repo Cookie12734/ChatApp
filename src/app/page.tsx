@@ -8,13 +8,14 @@ type HomePageProps = {
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const session = await auth();
+  const [session, { serverId }] = await Promise.all([auth(), searchParams]);
+  const callbackUrl = serverId
+    ? `/?serverId=${encodeURIComponent(serverId)}`
+    : "/";
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
-
-  const { serverId } = await searchParams;
 
   return <FriendChatPanel initialServerId={serverId} />;
 }

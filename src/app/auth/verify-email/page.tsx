@@ -26,14 +26,20 @@ export default async function VerifyEmailPage({
   const tokenStatus = await getVerificationTokenStatus(token);
 
   if (tokenStatus !== "valid") {
+    const isExpired = tokenStatus === "expired";
+
     return (
       <VerifyEmailResult
         title="確認できませんでした"
         message={
-          tokenStatus === "expired"
-            ? "確認リンクの有効期限が切れています。もう一度登録をお試しください。"
-            : "確認リンクが無効です。もう一度登録をお試しください。"
+          isExpired
+            ? "確認リンクの有効期限が切れています。登録時のメールアドレスとパスワードでログインすると、確認メールを再送できます。"
+            : tokenStatus === "legacy"
+              ? "以前の確認リンクは無効です。新規登録から登録し直してください。"
+              : "確認リンクが無効です。もう一度登録をお試しください。"
         }
+        href={isExpired ? "/auth/login" : "/auth/signup"}
+        linkLabel={isExpired ? "ログインへ" : "新規登録へ戻る"}
       />
     );
   }
@@ -48,7 +54,7 @@ export default async function VerifyEmailPage({
           メールアドレスを確認しますか？
         </h1>
         <p className="mt-4 leading-7 text-[#53615a]">
-          この操作でアカウントが有効になります。登録した覚えがある場合だけ続けてください。
+          登録時のパスワードを入力するとアカウントが有効になります。登録した覚えがない場合は操作せず、このページを閉じてください。
         </p>
         <VerifyEmailForm token={token} />
         <Link
@@ -63,9 +69,13 @@ export default async function VerifyEmailPage({
 }
 
 function VerifyEmailResult({
+  href = "/auth/signup",
+  linkLabel = "新規登録へ戻る",
   title,
   message,
 }: {
+  href?: string;
+  linkLabel?: string;
   title: string;
   message: string;
 }) {
@@ -78,11 +88,11 @@ function VerifyEmailResult({
         <h1 className="mt-6 text-3xl font-semibold">{title}</h1>
         <p className="mt-4 leading-7 text-[#53615a]">{message}</p>
         <Link
-          href="/auth/signup"
+          href={href}
           className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
         >
           <Check className="h-4 w-4" aria-hidden="true" />
-          新規登録へ戻る
+          {linkLabel}
         </Link>
       </section>
     </main>

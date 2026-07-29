@@ -10,13 +10,14 @@ type ProfilePageProps = {
 };
 
 export default async function ProfilePage({ searchParams }: ProfilePageProps) {
-  const session = await auth();
+  const [session, { from }] = await Promise.all([auth(), searchParams]);
+  const callbackUrl = from
+    ? `/profile?from=${encodeURIComponent(from)}`
+    : "/profile";
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
-
-  const { from } = await searchParams;
 
   return (
     <main className="min-h-screen bg-[#f6f0e4] px-5 py-6 text-[#18221f] sm:px-8 lg:px-10">

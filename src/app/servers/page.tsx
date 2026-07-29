@@ -7,13 +7,14 @@ type ServersPageProps = {
 };
 
 export default async function ServersPage({ searchParams }: ServersPageProps) {
-  const session = await auth();
+  const [session, { serverId }] = await Promise.all([auth(), searchParams]);
+  const callbackUrl = serverId
+    ? `/servers?serverId=${encodeURIComponent(serverId)}`
+    : "/servers";
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
-
-  const { serverId } = await searchParams;
 
   redirect(serverId ? `/?serverId=${encodeURIComponent(serverId)}` : "/");
 }

@@ -1,6 +1,7 @@
 import { MessageCircle } from "lucide-react";
 import { redirect } from "next/navigation";
 
+import { env } from "~/env";
 import { auth } from "~/features/auth";
 import { LoginForm } from "~/features/auth/components/login-form";
 import { getSafeInternalRedirect } from "~/features/auth/lib/redirect-path";
@@ -8,15 +9,25 @@ import { getSafeInternalRedirect } from "~/features/auth/lib/redirect-path";
 type LoginPageProps = {
   searchParams: Promise<{
     callbackUrl?: string;
+    deleted?: string;
     reason?: string;
+    reset?: string;
     verified?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
-  const { callbackUrl, reason, verified } = await searchParams;
+  const { callbackUrl, deleted, reason, reset, verified } = await searchParams;
   const redirectTo = getSafeInternalRedirect(callbackUrl);
+  const statusMessage =
+    verified === "1"
+      ? "メールアドレスの確認が完了しました。ログインしてください。"
+      : reset === "1"
+        ? "パスワードを更新しました"
+        : deleted === "1"
+          ? "アカウントを削除しました"
+          : null;
 
   if (session?.user?.id) {
     redirect(redirectTo);
@@ -40,9 +51,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p className="mt-5 leading-8 text-[#53615a]">
             ログインすると、チャットとフレンドの通知へ戻れます。
           </p>
-          {verified === "1" && (
-            <p className="mt-6 rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 py-3 text-sm text-[#114744]">
-              メールアドレスの確認が完了しました。ログインしてください。
+          {statusMessage && (
+            <p
+              className="mt-6 rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 py-3 text-sm text-[#114744]"
+              role="status"
+            >
+              {statusMessage}
             </p>
           )}
           {reason === "session_expired" && (
@@ -57,7 +71,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         <section className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-6 shadow-[10px_10px_0_#d8efee] sm:p-8">
           <h2 className="mb-6 text-2xl font-semibold">ログイン</h2>
-          <LoginForm callbackUrl={redirectTo} />
+          <LoginForm
+            callbackUrl={redirectTo}
+            hasDiscordProvider={Boolean(
+              env.AUTH_DISCORD_ID && env.AUTH_DISCORD_SECRET,
+            )}
+          />
         </section>
       </div>
     </main>

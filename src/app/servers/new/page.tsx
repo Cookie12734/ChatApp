@@ -7,7 +7,7 @@ export default async function NewServerPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect("/auth/login?callbackUrl=%2Fservers%2Fnew");
   }
 
   return <ServerCreate />;

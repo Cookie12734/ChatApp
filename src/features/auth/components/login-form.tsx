@@ -6,10 +6,17 @@ import { useActionState, useState } from "react";
 
 import {
   signInWithCredentials,
+  signInWithDiscord,
   type AuthFormState,
 } from "~/features/auth/actions";
 
-export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
+export function LoginForm({
+  callbackUrl = "/",
+  hasDiscordProvider = false,
+}: {
+  callbackUrl?: string;
+  hasDiscordProvider?: boolean;
+}) {
   const [state, formAction, isPending] = useActionState<
     AuthFormState,
     FormData
@@ -24,7 +31,10 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         {state.error && (
-          <p className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]">
+          <p
+            className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]"
+            role="alert"
+          >
             {state.error}
           </p>
         )}
@@ -38,6 +48,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
             name="email"
             type="email"
             required
+            maxLength={320}
             autoComplete="email"
             value={formValues.email}
             onChange={(event) =>
@@ -63,6 +74,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
             name="password"
             type="password"
             required
+            maxLength={72}
             autoComplete="current-password"
             value={formValues.password}
             onChange={(event) =>
@@ -74,6 +86,12 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
             placeholder="8文字以上"
             className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
           />
+          <Link
+            href="/auth/forgot-password"
+            className="self-end text-sm font-semibold text-[#114744] underline-offset-4 hover:underline"
+          >
+            パスワードを忘れた方
+          </Link>
         </div>
 
         <button
@@ -85,6 +103,18 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
           {!isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
         </button>
       </form>
+
+      {hasDiscordProvider && (
+        <form action={signInWithDiscord}>
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center rounded-md border border-[#18221f]/20 bg-white px-4 py-3 font-semibold text-[#18221f] transition hover:bg-[#f6f0e4]"
+          >
+            Discordでログイン
+          </button>
+        </form>
+      )}
 
       <p className="text-center text-sm text-[#5d665f]">
         アカウントをお持ちでない方は{" "}

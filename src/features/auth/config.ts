@@ -2,19 +2,44 @@ import { randomUUID } from "crypto";
 
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import { type DefaultSession, type NextAuthConfig } from "next-auth";
+import {
+  CredentialsSignin,
+  type DefaultSession,
+  type NextAuthConfig,
+} from "next-auth";
+import type {} from "next-auth/jwt";
 import { type Adapter, type AdapterUser } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 
+import {
+  getCredentialsLoginRateLimitRules,
+  isBcryptPasswordSupported,
+} from "~/features/auth/lib/credential-policy";
 import { normalizeEmailAddress } from "~/features/auth/lib/email-normalization";
 import { findUserByNormalizedEmail } from "~/features/auth/lib/email-user";
 import {
   getOAuthUserIdCandidate,
   withOAuthUserIdSuffix,
 } from "~/features/auth/lib/oauth-user-id";
-import { hasActiveSessionUser } from "~/features/auth/lib/session-user";
+import { getActiveSessionUser } from "~/features/auth/lib/session-user";
+import { getProfileImageUrl } from "~/lib/static-image";
 import { db } from "~/server/db";
+import { enforceRateLimits } from "~/server/rate-limit";
+import {
+  getRateLimitSubjectFromHeaders,
+  RateLimitExceededError,
+} from "~/server/rate-limit-policy";
+
+class LoginRateLimitError extends CredentialsSignin {
+  code = "rate_limited";
+  readonly retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super();
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -27,6 +52,12 @@ declare module "next-auth" {
     user: {
       id: string;
     } & DefaultSession["user"];
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    sessionVersion?: number;
   }
 }
 
@@ -123,7 +154,7 @@ export const authConfig = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = credentials?.email;
         const password = credentials?.password;
 
@@ -131,8 +162,35 @@ export const authConfig = {
           return null;
         }
 
+        const normalizedInputEmail = normalizeEmailAddress(email);
+
+        try {
+          await enforceRateLimits(
+            getCredentialsLoginRateLimitRules(
+              normalizedInputEmail,
+              getRateLimitSubjectFromHeaders(
+                request.headers.get("x-forwarded-for"),
+                request.headers.get("x-real-ip"),
+              ),
+            ),
+          );
+        } catch (error) {
+          if (error instanceof RateLimitExceededError) {
+            throw new LoginRateLimitError(error.retryAfterSeconds);
+          }
+
+          throw error;
+        }
+
+        if (
+          normalizedInputEmail.length > 320 ||
+          !isBcryptPasswordSupported(password)
+        ) {
+          return null;
+        }
+
         const { isAmbiguous, normalizedEmail, user } =
-          await findUserByNormalizedEmail(email);
+          await findUserByNormalizedEmail(normalizedInputEmail);
 
         if (isAmbiguous || !user?.passwordHash || !user.emailVerified) {
           return null;
@@ -155,7 +213,7 @@ export const authConfig = {
           id: authenticatedUser.id,
           name: authenticatedUser.name,
           email: authenticatedUser.email,
-          image: authenticatedUser.image,
+          image: getProfileImageUrl(authenticatedUser.userId),
         };
       },
     }),
@@ -167,18 +225,37 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id;
+        const sessionUser = await db.user.findUnique({
+          where: { id: user.id },
+          select: { id: true, sessionVersion: true, userId: true },
+        });
+
+        if (!sessionUser) {
+          return null;
+        }
+
+        token.sub = sessionUser.id;
+        token.picture = getProfileImageUrl(sessionUser.userId);
+        token.sessionVersion = sessionUser.sessionVersion;
         return token;
       }
 
-      const hasUser = await hasActiveSessionUser(token.sub, (id) =>
-        db.user.findUnique({
-          where: { id },
-          select: { id: true },
-        }),
+      const sessionUser = await getActiveSessionUser(
+        token.sub,
+        token.sessionVersion,
+        (id) =>
+          db.user.findUnique({
+            where: { id },
+            select: { id: true, sessionVersion: true, userId: true },
+          }),
       );
 
-      return hasUser ? token : null;
+      if (!sessionUser) {
+        return null;
+      }
+
+      token.picture = getProfileImageUrl(sessionUser.userId);
+      return token;
     },
     session({ session, token }) {
       if (session.user && token.sub) {

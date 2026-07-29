@@ -1,8 +1,18 @@
 "use client";
 
 import { Camera, Save, UserRound } from "lucide-react";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  useActionState,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
+import {
+  deleteAccount,
+  type DeleteAccountState,
+} from "~/features/auth/actions";
 import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
@@ -31,6 +41,11 @@ export function ProfileForm() {
     useState<PresenceStatus>("ONLINE");
   const [message, setMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleteState, deleteAction, isDeleting] = useActionState<
+    DeleteAccountState,
+    FormData
+  >(deleteAccount, {});
 
   useEffect(() => {
     if (!profile.data) return;
@@ -153,7 +168,9 @@ export function ProfileForm() {
                   onChange={uploadIcon}
                 />
               </label>
-              <span className="text-sm text-[#68716b]">PNG / JPG、5MBまで</span>
+              <span className="text-sm text-[#68716b]">
+                PNG / JPG、256KBまで
+              </span>
             </div>
           </label>
 
@@ -297,6 +314,61 @@ export function ProfileForm() {
           </div>
         </div>
       </aside>
+
+      <form
+        action={deleteAction}
+        onSubmit={(event) => {
+          if (deleteConfirmation.trim() !== profile.data?.userId) {
+            event.preventDefault();
+            return;
+          }
+          if (
+            !window.confirm(
+              "アカウントを完全に削除しますか？この操作は取り消せません。",
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
+        className="rounded-md border border-[#cc5f2f]/35 bg-[#fff1e8] p-5 lg:col-span-2"
+      >
+        <h2 className="text-lg font-semibold text-[#9f4122]">アカウント削除</h2>
+        <p className="mt-2 text-sm leading-6 text-[#7f321b]">
+          この操作は取り消せません。所有中のサーバーがある場合は削除できないため、先に所有権を移譲するかサーバーを削除してください。
+        </p>
+        <label className="mt-4 block">
+          <span className="mb-2 block text-sm font-semibold text-[#7f321b]">
+            確認のため現在のユーザーID「{profile.data?.userId}」を入力
+          </span>
+          <input
+            name="userId"
+            value={deleteConfirmation}
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            autoComplete="off"
+            required
+            className="min-h-11 w-full rounded-md border border-[#cc5f2f]/35 bg-white px-4 py-2 text-[#18221f] focus:border-[#9f4122] focus:ring-2 focus:ring-[#ffd8c6] focus:outline-none"
+          />
+        </label>
+        {deleteState.error && (
+          <p
+            className="mt-3 rounded-md border border-[#cc5f2f]/35 bg-white px-3 py-2 text-sm text-[#9f4122]"
+            role="alert"
+          >
+            {deleteState.error}
+          </p>
+        )}
+        <div className="mt-4 flex justify-end">
+          <button
+            type="submit"
+            disabled={
+              isDeleting || deleteConfirmation.trim() !== profile.data?.userId
+            }
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#9f4122] px-4 py-2 font-semibold text-white transition hover:bg-[#7f321b] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isDeleting ? "削除中..." : "アカウントを削除"}
+          </button>
+        </div>
+      </form>
     </section>
   );
 }

@@ -1,7 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
+import {
+  getEmailVerificationCommitRateLimitRules,
+  isBcryptPasswordSupported,
+} from "~/features/auth/lib/credential-policy";
 import { verifyEmailToken } from "~/features/auth/lib/verification-token";
 import {
   getRateLimitMessage,
@@ -19,17 +24,25 @@ export type VerifyEmailState = {
 export async function confirmEmailToken(
   token: string,
   _previousState: VerifyEmailState,
-  _formData: FormData,
+  formData: FormData,
 ): Promise<VerifyEmailState> {
+  const password = z
+    .string()
+    .min(8)
+    .refine(isBcryptPasswordSupported)
+    .safeParse(formData.get("password"));
+
+  if (!password.success) {
+    return { error: "確認リンクまたはパスワードが正しくありません" };
+  }
+
   try {
-    await enforceRateLimits([
-      {
-        limit: 20,
-        scope: "auth:verify-token:address",
-        subject: await getRequestRateLimitSubject(),
-        windowMs: 15 * 60 * 1000,
-      },
-    ]);
+    await enforceRateLimits(
+      getEmailVerificationCommitRateLimitRules(
+        token,
+        await getRequestRateLimitSubject(),
+      ),
+    );
   } catch (error) {
     if (error instanceof RateLimitExceededError) {
       return { error: getRateLimitMessage(error) };
@@ -38,14 +51,20 @@ export async function confirmEmailToken(
     throw error;
   }
 
-  const result = await verifyEmailToken(token);
+  const result = await verifyEmailToken(token, password.data);
 
   if (!result.success) {
+    const error =
+      result.reason === "expired"
+        ? "確認リンクの有効期限が切れています。登録時の情報でログインすると再送できます"
+        : result.reason === "legacy"
+          ? "以前の確認リンクは無効になりました。新規登録から登録し直してください"
+          : result.reason === "conflict"
+            ? "メールアドレスまたはユーザーIDはすでに使用されています。新規登録の内容を確認してください"
+            : "確認リンクまたはパスワードが正しくありません";
+
     return {
-      error:
-        result.reason === "expired"
-          ? "確認リンクの有効期限が切れています。もう一度登録をお試しください"
-          : "確認リンクが無効です。もう一度登録をお試しください",
+      error,
     };
   }
 

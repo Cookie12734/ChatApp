@@ -26,7 +26,10 @@ export function SignUpForm() {
     <div className="flex w-full max-w-sm flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
         {state.error && (
-          <p className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]">
+          <p
+            className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]"
+            role="alert"
+          >
             {state.error}
           </p>
         )}
@@ -65,6 +68,7 @@ export function SignUpForm() {
             name="name"
             type="text"
             required
+            maxLength={50}
             autoComplete="name"
             value={formValues.name}
             onChange={(event) =>
@@ -87,6 +91,7 @@ export function SignUpForm() {
             name="email"
             type="email"
             required
+            maxLength={320}
             autoComplete="email"
             value={formValues.email}
             onChange={(event) =>
@@ -114,6 +119,7 @@ export function SignUpForm() {
             required
             autoComplete="new-password"
             minLength={8}
+            maxLength={72}
             value={formValues.password}
             onChange={(event) =>
               setFormValues((current) => ({
@@ -140,6 +146,7 @@ export function SignUpForm() {
             required
             autoComplete="new-password"
             minLength={8}
+            maxLength={72}
             value={formValues.confirmPassword}
             onChange={(event) =>
               setFormValues((current) => ({

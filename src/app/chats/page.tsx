@@ -7,7 +7,7 @@ export default async function ChatsPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect("/auth/login?callbackUrl=%2Fchats");
   }
 
   return <FriendChatPanel />;
