@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Copy,
   Ellipsis,
+  Flag,
   Hash,
   Inbox,
   LogOut,
@@ -24,7 +25,11 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { type FormEvent, type MouseEvent } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+} from "react";
 
 import {
   Dialog,
@@ -91,6 +96,12 @@ type EditingMessage =
 type MessageContextMenu =
   | { kind: "direct"; messageId: string; x: number; y: number }
   | { kind: "server"; messageId: string; x: number; y: number };
+type ReportReason = "HARASSMENT" | "OTHER" | "SELF_HARM" | "SPAM";
+type ReportTarget = {
+  content: string;
+  messageId: string;
+  messageKind: "DIRECT" | "SERVER";
+};
 type ProfileContextUser = {
   name?: string | null;
   userId: string;
@@ -133,12 +144,55 @@ const matchingTopics = [
 ] as const;
 type MatchingTopic = (typeof matchingTopics)[number]["value"];
 
+const reportReasons: { label: string; value: ReportReason }[] = [
+  { label: "嫌がらせ", value: "HARASSMENT" },
+  { label: "自傷・自殺に関する内容", value: "SELF_HARM" },
+  { label: "スパム", value: "SPAM" },
+  { label: "その他", value: "OTHER" },
+];
+
 function getErrorMessage(error: unknown) {
   if (error && typeof error === "object" && "message" in error) {
     return String(error.message);
   }
 
   return "処理に失敗しました";
+}
+
+function handleContextMenuKeyDown(
+  event: ReactKeyboardEvent<HTMLDivElement>,
+  closeMenu: () => void,
+) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMenu();
+    return;
+  }
+
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+
+  const items = [
+    ...event.currentTarget.querySelectorAll<HTMLElement>(
+      '[role="menuitem"]:not(:disabled)',
+    ),
+  ];
+  if (items.length === 0) return;
+
+  event.preventDefault();
+  const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+  const nextIndex =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? items.length - 1
+        : event.key === "ArrowDown"
+          ? currentIndex < 0
+            ? 0
+            : (currentIndex + 1) % items.length
+          : currentIndex < 0
+            ? items.length - 1
+            : (currentIndex - 1 + items.length) % items.length;
+  items[nextIndex]?.focus();
 }
 
 function FriendListItem({
@@ -233,6 +287,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   );
   const [isServerMenuOpen, setIsServerMenuOpen] = useState(false);
   const [isServerSettingsOpen, setIsServerSettingsOpen] = useState(false);
+  const [isServerReportsOpen, setIsServerReportsOpen] = useState(false);
   const [isPinnedMessagesOpen, setIsPinnedMessagesOpen] = useState(false);
   const [isMemberListOpen, setIsMemberListOpen] = useState(false);
   const [pendingExternalLink, setPendingExternalLink] = useState<string | null>(
@@ -243,6 +298,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const [serverSettingsMessage, setServerSettingsMessage] = useState<
     string | null
   >(null);
+  const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
+  const [reportReason, setReportReason] = useState<ReportReason>("HARASSMENT");
+  const [reportDetails, setReportDetails] = useState("");
+  const [moderationNotice, setModerationNotice] = useState<{
+    kind: "error" | "success";
+    text: string;
+  } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [pendingDirectMessages, setPendingDirectMessages] = useState<
@@ -260,6 +322,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     null,
   );
   const lastTypingSentAtRef = useRef(0);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
 
   const friends = api.chat.getFriends.useQuery(undefined, {
     refetchInterval: (query) =>
@@ -316,7 +379,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     {
       enabled: Boolean(selectedServerId),
       refetchInterval: (query) =>
-        query.state.status === "error"
+        !isMemberListOpen || query.state.status === "error"
           ? false
           : isRealtimeConnected
             ? 60000
@@ -334,6 +397,41 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     );
   }, [serverMembers.data]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
+  const serverReports = api.moderation.getServerReports.useQuery(
+    { serverId: selectedServerId ?? "" },
+    {
+      enabled: Boolean(
+        isServerReportsOpen && isSelectedServerOwner && selectedServerId,
+      ),
+    },
+  );
+  const submitMessageReport = api.moderation.reportMessage.useMutation({
+    onMutate: () => setModerationNotice(null),
+    onSuccess: () => {
+      setReportTarget(null);
+      setModerationNotice({
+        kind: "success",
+        text: "メッセージの通報を受け付けました",
+      });
+    },
+    onError: (error) =>
+      setModerationNotice({ kind: "error", text: getErrorMessage(error) }),
+  });
+  const markServerReportReviewed =
+    api.moderation.markServerReportReviewed.useMutation({
+      onMutate: () => setModerationNotice(null),
+      onSuccess: async (_result, variables) => {
+        setModerationNotice({
+          kind: "success",
+          text: "通報を確認済みにしました",
+        });
+        await utils.moderation.getServerReports.invalidate({
+          serverId: variables.serverId,
+        });
+      },
+      onError: (error) =>
+        setModerationNotice({ kind: "error", text: getErrorMessage(error) }),
+    });
   const channelContextTarget = channelContextMenu
     ? selectedServer?.server.channels.find(
         (channel) => channel.id === channelContextMenu.channelId,
@@ -509,7 +607,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const firstDirectUnreadMessageId = directUnreadMessages[0]?.id;
   const firstServerUnreadMessageId = serverUnreadMessages[0]?.id;
 
-  const { mutate: markDirectConversationRead } =
+  const { mutateAsync: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
       onSuccess: (result, variables) => {
         void utils.chat.getFriends.invalidate();
@@ -533,7 +631,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         );
       },
     });
-  const { mutate: markServerChannelRead } =
+  const { mutateAsync: markServerChannelRead } =
     api.server.markChannelRead.useMutation({
       onSuccess: (result, variables) => {
         utils.server.getOverview.setData(undefined, (overview) => {
@@ -573,13 +671,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       },
     });
 
-  const markLatestMessageRead = useCallback(() => {
+  const markLatestMessageRead = useCallback(async () => {
     if (
       selectedServerId &&
       selectedServerChannel?.id &&
       latestServerMessageId
     ) {
-      markServerChannelRead({
+      await markServerChannelRead({
         channelId: selectedServerChannel.id,
         messageId: latestServerMessageId,
         serverId: selectedServerId,
@@ -588,7 +686,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     }
 
     if (selectedFriendId && latestDirectMessageId) {
-      markDirectConversationRead({
+      await markDirectConversationRead({
         friendId: selectedFriendId,
         messageId: latestDirectMessageId,
       });
@@ -709,6 +807,19 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   }, [messageContextMenu, profileContextMenu]);
 
   useEffect(() => {
+    if (!channelContextMenu && !messageContextMenu && !profileContextMenu) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      contextMenuRef.current
+        ?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')
+        ?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [channelContextMenu, messageContextMenu, profileContextMenu]);
+
+  useEffect(() => {
     setMessageContextMenu(null);
     setProfileContextMenu(null);
     setEditingMessage(null);
@@ -728,7 +839,27 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   useEffect(() => {
     const events = new EventSource("/api/chat/events");
-    events.onopen = () => setIsRealtimeConnected(true);
+    events.onopen = () => {
+      setIsRealtimeConnected(true);
+      void utils.chat.getFriends.invalidate();
+      void utils.server.getOverview.invalidate();
+      if (selectedFriendId) {
+        void utils.chat.getConversation.invalidate({
+          friendId: selectedFriendId,
+        });
+      }
+      if (selectedServerId && selectedServerChannel?.id) {
+        void utils.server.getConversation.invalidate({
+          channelId: selectedServerChannel.id,
+          serverId: selectedServerId,
+        });
+      }
+      if (selectedServerId) {
+        void utils.server.getMembers.invalidate({
+          serverId: selectedServerId,
+        });
+      }
+    };
     events.onerror = () => setIsRealtimeConnected(false);
     const handleChatEvent = (event: MessageEvent<string>) => {
       let payload: ChatEventPayload;
@@ -815,7 +946,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         setTypingUserName(payload.userName);
         typingResetTimerRef.current = setTimeout(() => {
           setTypingUserName(null);
-        }, 2500);
+        }, 12_000);
       } else {
         setTypingUserName(null);
       }
@@ -838,6 +969,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     utils.chat.getConversation,
     utils.chat.getFriends,
     utils.server.getConversation,
+    utils.server.getMembers,
     utils.server.getOverview,
   ]);
 
@@ -848,6 +980,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     },
     [canSendDirectMessage, publishTyping, selectedFriendId],
   );
+
+  useEffect(() => {
+    return () => {
+      if (localTypingStopTimerRef.current) {
+        clearTimeout(localTypingStopTimerRef.current);
+      }
+      if (lastTypingSentAtRef.current > 0) {
+        broadcastTyping(false);
+      }
+      lastTypingSentAtRef.current = 0;
+    };
+  }, [broadcastTyping]);
 
   const openDirectFriend = useCallback((friendId: string) => {
     setIsNavigationOpen(false);
@@ -877,7 +1021,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     }
 
     const now = Date.now();
-    if (now - lastTypingSentAtRef.current > 1000) {
+    if (now - lastTypingSentAtRef.current >= 10_000) {
       lastTypingSentAtRef.current = now;
       broadcastTyping(true);
     }
@@ -1327,6 +1471,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setIsServerSettingsOpen(true);
   };
 
+  const openServerReports = () => {
+    if (!selectedServer || !isSelectedServerOwner) return;
+
+    setModerationNotice(null);
+    setIsServerSettingsOpen(false);
+    setIsServerReportsOpen(true);
+  };
+
   const handleCopyServerInvite = async () => {
     const inviteCode = selectedServer?.server.inviteCode;
     if (!inviteCode) return;
@@ -1411,7 +1563,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     }
 
     sendMessage.mutate(
-      { content, friendId },
+      { clientId, content, friendId },
       {
         onError: (error) => {
           setPendingDirectMessages((messages) =>
@@ -1472,7 +1624,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     ]);
     requestAnimationFrame(messageViewport.scrollToBottom);
     sendServerMessage.mutate(
-      { channelId, content, serverId },
+      { channelId, clientId, content, serverId },
       {
         onError: (error) => {
           setPendingServerMessages((messages) =>
@@ -1735,6 +1887,41 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     isServerContextMessageMine,
     Boolean(serverMessageContextTarget && isSelectedServerOwner),
   ].some(Boolean);
+  const canReportContextMessage = [
+    Boolean(directMessageContextTarget && !isDirectContextMessageMine),
+    Boolean(serverMessageContextTarget && !isServerContextMessageMine),
+  ].some(Boolean);
+  const openMessageReport = () => {
+    if (
+      !messageContextMenu ||
+      !messageContextTarget ||
+      !canReportContextMessage
+    ) {
+      return;
+    }
+
+    setReportTarget({
+      content: messageContextTarget.content,
+      messageId: messageContextTarget.id,
+      messageKind: messageContextMenu.kind === "direct" ? "DIRECT" : "SERVER",
+    });
+    setReportReason("HARASSMENT");
+    setReportDetails("");
+    setModerationNotice(null);
+    setMessageContextMenu(null);
+  };
+  const handleMessageReportSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!reportTarget) return;
+    const details = reportDetails.trim();
+
+    submitMessageReport.mutate({
+      details: details.length > 0 ? details : undefined,
+      messageId: reportTarget.messageId,
+      messageKind: reportTarget.messageKind,
+      reason: reportReason,
+    });
+  };
   const handleCopyMessage = async () => {
     if (!messageContextTarget) return;
 
@@ -2983,6 +3170,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   }
                   className="block w-full text-sm text-[#53615a] file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-[#18221f] file:px-3 file:font-semibold file:text-[#f6f0e4]"
                 />
+                <span className="mt-1 block text-xs text-[#68716b]">
+                  PNG / JPG、128KBまで
+                </span>
                 {serverIconFile && (
                   <span className="mt-1 block truncate text-xs text-[#68716b]">
                     {serverIconFile.name}
@@ -3042,6 +3232,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </div>
             )}
 
+            {isSelectedServerOwner && (
+              <button
+                type="button"
+                onClick={openServerReports}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
+              >
+                <Flag className="h-4 w-4" aria-hidden="true" />
+                通報一覧を開く
+              </button>
+            )}
+
             {serverSettingsMessage && (
               <p
                 className={`rounded-md border px-3 py-2 text-sm ${
@@ -3080,6 +3281,158 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={Boolean(reportTarget)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setReportTarget(null);
+        }}
+      >
+        <DialogContent className="bg-[#f6f0e4] text-[#18221f] sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>メッセージを通報</DialogTitle>
+            <DialogDescription>
+              内容を確認し、通報理由を選んでください。
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleMessageReportSubmit} className="space-y-4">
+            <p className="max-h-28 overflow-y-auto rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+              {reportTarget?.content}
+            </p>
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold">通報理由</span>
+              <select
+                value={reportReason}
+                onChange={(event) =>
+                  setReportReason(event.target.value as ReportReason)
+                }
+                className="min-h-11 w-full rounded-md border border-[#18221f]/15 bg-white px-3 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              >
+                {reportReasons.map((reason) => (
+                  <option key={reason.value} value={reason.value}>
+                    {reason.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-semibold">
+                詳細（任意）
+              </span>
+              <textarea
+                value={reportDetails}
+                onChange={(event) => setReportDetails(event.target.value)}
+                className="min-h-28 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                maxLength={500}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReportTarget(null)}
+                className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
+              >
+                キャンセル
+              </button>
+              <button
+                type="submit"
+                disabled={submitMessageReport.isPending}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#9f4122] px-4 font-semibold text-white transition hover:bg-[#7f321b] disabled:opacity-50"
+              >
+                {submitMessageReport.isPending ? "送信中..." : "通報する"}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isServerReportsOpen} onOpenChange={setIsServerReportsOpen}>
+        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] text-[#18221f] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>サーバーの通報一覧</DialogTitle>
+            <DialogDescription>
+              メンバーから届いた通報を確認済みにできます。
+            </DialogDescription>
+          </DialogHeader>
+          {serverReports.isLoading ? (
+            <p className="py-8 text-center text-sm text-[#53615a]">
+              読み込み中...
+            </p>
+          ) : serverReports.error ? (
+            <p
+              className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]"
+              role="alert"
+            >
+              {getErrorMessage(serverReports.error)}
+            </p>
+          ) : serverReports.data?.length ? (
+            <div className="space-y-3">
+              {serverReports.data.map((report) => (
+                <article
+                  key={report.id}
+                  className="rounded-md border border-[#18221f]/15 bg-white p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">
+                        {report.reportedUser?.name ??
+                          (report.reportedUser
+                            ? `@${report.reportedUser.userId}`
+                            : "削除されたユーザー")}
+                      </p>
+                      <p className="text-xs text-[#68716b]">
+                        {report.createdAt.toLocaleString("ja-JP")}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                        report.status === "REVIEWED"
+                          ? "bg-[#e4f2dc] text-[#114744]"
+                          : "bg-[#fff1e8] text-[#9f4122]"
+                      }`}
+                    >
+                      {report.status === "REVIEWED" ? "確認済み" : "未確認"}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm font-semibold">
+                    {reportReasons.find(
+                      (reason) => reason.value === report.reason,
+                    )?.label ?? report.reason}
+                  </p>
+                  <p className="mt-2 rounded-md bg-[#f6f0e4] px-3 py-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+                    {report.contentSnapshot}
+                  </p>
+                  {report.details && (
+                    <p className="mt-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+                      詳細: {report.details}
+                    </p>
+                  )}
+                  {report.status !== "REVIEWED" && selectedServerId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        markServerReportReviewed.mutate({
+                          reportId: report.id,
+                          serverId: selectedServerId,
+                        })
+                      }
+                      disabled={markServerReportReviewed.isPending}
+                      className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                    >
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                      確認済みにする
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-[#53615a]">
+              通報はありません。
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <PinnedMessagesDialog
         isLoading={serverConversation.isLoading}
         messages={serverConversationData?.pinnedMessages}
@@ -3095,11 +3448,36 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         url={pendingExternalLink}
       />
 
+      {moderationNotice && (
+        <div
+          className={`fixed right-4 bottom-4 z-[100] flex max-w-sm items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-xl ${
+            moderationNotice.kind === "success"
+              ? "border-[#114744]/20 bg-[#e4f2dc] text-[#114744]"
+              : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+          }`}
+          role={moderationNotice.kind === "success" ? "status" : "alert"}
+        >
+          <span className="flex-1">{moderationNotice.text}</span>
+          <button
+            type="button"
+            onClick={() => setModerationNotice(null)}
+            className="rounded p-0.5 transition hover:bg-black/5"
+            aria-label="通知を閉じる"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       {channelContextMenu && channelContextTarget && selectedServer && (
         <div
+          ref={contextMenuRef}
           className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
           style={{ left: channelContextMenu.x, top: channelContextMenu.y }}
           onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) =>
+            handleContextMenuKeyDown(event, () => setChannelContextMenu(null))
+          }
           role="menu"
         >
           <button
@@ -3129,10 +3507,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
       {profileContextMenu && (
         <div
+          ref={contextMenuRef}
           className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
           style={{ left: profileContextMenu.x, top: profileContextMenu.y }}
           onClick={(event) => event.stopPropagation()}
           onContextMenu={(event) => event.preventDefault()}
+          onKeyDown={(event) =>
+            handleContextMenuKeyDown(event, () => setProfileContextMenu(null))
+          }
           role="menu"
           aria-label={`${getDisplayName(profileContextMenu)}のプロフィール操作`}
         >
@@ -3151,9 +3533,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
       {messageContextMenu && messageContextTarget && (
         <div
+          ref={contextMenuRef}
           className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
           style={{ left: messageContextMenu.x, top: messageContextMenu.y }}
           onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) =>
+            handleContextMenuKeyDown(event, () => setMessageContextMenu(null))
+          }
           role="menu"
         >
           <button
@@ -3165,6 +3551,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             <Copy className="h-4 w-4" aria-hidden="true" />
             コピー
           </button>
+          {canReportContextMessage && (
+            <button
+              type="button"
+              onClick={openMessageReport}
+              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8]"
+              role="menuitem"
+            >
+              <Flag className="h-4 w-4" aria-hidden="true" />
+              通報
+            </button>
+          )}
           {serverMessageContextTarget && isSelectedServerOwner && (
             <button
               type="button"

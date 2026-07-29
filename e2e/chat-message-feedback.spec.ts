@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import bcrypt from "bcryptjs";
 
-import { PrismaClient } from "../generated/prisma/index.js";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const runId = `${Date.now()}-${process.pid}`;
@@ -121,10 +121,15 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
 
   const pendingMessage = page.locator("article").filter({ hasText: content });
   await expect(pendingMessage).toHaveCSS("color", "rgb(125, 135, 129)");
-  await expect(pendingMessage).not.toContainText("送信中");
+  await expect(pendingMessage.getByText("送信中", { exact: true })).toHaveCount(
+    1,
+  );
   await expect(pendingMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
     timeout: 10_000,
   });
+  await expect(pendingMessage.getByText("送信中", { exact: true })).toHaveCount(
+    0,
+  );
   await expect(
     page.locator("article").filter({ hasText: content }),
   ).toHaveCount(1);
@@ -137,7 +142,9 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
     .locator("article")
     .filter({ hasText: followupContent });
   await expect(followupMessage).toHaveCSS("color", "rgb(125, 135, 129)");
-  await expect(followupMessage).not.toContainText("送信中");
+  await expect(
+    followupMessage.getByText("送信中", { exact: true }),
+  ).toHaveCount(1);
   await expect(followupMessage.locator("time")).toHaveCount(0);
   await expect(
     followupMessage.getByRole("button", { name: /プロフィールを開く/ }),
@@ -148,6 +155,9 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await expect(followupMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
     timeout: 10_000,
   });
+  await expect(
+    followupMessage.getByText("送信中", { exact: true }),
+  ).toHaveCount(0);
 });
 
 test("スクロール中の新着件数と未読線を表示する", async ({ page }) => {
@@ -198,6 +208,50 @@ test("スクロール中の新着件数と未読線を表示する", async ({ pa
   await expect(newMessageButton).toHaveCount(0, { timeout: 10_000 });
 });
 
+test("既読更新に失敗しても同じメッセージを再試行する", async ({ page }) => {
+  const retryMessage = await prisma.serverMessage.create({
+    data: {
+      channelId,
+      content: `read-retry-${runId}`,
+      senderId: memberId,
+      serverId,
+    },
+  });
+  let attempts = 0;
+
+  await page.route("**/api/trpc/server.markChannelRead**", async (route) => {
+    attempts += 1;
+    if (attempts === 1) {
+      await route.abort("failed");
+      return;
+    }
+    await route.continue();
+  });
+  await login(page);
+  await expect.poll(() => attempts).toBeGreaterThanOrEqual(1);
+
+  const viewport = page.locator(".chat-scrollbar").first();
+  await viewport.evaluate((element) => {
+    element.scrollTop = 0;
+    element.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
+  await page.waitForTimeout(100);
+  await viewport.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+    element.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
+
+  await expect.poll(() => attempts).toBeGreaterThanOrEqual(2);
+  await expect
+    .poll(async () => {
+      const read = await prisma.serverChannelRead.findUnique({
+        where: { channelId_userId: { channelId, userId: ownerId } },
+      });
+      return Boolean(read && read.readAt >= retryMessage.createdAt);
+    })
+    .toBe(true);
+});
+
 test("プロフィールアイコンからブロックしてメッセージとマッチングを除外する", async ({
   page,
 }) => {
@@ -223,6 +277,20 @@ test("プロフィールアイコンからブロックしてメッセージと�
     exact: true,
   });
   await expect(blockButton).toBeVisible();
+  await expect(blockButton).toBeFocused();
+  for (const key of ["ArrowDown", "ArrowUp", "Home", "End"]) {
+    await blockButton.press(key);
+    await expect(blockButton).toBeFocused();
+  }
+  await blockButton.press("Escape");
+  await expect(blockButton).toHaveCount(0);
+
+  await page.mouse.click(
+    avatarBounds.x + avatarBounds.width / 2,
+    avatarBounds.y + avatarBounds.height / 2,
+    { button: "right" },
+  );
+  await expect(blockButton).toBeFocused();
   page.once("dialog", (dialog) => void dialog.accept());
   await blockButton.click();
 

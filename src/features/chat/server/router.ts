@@ -5,9 +5,16 @@ import {
   assertNotBlocked,
   getBlockedPeerIds,
 } from "~/features/friend/server/blocking";
+import { getFriendRequestLockIds } from "~/features/friend/server/friend-request-permissions";
 import { canManageDirectMessage } from "~/features/chat/server/direct-message-permissions";
-import { canShowMatchedUser } from "~/features/chat/server/matching-permissions";
 import {
+  canShowMatchedUser,
+  hasSettledMatch,
+} from "~/features/chat/server/matching-permissions";
+import { isSameDirectMessage } from "~/features/chat/server/message-idempotency";
+import {
+  decodeMessageCursor,
+  getMessageCursorWhere,
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
 } from "~/features/chat/message-page";
@@ -18,6 +25,7 @@ import {
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { addProfileImageUrl } from "~/lib/static-image";
 
 const friendIdInput = z.object({
   friendId: z.string().min(1),
@@ -36,6 +44,7 @@ const messageIdInput = z.object({
 });
 
 const sendMessageInput = friendIdInput.extend({
+  clientId: z.string().uuid(),
   content: z
     .string()
     .trim()
@@ -57,7 +66,6 @@ const matchingTopicInput = z.object({
 
 const userPreviewSelect = {
   id: true,
-  image: true,
   name: true,
   userId: true,
 } as const;
@@ -102,7 +110,6 @@ export const chatRouter = createTRPCRouter({
         id: true,
         userId: true,
         name: true,
-        image: true,
         sentDirectMessages: {
           where: { receiverId: currentUserId },
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -146,7 +153,7 @@ export const chatRouter = createTRPCRouter({
       return {
         currentUserId,
         friendshipId,
-        friend,
+        friend: addProfileImageUrl(friend),
         isBlocked,
         isFriend: friendshipId !== null,
         lastMessage: isBlocked
@@ -207,7 +214,11 @@ export const chatRouter = createTRPCRouter({
         isBlocked: Boolean(block),
         isFriend: Boolean(friendship),
       })
-      ? { friend, status: "matched" as const, topic: queue.topic }
+      ? {
+          friend: addProfileImageUrl(friend),
+          status: "matched" as const,
+          topic: queue.topic,
+        }
       : { status: "idle" as const };
   }),
 
@@ -254,10 +265,6 @@ export const chatRouter = createTRPCRouter({
           return { status: "waiting" as const, topic: input.topic };
         };
 
-        await tx.matchingQueue.deleteMany({
-          where: { userId: currentUserId },
-        });
-
         const waitingUsers = await tx.matchingQueue.findMany({
           where: {
             matchedUserId: null,
@@ -274,6 +281,41 @@ export const chatRouter = createTRPCRouter({
         if (!match) {
           return wait();
         }
+        const [firstUserId, secondUserId] = getFriendRequestLockIds(
+          currentUserId,
+          match.userId,
+        );
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+        const currentQueue = await tx.matchingQueue.findUnique({
+          where: { userId: currentUserId },
+          select: { matchedUserId: true, topic: true },
+        });
+
+        if (hasSettledMatch(currentQueue)) {
+          const settledUser =
+            currentQueue.matchedUserId === match.userId
+              ? match.user
+              : await tx.user.findUnique({
+                  where: { id: currentQueue.matchedUserId },
+                  select: userPreviewSelect,
+                });
+
+          if (settledUser) {
+            return {
+              friend: addProfileImageUrl(settledUser),
+              status: "matched" as const,
+              topic: currentQueue.topic,
+            };
+          }
+        }
+
+        await assertNotBlocked(tx, currentUserId, match.userId);
 
         // ponytail: random from the oldest 50 keeps this cheap; use DB random/locks if traffic grows.
         const claimed = await tx.matchingQueue.updateMany({
@@ -285,6 +327,9 @@ export const chatRouter = createTRPCRouter({
           return wait();
         }
 
+        await tx.matchingQueue.deleteMany({
+          where: { userId: currentUserId },
+        });
         await tx.friendship.createMany({
           data: [
             { friendId: match.userId, userId: currentUserId },
@@ -294,7 +339,7 @@ export const chatRouter = createTRPCRouter({
         });
 
         return {
-          friend: match.user,
+          friend: addProfileImageUrl(match.user),
           status: "matched" as const,
           topic: input.topic,
         };
@@ -344,7 +389,7 @@ export const chatRouter = createTRPCRouter({
         }),
         ctx.db.user.findUnique({
           where: { id: input.friendId },
-          select: { id: true, userId: true, name: true, image: true },
+          select: { id: true, userId: true, name: true },
         }),
       ]);
 
@@ -355,27 +400,42 @@ export const chatRouter = createTRPCRouter({
         });
       }
 
+      const conversationWhere = {
+        OR: [
+          {
+            receiverId: currentUserId,
+            senderId: input.friendId,
+          },
+          {
+            receiverId: input.friendId,
+            senderId: currentUserId,
+          },
+        ],
+      };
+      const stableCursor = decodeMessageCursor(input.cursor);
+      const legacyCursor =
+        !block && input.cursor && !stableCursor
+          ? await ctx.db.directMessage.findFirst({
+              where: { id: input.cursor, ...conversationWhere },
+              select: { id: true },
+            })
+          : null;
+
       const [currentUser, messages] = await Promise.all([
         ctx.db.user.findUniqueOrThrow({
           where: { id: currentUserId },
-          select: { id: true, userId: true, name: true, image: true },
+          select: { id: true, userId: true, name: true },
         }),
         block
           ? []
           : ctx.db.directMessage.findMany({
               where: {
-                OR: [
-                  {
-                    receiverId: currentUserId,
-                    senderId: input.friendId,
-                  },
-                  {
-                    receiverId: input.friendId,
-                    senderId: currentUserId,
-                  },
-                ],
+                ...conversationWhere,
+                ...(stableCursor
+                  ? { AND: [getMessageCursorWhere(stableCursor)] }
+                  : {}),
               },
-              cursor: input.cursor ? { id: input.cursor } : undefined,
+              cursor: legacyCursor ? { id: legacyCursor.id } : undefined,
               orderBy: [{ createdAt: "desc" }, { id: "desc" }],
               take: MESSAGE_PAGE_SIZE + 1,
               select: {
@@ -390,10 +450,10 @@ export const chatRouter = createTRPCRouter({
       ]);
 
       return {
-        currentUser,
+        currentUser: addProfileImageUrl(currentUser),
         currentUserId,
         canSend: Boolean(friendship) && !block,
-        friend,
+        friend: addProfileImageUrl(friend),
         ...prepareMessagePage(messages),
       };
     }),
@@ -495,30 +555,67 @@ export const chatRouter = createTRPCRouter({
         },
       ]);
 
-      const friendship = await ctx.db.friendship.findUnique({
-        where: {
-          userId_friendId: {
-            userId: currentUserId,
-            friendId: input.friendId,
+      const content = input.content.trim();
+      const [firstUserId, secondUserId] = getFriendRequestLockIds(
+        currentUserId,
+        input.friendId,
+      );
+      const message = await ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+
+        const friendship = await tx.friendship.findUnique({
+          where: {
+            userId_friendId: {
+              userId: currentUserId,
+              friendId: input.friendId,
+            },
           },
-        },
-        select: { id: true },
-      });
-
-      if (!friendship) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "フレンドにだけメッセージを送れます",
+          select: { id: true },
         });
-      }
-      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
 
-      const message = await ctx.db.directMessage.create({
-        data: {
-          content: input.content.trim(),
-          receiverId: input.friendId,
-          senderId: currentUserId,
-        },
+        if (!friendship) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "フレンドにだけメッセージを送れます",
+          });
+        }
+        await assertNotBlocked(tx, currentUserId, input.friendId);
+
+        const storedMessage = await tx.directMessage.upsert({
+          where: {
+            senderId_clientId: {
+              clientId: input.clientId,
+              senderId: currentUserId,
+            },
+          },
+          create: {
+            clientId: input.clientId,
+            content,
+            receiverId: input.friendId,
+            senderId: currentUserId,
+          },
+          update: { clientId: input.clientId },
+        });
+
+        if (
+          !isSameDirectMessage(storedMessage, {
+            content,
+            receiverId: input.friendId,
+          })
+        ) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "同じ送信IDを別のメッセージには使用できません",
+          });
+        }
+
+        return storedMessage;
       });
 
       void publishChatEvent(ctx.db, {

@@ -153,6 +153,7 @@ export function PendingMessageRow({
         )}
         <p className="text-left leading-7 break-words whitespace-pre-wrap">
           <MessageText content={message.content} onOpenLink={onOpenLink} />
+          {isPending && <span className="sr-only">送信中</span>}
         </p>
       </div>
     </article>

@@ -14,7 +14,7 @@ export function useMessageViewport({
   conversationKey: string | null;
   firstUnreadMessageId?: string;
   latestMessageId?: string;
-  onReadLatest: () => void;
+  onReadLatest: () => Promise<unknown> | void;
   unreadCount: number;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -115,8 +115,15 @@ export function useMessageViewport({
       return;
     }
 
-    readMessageRef.current = latestMessageId;
-    onReadLatest();
+    const readMessageId = latestMessageId;
+    readMessageRef.current = readMessageId;
+    void Promise.resolve()
+      .then(onReadLatest)
+      .catch(() => {
+        if (readMessageRef.current === readMessageId) {
+          readMessageRef.current = undefined;
+        }
+      });
   }, [isActive, isAtBottom, latestMessageId, onReadLatest, unreadCount]);
 
   return {
