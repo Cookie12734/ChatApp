@@ -6,6 +6,7 @@ import {
   presenceStatuses,
 } from "~/features/profile/presence";
 import { canViewProfile } from "~/features/profile/server/profile-permissions";
+import { getProfileImageUrl } from "~/lib/static-image";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const profileInput = z.object({
@@ -48,18 +49,19 @@ function normalizeOptionalText(value: string | undefined) {
 
 export const profileRouter = createTRPCRouter({
   getMine: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.user.findUniqueOrThrow({
+    const profile = await ctx.db.user.findUniqueOrThrow({
       where: { id: ctx.session.user.id },
       select: {
         id: true,
         userId: true,
         name: true,
-        image: true,
         bio: true,
         statusMessage: true,
         presenceStatus: true,
       },
     });
+
+    return { ...profile, image: getProfileImageUrl(profile.userId) };
   }),
 
   getByUserId: protectedProcedure
@@ -71,7 +73,6 @@ export const profileRouter = createTRPCRouter({
         select: {
           bio: true,
           id: true,
-          image: true,
           lastSeenAt: true,
           name: true,
           presenceStatus: true,
@@ -201,6 +202,7 @@ export const profileRouter = createTRPCRouter({
 
       return {
         ...visibleProfile,
+        image: getProfileImageUrl(visibleProfile.userId),
         presenceStatus: isCurrentUser
           ? visibleProfile.presenceStatus
           : getEffectivePresenceStatus(
@@ -219,7 +221,7 @@ export const profileRouter = createTRPCRouter({
   updateMine: protectedProcedure
     .input(profileInput)
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.user.update({
+      const profile = await ctx.db.user.update({
         where: { id: ctx.session.user.id },
         data: {
           name: input.name.trim(),
@@ -233,12 +235,13 @@ export const profileRouter = createTRPCRouter({
           id: true,
           userId: true,
           name: true,
-          image: true,
           bio: true,
           statusMessage: true,
           presenceStatus: true,
         },
       });
+
+      return { ...profile, image: getProfileImageUrl(profile.userId) };
     }),
 
   updatePresence: protectedProcedure

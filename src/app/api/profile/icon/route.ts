@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
-import { readStaticImageDataUrl } from "~/lib/static-image";
+import {
+  getProfileImageUrl,
+  readLimitedUploadFormData,
+  readStaticImageDataUrl,
+} from "~/lib/static-image";
 import { db } from "~/server/db";
 
 export const runtime = "nodejs";
 
-const maxFileSize = 5 * 1024 * 1024;
+const maxFileSize = 256 * 1024;
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error
@@ -24,25 +28,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
-  const file = formData.get("icon");
-
-  if (!(file instanceof File)) {
-    return NextResponse.json(
-      { message: "画像ファイルを選択してください" },
-      { status: 400 },
-    );
-  }
-
   try {
+    const formData = await readLimitedUploadFormData(request, maxFileSize);
+    const file = formData.get("icon");
+
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        { message: "画像ファイルを選択してください" },
+        { status: 400 },
+      );
+    }
+
     const image = await readStaticImageDataUrl(file, maxFileSize);
 
-    await db.user.update({
+    const user = await db.user.update({
       where: { id: session.user.id },
       data: { image },
+      select: { userId: true },
     });
 
-    return NextResponse.json({ image });
+    return NextResponse.json({ image: getProfileImageUrl(user.userId) });
   } catch (error) {
     return NextResponse.json(
       { message: getErrorMessage(error) },

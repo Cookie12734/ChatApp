@@ -8,6 +8,7 @@ import {
   getPresenceDotClassName,
 } from "~/features/profile/presence";
 import { canViewProfile } from "~/features/profile/server/profile-permissions";
+import { getProfileImageUrl } from "~/lib/static-image";
 import { db } from "~/server/db";
 
 type ProfileDetailPageProps = {
@@ -19,19 +20,25 @@ export default async function ProfileDetailPage({
   params,
   searchParams,
 }: ProfileDetailPageProps) {
-  const session = await auth();
+  const [session, { userId }, { from }] = await Promise.all([
+    auth(),
+    params,
+    searchParams,
+  ]);
+  const profilePath = `/profile/${encodeURIComponent(userId)}`;
+  const callbackUrl = from
+    ? `${profilePath}?from=${encodeURIComponent(from)}`
+    : profilePath;
 
   if (!session?.user?.id) {
-    redirect("/auth/login");
+    redirect(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
-  const [{ userId }, { from }] = await Promise.all([params, searchParams]);
   const profile = await db.user.findUnique({
     where: { userId },
     select: {
       bio: true,
       id: true,
-      image: true,
       name: true,
       presenceStatus: true,
       statusMessage: true,
@@ -111,18 +118,12 @@ export default async function ProfileDetailPage({
 
         <section className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5 shadow-[8px_8px_0_#d8efee]">
           <div className="flex flex-wrap items-center gap-4">
-            {profile.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.image}
-                alt=""
-                className="h-24 w-24 rounded-md border border-[#18221f]/15 object-cover"
-              />
-            ) : (
-              <span className="flex h-24 w-24 items-center justify-center rounded-md bg-[#18221f] text-3xl font-semibold text-[#f6f0e4]">
-                {(profile.name ?? profile.userId).slice(0, 1).toUpperCase()}
-              </span>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getProfileImageUrl(profile.userId)}
+              alt=""
+              className="h-24 w-24 rounded-md border border-[#18221f]/15 object-cover"
+            />
             <div className="min-w-0">
               <h2 className="truncate text-3xl font-semibold">
                 {profile.name ?? profile.userId}
