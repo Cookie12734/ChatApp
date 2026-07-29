@@ -31,6 +31,10 @@ $dbPort = $Matches[4]
 $dbName = $Matches[5]
 $containerName = "$dbName-postgres"
 
+if ($dbPassword -in @("password", "example")) {
+    throw "Change the default database password in .env before starting PostgreSQL."
+}
+
 $running = docker ps -q -f "name=$containerName"
 if ($running) {
     Write-Host "Container '$containerName' is already running."
@@ -44,7 +48,7 @@ if ($stopped) {
     exit 0
 }
 
-docker run -d --name $containerName -e "POSTGRES_USER=$dbUser" -e "POSTGRES_PASSWORD=$dbPassword" -e "POSTGRES_DB=$dbName" -p "${dbPort}:5432" docker.io/postgres | Out-Null
+docker run -d --name $containerName -e "POSTGRES_USER=$dbUser" -e "POSTGRES_PASSWORD=$dbPassword" -e "POSTGRES_DB=$dbName" -p "127.0.0.1:${dbPort}:5432" docker.io/postgres | Out-Null
 
 Write-Host "Created and started container '$containerName'."
 Write-Host "Next: npx prisma db push"
