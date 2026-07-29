@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "@prisma/client";
 import {
   createRateLimitKey,
   getRateLimitSubjectFromHeaders,
