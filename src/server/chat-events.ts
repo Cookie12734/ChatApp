@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export type ChatEvent =
   | { kind: "direct"; userIds: string[] }
@@ -19,23 +19,29 @@ export type ChatEvent =
 
 type ChatEventDatabase = Pick<PrismaClient, "chatEvent">;
 type ChatEventListener = (event: ChatEvent) => void;
+type ChatEventSubscription = {
+  listener: ChatEventListener;
+  serverIds: ReadonlySet<string>;
+  userId: string;
+};
 
 type ChatEventStreamState = {
   isPolling: boolean;
   lastEventId?: bigint;
-  listeners: Set<ChatEventListener>;
   localEventIds: Set<string>;
   pollTimer?: NodeJS.Timeout;
+  subscriptions: Map<ChatEventListener, ChatEventSubscription>;
 };
 
 const globalForChatEvents = globalThis as unknown as {
   chatEventStreamState?: ChatEventStreamState;
 };
-const streamState = (globalForChatEvents.chatEventStreamState ??= {
-  isPolling: false,
-  listeners: new Set(),
-  localEventIds: new Set(),
-});
+const streamState: ChatEventStreamState =
+  (globalForChatEvents.chatEventStreamState ??= {
+    isPolling: false,
+    localEventIds: new Set<string>(),
+    subscriptions: new Map<ChatEventListener, ChatEventSubscription>(),
+  });
 
 let nextCleanupAt = 0;
 
@@ -44,6 +50,7 @@ export function getChatEventRecord(event: ChatEvent) {
     audienceIds: event.kind === "server" ? [] : [...event.userIds],
     kind: event.kind,
     payload: event,
+    serverId: event.kind === "server" ? event.serverId : null,
   };
 }
 
@@ -57,10 +64,42 @@ export function canReceiveChatEvent(
     : event.userIds.includes(userId);
 }
 
+export function canOpenChatEventConnection(
+  currentCount: number,
+  limit: number,
+) {
+  return currentCount < limit;
+}
+
+export function takePendingLocalEventIds(
+  localEventIds: Set<string>,
+  afterEventId: bigint,
+  limit = 100,
+) {
+  const pendingIds: bigint[] = [];
+
+  for (const id of localEventIds) {
+    const eventId = BigInt(id);
+    if (eventId <= afterEventId) {
+      localEventIds.delete(id);
+    } else if (pendingIds.length < limit) {
+      pendingIds.push(eventId);
+    }
+  }
+
+  return pendingIds;
+}
+
 function emitChatEvent(event: ChatEvent) {
-  for (const listener of streamState.listeners) {
+  for (const subscription of streamState.subscriptions.values()) {
+    if (
+      !canReceiveChatEvent(event, subscription.userId, subscription.serverIds)
+    ) {
+      continue;
+    }
+
     try {
-      listener(event);
+      subscription.listener(event);
     } catch (error) {
       console.error("Failed to deliver chat event", error);
     }
@@ -68,7 +107,7 @@ function emitChatEvent(event: ChatEvent) {
 }
 
 async function pollChatEvents(db: ChatEventDatabase) {
-  if (streamState.isPolling || streamState.listeners.size === 0) return;
+  if (streamState.isPolling || streamState.subscriptions.size === 0) return;
   streamState.isPolling = true;
 
   try {
@@ -83,11 +122,42 @@ async function pollChatEvents(db: ChatEventDatabase) {
       return;
     }
 
+    const audienceIds = [
+      ...new Set(
+        [...streamState.subscriptions.values()].map(
+          (subscription) => subscription.userId,
+        ),
+      ),
+    ];
+    const serverIds = [
+      ...new Set(
+        [...streamState.subscriptions.values()].flatMap((subscription) => [
+          ...subscription.serverIds,
+        ]),
+      ),
+    ];
     let hasMoreEvents = true;
     while (hasMoreEvents) {
+      const lastEventId = streamState.lastEventId;
+      if (lastEventId === undefined) break;
+      const localEventIds = takePendingLocalEventIds(
+        streamState.localEventIds,
+        lastEventId,
+      );
       const events: Array<{ id: bigint; payload: unknown }> =
         await db.chatEvent.findMany({
-          where: { id: { gt: streamState.lastEventId } },
+          where: {
+            id: { gt: lastEventId },
+            OR: [
+              { audienceIds: { hasSome: audienceIds } },
+              ...(serverIds.length > 0
+                ? [{ serverId: { in: serverIds } }]
+                : []),
+              ...(localEventIds.length > 0
+                ? [{ id: { in: localEventIds } }]
+                : []),
+            ],
+          },
           orderBy: { id: "asc" },
           select: { id: true, payload: true },
           take: 100,
@@ -110,17 +180,17 @@ async function pollChatEvents(db: ChatEventDatabase) {
 
 export function subscribeToChatEvents(
   db: ChatEventDatabase,
-  listener: ChatEventListener,
+  subscription: ChatEventSubscription,
 ) {
-  streamState.listeners.add(listener);
+  streamState.subscriptions.set(subscription.listener, subscription);
   if (!streamState.pollTimer) {
     void pollChatEvents(db);
     streamState.pollTimer = setInterval(() => void pollChatEvents(db), 500);
   }
 
   return () => {
-    streamState.listeners.delete(listener);
-    if (streamState.listeners.size > 0) return;
+    streamState.subscriptions.delete(subscription.listener);
+    if (streamState.subscriptions.size > 0) return;
 
     clearInterval(streamState.pollTimer);
     streamState.pollTimer = undefined;
@@ -157,10 +227,11 @@ export async function publishChatEvent(
         audienceIds: record.audienceIds,
         kind: record.kind,
         payload: record.payload,
+        serverId: record.serverId,
       },
       select: { id: true },
     });
-    if (streamState.listeners.size > 0) {
+    if (streamState.subscriptions.size > 0) {
       streamState.localEventIds.add(createdEvent.id.toString());
     }
     void cleanupExpiredEvents(db);
