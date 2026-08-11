@@ -46,38 +46,43 @@ model Session {
 }
 
 model User {
-  id                     String              @id @default(cuid())
-  userId                 String              @unique
-  name                   String?
-  email                  String?             @unique
-  emailVerified          DateTime?
-  passwordHash           String?
-  image                  String?
-  bio                    String?
-  statusMessage          String?
-  presenceStatus         UserPresenceStatus  @default(ONLINE)
-  sessionVersion         Int                 @default(0)
-  lastSeenAt             DateTime?
-  accounts               Account[]
-  blockedBy              UserBlock[]         @relation("BlockedUsers")
-  blockedUsers           UserBlock[]         @relation("UserBlocks")
-  channelReads           ServerChannelRead[]
-  receivedDirectMessages DirectMessage[]     @relation("ReceivedDirectMessages")
-  createdServers         ChatServer[]        @relation("CreatedServers")
-  friendships            Friendship[]        @relation("UserFriendships")
-  friendOf               Friendship[]        @relation("FriendOf")
-  matchingQueue          MatchingQueue?
-  notifications          Notification[]
-  reportedMessages       MessageReport[]     @relation("ReportedUsers")
-  reviewedReports        MessageReport[]     @relation("ReviewedReports")
-  submittedReports       MessageReport[]     @relation("SubmittedReports")
-  posts                  Post[]
-  sentServerMessages     ServerMessage[]     @relation("SentServerMessages")
-  sentDirectMessages     DirectMessage[]     @relation("SentDirectMessages")
-  receivedFriendRequests FriendRequest[]     @relation("ReceivedFriendRequests")
-  serverMemberships      ServerMember[]
-  sentFriendRequests     FriendRequest[]     @relation("SentFriendRequests")
-  sessions               Session[]
+  id                      String                 @id @default(cuid())
+  userId                  String                 @unique
+  name                    String?
+  email                   String?                @unique
+  emailVerified           DateTime?
+  passwordHash            String?
+  image                   String?
+  bio                     String?
+  statusMessage           String?
+  presenceStatus          UserPresenceStatus     @default(ONLINE)
+  sessionVersion          Int                    @default(0)
+  lastSeenAt              DateTime?
+  matchingRatingTotal     Int                    @default(0)
+  matchingRatingCount     Int                    @default(0)
+  accounts                Account[]
+  blockedBy               UserBlock[]            @relation("BlockedUsers")
+  blockedUsers            UserBlock[]            @relation("UserBlocks")
+  channelReads            ServerChannelRead[]
+  receivedDirectMessages  DirectMessage[]        @relation("ReceivedDirectMessages")
+  createdServers          ChatServer[]           @relation("CreatedServers")
+  friendships             Friendship[]           @relation("UserFriendships")
+  friendOf                Friendship[]           @relation("FriendOf")
+  matchingQueue           MatchingQueue?
+  matchingResultsAsFirst  MatchingResult[]       @relation("FirstMatchedUser")
+  matchingResultsAsSecond MatchingResult[]       @relation("SecondMatchedUser")
+  matchingTopicProfiles   MatchingTopicProfile[]
+  notifications           Notification[]
+  reportedMessages        MessageReport[]        @relation("ReportedUsers")
+  reviewedReports         MessageReport[]        @relation("ReviewedReports")
+  submittedReports        MessageReport[]        @relation("SubmittedReports")
+  posts                   Post[]
+  sentServerMessages      ServerMessage[]        @relation("SentServerMessages")
+  sentDirectMessages      DirectMessage[]        @relation("SentDirectMessages")
+  receivedFriendRequests  FriendRequest[]        @relation("ReceivedFriendRequests")
+  serverMemberships       ServerMember[]
+  sentFriendRequests      FriendRequest[]        @relation("SentFriendRequests")
+  sessions                Session[]
 }
 
 model VerificationToken {
@@ -183,15 +188,47 @@ model DirectMessage {
 }
 
 model MatchingQueue {
-  id            String        @id @default(cuid())
-  userId        String        @unique
-  topic         MatchingTopic
-  matchedUserId String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String          @id @default(cuid())
+  userId           String          @unique
+  topic            MatchingTopic
+  matchedUserId    String?
+  matchingResultId String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchingResult   MatchingResult? @relation(fields: [matchingResultId], references: [id], onDelete: SetNull)
 
   @@index([topic, matchedUserId, createdAt])
+}
+
+model MatchingResult {
+  id                            String         @id @default(cuid())
+  firstUserId                   String
+  secondUserId                  String
+  topic                         MatchingTopic
+  firstUserRatedAt              DateTime?
+  secondUserRatedAt             DateTime?
+  firstUserConversationConsent  Boolean?
+  secondUserConversationConsent Boolean?
+  createdAt                     DateTime       @default(now())
+  firstUser                     User           @relation("FirstMatchedUser", fields: [firstUserId], references: [id], onDelete: Cascade)
+  secondUser                    User           @relation("SecondMatchedUser", fields: [secondUserId], references: [id], onDelete: Cascade)
+  queue                         MatchingQueue?
+
+  @@index([firstUserId, firstUserRatedAt, createdAt])
+  @@index([secondUserId, secondUserRatedAt, createdAt])
+}
+
+model MatchingTopicProfile {
+  userId      String
+  topic       MatchingTopic
+  vector      Json
+  sampleCount Int
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, topic])
+  @@index([topic, updatedAt])
 }
 
 model UserBlock {

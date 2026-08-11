@@ -97,6 +97,7 @@ type MessageContextMenu =
   | { kind: "direct"; messageId: string; x: number; y: number }
   | { kind: "server"; messageId: string; x: number; y: number };
 type ReportReason = "HARASSMENT" | "OTHER" | "SELF_HARM" | "SPAM";
+type MatchingRating = "NEGATIVE" | "NEUTRAL" | "POSITIVE";
 type ReportTarget = {
   content: string;
   messageId: string;
@@ -347,6 +348,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           ? 3000
           : false,
   });
+  const pendingMatchFeedback = api.chat.getPendingMatchFeedback.useQuery();
   const serverOverview = api.server.getOverview.useQuery(undefined, {
     refetchInterval: (query) =>
       query.state.status === "error"
@@ -830,6 +832,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const selectedFriend = useMemo(() => {
     return directConversation?.friend ?? selectedFriendContact?.friend ?? null;
   }, [directConversation?.friend, selectedFriendContact?.friend]);
+  const privateMatchFeedback =
+    pendingMatchFeedback.data?.friend.id === selectedFriendId
+      ? pendingMatchFeedback.data
+      : null;
   const canSendDirectMessage =
     directConversation?.canSend ??
     Boolean(
@@ -1043,6 +1049,23 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     onError: (error) => setMatchingMessage(getErrorMessage(error)),
   });
 
+  const submitMatchRating = api.chat.submitMatchRating.useMutation({
+    onSuccess: async () => {
+      setMessage("評価を送信しました。内容は誰にも表示されません。");
+      await utils.chat.getPendingMatchFeedback.invalidate();
+    },
+    onError: (error) => setMessage(getErrorMessage(error)),
+  });
+
+  const submitConversationAnalysisConsent =
+    api.chat.submitConversationAnalysisConsent.useMutation({
+      onSuccess: async () => {
+        setMessage("設定を保存しました。");
+        await utils.chat.getPendingMatchFeedback.invalidate();
+      },
+      onError: (error) => setMessage(getErrorMessage(error)),
+    });
+
   const matchRandom = api.chat.matchRandom.useMutation({
     onSuccess: async (result) => {
       if (result.status === "matched") {
@@ -1054,6 +1077,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         await Promise.all([
           utils.chat.getFriends.invalidate(),
           utils.chat.getConversation.invalidate({ friendId: result.friend.id }),
+          utils.chat.getPendingMatchFeedback.invalidate(),
         ]);
         return;
       }
@@ -1123,6 +1147,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     void Promise.all([
       utils.chat.getFriends.invalidate(),
       utils.chat.getConversation.invalidate({ friendId: friend.id }),
+      utils.chat.getPendingMatchFeedback.invalidate(),
     ]);
     cancelMatching.mutate();
   }, [
@@ -1132,6 +1157,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     openDirectFriend,
     utils.chat.getConversation,
     utils.chat.getFriends,
+    utils.chat.getPendingMatchFeedback,
   ]);
 
   const sendMessage = api.chat.sendMessage.useMutation();
@@ -3046,6 +3072,85 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     </>
                   ) : selectedFriendId ? (
                     <>
+                      {privateMatchFeedback?.needsRating && (
+                        <section className="mb-3 rounded-lg border border-[#114744]/20 bg-[#eef7f4] p-4">
+                          <p className="font-semibold text-[#18221f]">
+                            今回のマッチングはいかがでしたか？
+                          </p>
+                          <p className="mt-1 text-xs text-[#53615a]">
+                            評価内容は誰にも表示されず、今後のマッチング改善にのみ使用されます。
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(
+                              [
+                                ["NEGATIVE", "合わなかった"],
+                                ["NEUTRAL", "普通"],
+                                ["POSITIVE", "また話したい"],
+                              ] as const satisfies readonly (readonly [
+                                MatchingRating,
+                                string,
+                              ])[]
+                            ).map(([rating, label]) => (
+                              <button
+                                key={rating}
+                                type="button"
+                                onClick={() =>
+                                  submitMatchRating.mutate({
+                                    matchId: privateMatchFeedback.matchId,
+                                    rating,
+                                  })
+                                }
+                                disabled={submitMatchRating.isPending}
+                                className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                      {privateMatchFeedback?.needsConversationConsent && (
+                        <section className="mb-3 rounded-lg border border-[#114744]/20 bg-[#eef7f4] p-4">
+                          <p className="font-semibold text-[#18221f]">
+                            この会話を次回のマッチング品質向上の為に使用しますか？
+                          </p>
+                          <p className="mt-1 text-xs text-[#53615a]">
+                            同意した場合も、分析するのはあなた自身の発言だけです。会話本文や分析結果は相手に表示されません。
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                submitConversationAnalysisConsent.mutate({
+                                  consent: true,
+                                  matchId: privateMatchFeedback.matchId,
+                                })
+                              }
+                              disabled={
+                                submitConversationAnalysisConsent.isPending
+                              }
+                              className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                            >
+                              使用する
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                submitConversationAnalysisConsent.mutate({
+                                  consent: false,
+                                  matchId: privateMatchFeedback.matchId,
+                                })
+                              }
+                              disabled={
+                                submitConversationAnalysisConsent.isPending
+                              }
+                              className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                            >
+                              使用しない
+                            </button>
+                          </div>
+                        </section>
+                      )}
                       {message && (
                         <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
                           {message}

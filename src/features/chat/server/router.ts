@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { type MatchingTopic, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
 import {
@@ -8,9 +9,16 @@ import {
 import { getFriendRequestLockIds } from "~/features/friend/server/friend-request-permissions";
 import { canManageDirectMessage } from "~/features/chat/server/direct-message-permissions";
 import {
+  createMatchingTopicVector,
+  getConsentedConversationWindows,
+} from "~/features/chat/server/matching-content";
+import {
   canShowMatchedUser,
+  getMatchingConversationConsentTarget,
+  getMatchingRatingTarget,
   hasSettledMatch,
 } from "~/features/chat/server/matching-permissions";
+import { pickMatchingCandidate } from "~/features/chat/server/matching-ranking";
 import { isSameDirectMessage } from "~/features/chat/server/message-idempotency";
 import {
   decodeMessageCursor,
@@ -64,11 +72,108 @@ const matchingTopicInput = z.object({
   topic: z.enum(["CASUAL", "GAME", "WORRIES"]),
 });
 
+const matchingRatingInput = z.object({
+  matchId: z.string().min(1),
+  rating: z.enum(["NEGATIVE", "NEUTRAL", "POSITIVE"]),
+});
+
+const matchingConversationConsentInput = z.object({
+  consent: z.boolean(),
+  matchId: z.string().min(1),
+});
+
+const matchingRatingValue = {
+  NEGATIVE: 0,
+  NEUTRAL: 1,
+  POSITIVE: 2,
+} as const;
+
 const userPreviewSelect = {
   id: true,
   name: true,
   userId: true,
 } as const;
+
+const matchingCandidateSelect = {
+  ...userPreviewSelect,
+  matchingRatingCount: true,
+  matchingRatingTotal: true,
+} as const;
+
+async function refreshMatchingTopicProfile(
+  database: PrismaClient,
+  userId: string,
+  topic: MatchingTopic,
+) {
+  const recentResults = await database.matchingResult.findMany({
+    where: {
+      createdAt: { gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
+      topic,
+      OR: [{ firstUserId: userId }, { secondUserId: userId }],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: {
+      createdAt: true,
+      firstUserConversationConsent: true,
+      firstUserId: true,
+      secondUserConversationConsent: true,
+      secondUserId: true,
+    },
+  });
+  // ponytail: scan at most 50 match records in memory; move this windowing to
+  // SQL only if users regularly exceed that history within 180 days.
+  const conversationWindows = getConsentedConversationWindows(
+    recentResults,
+    userId,
+  );
+
+  if (conversationWindows.length === 0) {
+    await database.matchingTopicProfile.deleteMany({
+      where: { topic, userId },
+    });
+    return null;
+  }
+
+  const messages = await database.directMessage.findMany({
+    where: { OR: conversationWindows, senderId: userId },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: { content: true },
+  });
+  const vector = createMatchingTopicVector(
+    messages.map((message) => message.content),
+  );
+
+  if (!vector) {
+    await database.matchingTopicProfile.deleteMany({
+      where: { topic, userId },
+    });
+    return null;
+  }
+
+  await database.matchingTopicProfile.upsert({
+    where: { userId_topic: { topic, userId } },
+    create: { sampleCount: messages.length, topic, userId, vector },
+    update: { sampleCount: messages.length, vector },
+  });
+
+  return vector;
+}
+
+function addPublicMatchingUserImageUrl(user: {
+  id: string;
+  matchingRatingCount?: number;
+  matchingRatingTotal?: number;
+  name: string | null;
+  userId: string;
+}) {
+  return addProfileImageUrl({
+    id: user.id,
+    name: user.name,
+    userId: user.userId,
+  });
+}
 
 export const chatRouter = createTRPCRouter({
   getFriends: protectedProcedure.query(async ({ ctx }) => {
@@ -173,7 +278,7 @@ export const chatRouter = createTRPCRouter({
     const currentUserId = ctx.session.user.id;
     const queue = await ctx.db.matchingQueue.findUnique({
       where: { userId: currentUserId },
-      select: { matchedUserId: true, topic: true },
+      select: { matchedUserId: true, matchingResultId: true, topic: true },
     });
 
     if (!queue) {
@@ -216,11 +321,246 @@ export const chatRouter = createTRPCRouter({
       })
       ? {
           friend: addProfileImageUrl(friend),
+          matchId: queue.matchingResultId,
           status: "matched" as const,
           topic: queue.topic,
         }
       : { status: "idle" as const };
   }),
+
+  getPendingMatchFeedback: protectedProcedure.query(async ({ ctx }) => {
+    const currentUserId = ctx.session.user.id;
+    const result = await ctx.db.matchingResult.findFirst({
+      where: {
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        OR: [
+          {
+            firstUserId: currentUserId,
+            OR: [
+              { firstUserConversationConsent: null },
+              { firstUserRatedAt: null },
+            ],
+          },
+          {
+            secondUserId: currentUserId,
+            OR: [
+              { secondUserConversationConsent: null },
+              { secondUserRatedAt: null },
+            ],
+          },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        firstUserConversationConsent: true,
+        firstUserId: true,
+        firstUserRatedAt: true,
+        firstUser: { select: userPreviewSelect },
+        secondUserConversationConsent: true,
+        secondUserRatedAt: true,
+        secondUser: { select: userPreviewSelect },
+      },
+    });
+
+    if (!result) return null;
+
+    const isFirstUser = result.firstUserId === currentUserId;
+    const friend = isFirstUser ? result.secondUser : result.firstUser;
+
+    const block = await ctx.db.userBlock.findFirst({
+      where: {
+        OR: [
+          { blockerId: currentUserId, blockedId: friend.id },
+          { blockerId: friend.id, blockedId: currentUserId },
+        ],
+      },
+      select: { id: true },
+    });
+    if (block) return null;
+
+    return {
+      friend: addProfileImageUrl(friend),
+      matchId: result.id,
+      needsConversationConsent:
+        (isFirstUser
+          ? result.firstUserConversationConsent
+          : result.secondUserConversationConsent) === null,
+      needsRating: !(isFirstUser
+        ? result.firstUserRatedAt
+        : result.secondUserRatedAt),
+    };
+  }),
+
+  submitMatchRating: protectedProcedure
+    .input(matchingRatingInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 20,
+          scope: "chat:matching-rating:user",
+          subject: currentUserId,
+          windowMs: 60 * 60 * 1000,
+        },
+      ]);
+
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "MatchingResult"
+          WHERE "id" = ${input.matchId}
+          FOR UPDATE
+        `;
+        const result = await tx.matchingResult.findUnique({
+          where: { id: input.matchId },
+          select: {
+            createdAt: true,
+            firstUserId: true,
+            firstUserRatedAt: true,
+            secondUserId: true,
+            secondUserRatedAt: true,
+          },
+        });
+
+        const ratingTarget = result
+          ? getMatchingRatingTarget(currentUserId, result)
+          : null;
+        if (
+          !result ||
+          !ratingTarget ||
+          result.createdAt < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        ) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "評価対象のマッチングが見つかりません",
+          });
+        }
+
+        if (ratingTarget.ratedAt) return { ok: true };
+
+        const block = await tx.userBlock.findFirst({
+          where: {
+            OR: [
+              {
+                blockerId: currentUserId,
+                blockedId: ratingTarget.targetUserId,
+              },
+              {
+                blockerId: ratingTarget.targetUserId,
+                blockedId: currentUserId,
+              },
+            ],
+          },
+          select: { id: true },
+        });
+        if (block) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "評価対象のマッチングが見つかりません",
+          });
+        }
+
+        await tx.matchingResult.update({
+          where: { id: input.matchId },
+          data: ratingTarget.isFirstUser
+            ? { firstUserRatedAt: new Date() }
+            : { secondUserRatedAt: new Date() },
+        });
+        await tx.user.update({
+          where: { id: ratingTarget.targetUserId },
+          data: {
+            matchingRatingCount: { increment: 1 },
+            matchingRatingTotal: {
+              increment: matchingRatingValue[input.rating],
+            },
+          },
+        });
+
+        return { ok: true };
+      });
+    }),
+
+  submitConversationAnalysisConsent: protectedProcedure
+    .input(matchingConversationConsentInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 20,
+          scope: "chat:matching-consent:user",
+          subject: currentUserId,
+          windowMs: 60 * 60 * 1000,
+        },
+      ]);
+
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id"
+          FROM "MatchingResult"
+          WHERE "id" = ${input.matchId}
+          FOR UPDATE
+        `;
+        const result = await tx.matchingResult.findUnique({
+          where: { id: input.matchId },
+          select: {
+            createdAt: true,
+            firstUserConversationConsent: true,
+            firstUserId: true,
+            secondUserConversationConsent: true,
+            secondUserId: true,
+          },
+        });
+        const consentTarget = result
+          ? getMatchingConversationConsentTarget(currentUserId, result)
+          : null;
+
+        if (
+          !result ||
+          !consentTarget ||
+          result.createdAt < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        ) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "同意対象のマッチングが見つかりません",
+          });
+        }
+        if (consentTarget.consent !== null) return { ok: true };
+
+        const block = await tx.userBlock.findFirst({
+          where: {
+            OR: [
+              {
+                blockerId: currentUserId,
+                blockedId: consentTarget.targetUserId,
+              },
+              {
+                blockerId: consentTarget.targetUserId,
+                blockedId: currentUserId,
+              },
+            ],
+          },
+          select: { id: true },
+        });
+        if (block) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "同意対象のマッチングが見つかりません",
+          });
+        }
+
+        await tx.matchingResult.update({
+          where: { id: input.matchId },
+          data: consentTarget.isFirstUser
+            ? { firstUserConversationConsent: input.consent }
+            : { secondUserConversationConsent: input.consent },
+        });
+
+        return { ok: true };
+      });
+    }),
 
   matchRandom: protectedProcedure
     .input(matchingTopicInput)
@@ -236,7 +576,7 @@ export const chatRouter = createTRPCRouter({
         },
       ]);
 
-      const [blocks, friendships] = await Promise.all([
+      const [blocks, friendships, currentUserVector] = await Promise.all([
         ctx.db.userBlock.findMany({
           where: {
             OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
@@ -247,6 +587,7 @@ export const chatRouter = createTRPCRouter({
           where: { userId: currentUserId },
           select: { friendId: true },
         }),
+        refreshMatchingTopicProfile(ctx.db, currentUserId, input.topic),
       ]);
       const excludedUserIds = [
         currentUserId,
@@ -258,7 +599,11 @@ export const chatRouter = createTRPCRouter({
         const wait = async () => {
           await tx.matchingQueue.upsert({
             where: { userId: currentUserId },
-            update: { matchedUserId: null, topic: input.topic },
+            update: {
+              matchedUserId: null,
+              matchingResultId: null,
+              topic: input.topic,
+            },
             create: { topic: input.topic, userId: currentUserId },
           });
 
@@ -273,11 +618,21 @@ export const chatRouter = createTRPCRouter({
           },
           orderBy: { createdAt: "asc" },
           take: 50,
-          include: { user: { select: userPreviewSelect } },
+          include: {
+            user: {
+              select: {
+                ...matchingCandidateSelect,
+                matchingTopicProfiles: {
+                  where: { topic: input.topic },
+                  take: 1,
+                  select: { vector: true },
+                },
+              },
+            },
+          },
         });
 
-        const match =
-          waitingUsers[Math.floor(Math.random() * waitingUsers.length)];
+        const match = pickMatchingCandidate(waitingUsers, currentUserVector);
         if (!match) {
           return wait();
         }
@@ -294,7 +649,7 @@ export const chatRouter = createTRPCRouter({
         `;
         const currentQueue = await tx.matchingQueue.findUnique({
           where: { userId: currentUserId },
-          select: { matchedUserId: true, topic: true },
+          select: { matchedUserId: true, matchingResultId: true, topic: true },
         });
 
         if (hasSettledMatch(currentQueue)) {
@@ -308,7 +663,8 @@ export const chatRouter = createTRPCRouter({
 
           if (settledUser) {
             return {
-              friend: addProfileImageUrl(settledUser),
+              friend: addPublicMatchingUserImageUrl(settledUser),
+              matchId: currentQueue.matchingResultId,
               status: "matched" as const,
               topic: currentQueue.topic,
             };
@@ -317,7 +673,8 @@ export const chatRouter = createTRPCRouter({
 
         await assertNotBlocked(tx, currentUserId, match.userId);
 
-        // ponytail: random from the oldest 50 keeps this cheap; use DB random/locks if traffic grows.
+        // ponytail: weighted selection from the oldest 50 keeps this cheap;
+        // move ranking to the database if the queue grows materially.
         const claimed = await tx.matchingQueue.updateMany({
           where: { id: match.id, matchedUserId: null },
           data: { matchedUserId: currentUserId },
@@ -326,6 +683,19 @@ export const chatRouter = createTRPCRouter({
         if (claimed.count === 0) {
           return wait();
         }
+
+        const matchingResult = await tx.matchingResult.create({
+          data: {
+            firstUserId,
+            secondUserId,
+            topic: input.topic,
+          },
+          select: { id: true },
+        });
+        await tx.matchingQueue.update({
+          where: { id: match.id },
+          data: { matchingResultId: matchingResult.id },
+        });
 
         await tx.matchingQueue.deleteMany({
           where: { userId: currentUserId },
@@ -339,7 +709,8 @@ export const chatRouter = createTRPCRouter({
         });
 
         return {
-          friend: addProfileImageUrl(match.user),
+          friend: addPublicMatchingUserImageUrl(match.user),
+          matchId: matchingResult.id,
           status: "matched" as const,
           topic: input.topic,
         };

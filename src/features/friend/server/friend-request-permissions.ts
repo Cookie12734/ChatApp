@@ -11,7 +11,7 @@ export function canCancelFriendRequest(
 }
 
 export function getFriendRequestLockIds(userAId: string, userBId: string) {
-  return [userAId, userBId].sort();
+  return [userAId, userBId].sort() as [string, string];
 }
 
 export function getPendingFriendRequestWhere(
