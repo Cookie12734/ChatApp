@@ -4,6 +4,15 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 export const PASSWORD_RESET_IDENTIFIER_PREFIX = "password-reset:";
 
+function getAddressRateLimitRule(
+  scope: string,
+  subject: string,
+  limit: number,
+  windowMs: number,
+) {
+  return subject === "unknown" ? [] : [{ limit, scope, subject, windowMs }];
+}
+
 export function getCredentialsLoginRateLimitRules(
   normalizedEmail: string,
   requestSubject: string,
@@ -15,12 +24,12 @@ export function getCredentialsLoginRateLimitRules(
       subject: "credentials",
       windowMs: LOGIN_WINDOW_MS,
     },
-    {
-      limit: 20,
-      scope: "auth:login:address",
-      subject: requestSubject,
-      windowMs: LOGIN_WINDOW_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:login:address",
+      requestSubject,
+      20,
+      LOGIN_WINDOW_MS,
+    ),
     {
       limit: 8,
       scope: "auth:login:email",
@@ -41,12 +50,12 @@ export function getSignupRateLimitRules(
       subject: "signup",
       windowMs: HOUR_MS,
     },
-    {
-      limit: 5,
-      scope: "auth:signup:address",
-      subject: requestSubject,
-      windowMs: HOUR_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:signup:address",
+      requestSubject,
+      5,
+      HOUR_MS,
+    ),
     {
       limit: 3,
       scope: "auth:signup:email",
@@ -67,12 +76,12 @@ export function getVerificationEmailRateLimitRules(
       subject: "verification",
       windowMs: HOUR_MS,
     },
-    {
-      limit: 10,
-      scope: "auth:verification:address",
-      subject: requestSubject,
-      windowMs: HOUR_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:verification:address",
+      requestSubject,
+      10,
+      HOUR_MS,
+    ),
     {
       limit: 3,
       scope: "auth:verification:email",
@@ -93,12 +102,12 @@ export function getPasswordResetRequestRateLimitRules(
       subject: "password-reset",
       windowMs: HOUR_MS,
     },
-    {
-      limit: 10,
-      scope: "auth:password-reset-request:address",
-      subject: requestSubject,
-      windowMs: HOUR_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:password-reset-request:address",
+      requestSubject,
+      10,
+      HOUR_MS,
+    ),
     {
       limit: 3,
       scope: "auth:password-reset-request:email",
@@ -119,12 +128,12 @@ export function getPasswordResetCommitRateLimitRules(
       subject: "password-reset",
       windowMs: LOGIN_WINDOW_MS,
     },
-    {
-      limit: 20,
-      scope: "auth:password-reset:address",
-      subject: requestSubject,
-      windowMs: LOGIN_WINDOW_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:password-reset:address",
+      requestSubject,
+      20,
+      LOGIN_WINDOW_MS,
+    ),
     {
       limit: 5,
       scope: "auth:password-reset:token",
@@ -145,12 +154,12 @@ export function getEmailVerificationCommitRateLimitRules(
       subject: "email-verification",
       windowMs: LOGIN_WINDOW_MS,
     },
-    {
-      limit: 20,
-      scope: "auth:verify-token:address",
-      subject: requestSubject,
-      windowMs: LOGIN_WINDOW_MS,
-    },
+    ...getAddressRateLimitRule(
+      "auth:verify-token:address",
+      requestSubject,
+      20,
+      LOGIN_WINDOW_MS,
+    ),
     {
       limit: 5,
       scope: "auth:verify-token:token",

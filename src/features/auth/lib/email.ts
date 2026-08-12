@@ -1,22 +1,10 @@
 import { createTransport } from "nodemailer";
 
 import { env } from "~/env";
-
-function getBaseUrl() {
-  if (process.env.AUTH_URL) {
-    return process.env.AUTH_URL.replace(/\/$/, "");
-  }
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL.replace(/\/$/, "");
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return `http://localhost:${process.env.PORT ?? 3000}`;
-}
+import { getEmailBaseUrl } from "~/features/auth/lib/email-url";
 
 export function buildVerificationUrl(token: string) {
-  return `${getBaseUrl()}/auth/verify-email?token=${token}`;
+  return `${getEmailBaseUrl()}/auth/verify-email?token=${token}`;
 }
 
 async function sendEmail(input: {
@@ -82,7 +70,7 @@ export async function sendSignupVerificationEmail(to: string, token: string) {
 }
 
 export function buildPasswordResetUrl(token: string) {
-  return `${getBaseUrl()}/auth/reset-password?token=${token}`;
+  return `${getEmailBaseUrl()}/auth/reset-password?token=${token}`;
 }
 
 export async function sendPasswordResetEmail(to: string, token: string) {

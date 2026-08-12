@@ -13,6 +13,7 @@ export const env = createEnv({
         : z.string().optional(),
     AUTH_DISCORD_ID: z.string().optional(),
     AUTH_DISCORD_SECRET: z.string().optional(),
+    AUTH_URL: z.string().url().optional(),
     EMAIL_SERVER: z.string().optional(),
     EMAIL_FROM: z.string().optional(),
     MODERATOR_EMAILS: z.string().optional(),
@@ -20,6 +21,10 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    TRUST_PROXY_HEADERS: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
   },
 
   /**
@@ -37,11 +42,13 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
     AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
+    AUTH_URL: process.env.AUTH_URL,
     EMAIL_SERVER: process.env.EMAIL_SERVER,
     EMAIL_FROM: process.env.EMAIL_FROM,
     MODERATOR_EMAILS: process.env.MODERATOR_EMAILS,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    TRUST_PROXY_HEADERS: process.env.TRUST_PROXY_HEADERS,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

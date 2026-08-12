@@ -3,6 +3,7 @@
 import { LogOut, Plus, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { type RouterOutputs, api } from "~/trpc/react";
@@ -179,14 +180,15 @@ export function ServerRail({
             <UserRound className="h-5 w-5" aria-hidden="true" />
           </button>
         </ProfileSettingsDialog>
-        <Link
-          href="/api/auth/signout"
+        <button
+          type="button"
+          onClick={() => void signOut({ redirectTo: "/auth/login" })}
           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
           aria-label="Sign out"
           title="Sign out"
         >
           <LogOut className="h-5 w-5" aria-hidden="true" />
-        </Link>
+        </button>
       </div>
     </aside>
   );

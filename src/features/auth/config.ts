@@ -12,6 +12,7 @@ import { type Adapter, type AdapterUser } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 
+import { env } from "~/env";
 import {
   getCredentialsLoginRateLimitRules,
   isBcryptPasswordSupported,
@@ -29,6 +30,7 @@ import { enforceRateLimits } from "~/server/rate-limit";
 import {
   getRateLimitSubjectFromHeaders,
   RateLimitExceededError,
+  shouldTrustProxyHeaders,
 } from "~/server/rate-limit-policy";
 
 class LoginRateLimitError extends CredentialsSignin {
@@ -171,6 +173,10 @@ export const authConfig = {
               getRateLimitSubjectFromHeaders(
                 request.headers.get("x-forwarded-for"),
                 request.headers.get("x-real-ip"),
+                shouldTrustProxyHeaders(
+                  env.TRUST_PROXY_HEADERS,
+                  process.env.VERCEL,
+                ),
               ),
             ),
           );
