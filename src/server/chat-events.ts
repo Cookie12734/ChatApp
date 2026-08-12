@@ -28,8 +28,9 @@ type ChatEventSubscription = {
 type ChatEventStreamState = {
   isPolling: boolean;
   lastEventId?: bigint;
-  localEventIds: Set<string>;
+  localEventVersions: Map<string, number>;
   pollTimer?: NodeJS.Timeout;
+  subscriptionVersion: number;
   subscriptions: Map<ChatEventListener, ChatEventSubscription>;
 };
 
@@ -39,7 +40,8 @@ const globalForChatEvents = globalThis as unknown as {
 const streamState: ChatEventStreamState =
   (globalForChatEvents.chatEventStreamState ??= {
     isPolling: false,
-    localEventIds: new Set<string>(),
+    localEventVersions: new Map<string, number>(),
+    subscriptionVersion: 0,
     subscriptions: new Map<ChatEventListener, ChatEventSubscription>(),
   });
 
@@ -72,22 +74,32 @@ export function canOpenChatEventConnection(
 }
 
 export function takePendingLocalEventIds(
-  localEventIds: Set<string>,
+  localEventVersions: Map<string, number>,
   afterEventId: bigint,
   limit = 100,
 ) {
   const pendingIds: bigint[] = [];
 
-  for (const id of localEventIds) {
+  for (const id of localEventVersions.keys()) {
     const eventId = BigInt(id);
     if (eventId <= afterEventId) {
-      localEventIds.delete(id);
+      localEventVersions.delete(id);
     } else if (pendingIds.length < limit) {
       pendingIds.push(eventId);
     }
   }
 
   return pendingIds;
+}
+
+export function shouldReplayLocalChatEvent(
+  publishedSubscriptionVersion: number | undefined,
+  currentSubscriptionVersion: number,
+) {
+  return (
+    publishedSubscriptionVersion === undefined ||
+    publishedSubscriptionVersion !== currentSubscriptionVersion
+  );
 }
 
 function emitChatEvent(event: ChatEvent) {
@@ -141,7 +153,7 @@ async function pollChatEvents(db: ChatEventDatabase) {
       const lastEventId = streamState.lastEventId;
       if (lastEventId === undefined) break;
       const localEventIds = takePendingLocalEventIds(
-        streamState.localEventIds,
+        streamState.localEventVersions,
         lastEventId,
       );
       const events: Array<{ id: bigint; payload: unknown }> =
@@ -165,7 +177,16 @@ async function pollChatEvents(db: ChatEventDatabase) {
 
       for (const event of events) {
         streamState.lastEventId = event.id;
-        if (!streamState.localEventIds.delete(event.id.toString())) {
+        const eventId = event.id.toString();
+        const publishedSubscriptionVersion =
+          streamState.localEventVersions.get(eventId);
+        streamState.localEventVersions.delete(eventId);
+        if (
+          shouldReplayLocalChatEvent(
+            publishedSubscriptionVersion,
+            streamState.subscriptionVersion,
+          )
+        ) {
           emitChatEvent(event.payload as ChatEvent);
         }
       }
@@ -183,19 +204,22 @@ export function subscribeToChatEvents(
   subscription: ChatEventSubscription,
 ) {
   streamState.subscriptions.set(subscription.listener, subscription);
+  streamState.subscriptionVersion += 1;
   if (!streamState.pollTimer) {
     void pollChatEvents(db);
     streamState.pollTimer = setInterval(() => void pollChatEvents(db), 500);
   }
 
   return () => {
-    streamState.subscriptions.delete(subscription.listener);
+    if (streamState.subscriptions.delete(subscription.listener)) {
+      streamState.subscriptionVersion += 1;
+    }
     if (streamState.subscriptions.size > 0) return;
 
     clearInterval(streamState.pollTimer);
     streamState.pollTimer = undefined;
     streamState.lastEventId = undefined;
-    streamState.localEventIds.clear();
+    streamState.localEventVersions.clear();
   };
 }
 
@@ -217,6 +241,8 @@ export async function publishChatEvent(
   db: ChatEventDatabase,
   event: ChatEvent,
 ) {
+  const publishedSubscriptionVersion = streamState.subscriptionVersion;
+  const hadLocalSubscribers = streamState.subscriptions.size > 0;
   emitChatEvent(event);
 
   try {
@@ -231,8 +257,11 @@ export async function publishChatEvent(
       },
       select: { id: true },
     });
-    if (streamState.subscriptions.size > 0) {
-      streamState.localEventIds.add(createdEvent.id.toString());
+    if (hadLocalSubscribers) {
+      streamState.localEventVersions.set(
+        createdEvent.id.toString(),
+        publishedSubscriptionVersion,
+      );
     }
     void cleanupExpiredEvents(db);
   } catch (error) {

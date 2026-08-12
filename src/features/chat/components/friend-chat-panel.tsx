@@ -1079,6 +1079,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           utils.chat.getConversation.invalidate({ friendId: result.friend.id }),
           utils.chat.getPendingMatchFeedback.invalidate(),
         ]);
+        cancelMatching.mutate();
         return;
       }
 

@@ -596,7 +596,48 @@ export const chatRouter = createTRPCRouter({
       ];
 
       return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT pg_advisory_xact_lock(hashtext(${currentUserId}))
+        `;
+
+        const getSettledMatch = async () => {
+          const queue = await tx.matchingQueue.findUnique({
+            where: { userId: currentUserId },
+            select: {
+              matchedUserId: true,
+              matchingResultId: true,
+              topic: true,
+            },
+          });
+          if (!hasSettledMatch(queue)) return null;
+
+          const friend = await tx.user.findUnique({
+            where: { id: queue.matchedUserId },
+            select: userPreviewSelect,
+          });
+          return friend
+            ? {
+                friend: addPublicMatchingUserImageUrl(friend),
+                matchId: queue.matchingResultId,
+                status: "matched" as const,
+                topic: queue.topic,
+              }
+            : null;
+        };
+
+        const settledMatch = await getSettledMatch();
+        if (settledMatch) return settledMatch;
+
         const wait = async () => {
+          await tx.$queryRaw`
+            SELECT "id"
+            FROM "User"
+            WHERE "id" = ${currentUserId}
+            FOR UPDATE
+          `;
+          const matchSettledWhileWaiting = await getSettledMatch();
+          if (matchSettledWhileWaiting) return matchSettledWhileWaiting;
+
           await tx.matchingQueue.upsert({
             where: { userId: currentUserId },
             update: {
@@ -647,29 +688,8 @@ export const chatRouter = createTRPCRouter({
           ORDER BY "id"
           FOR UPDATE
         `;
-        const currentQueue = await tx.matchingQueue.findUnique({
-          where: { userId: currentUserId },
-          select: { matchedUserId: true, matchingResultId: true, topic: true },
-        });
-
-        if (hasSettledMatch(currentQueue)) {
-          const settledUser =
-            currentQueue.matchedUserId === match.userId
-              ? match.user
-              : await tx.user.findUnique({
-                  where: { id: currentQueue.matchedUserId },
-                  select: userPreviewSelect,
-                });
-
-          if (settledUser) {
-            return {
-              friend: addPublicMatchingUserImageUrl(settledUser),
-              matchId: currentQueue.matchingResultId,
-              status: "matched" as const,
-              topic: currentQueue.topic,
-            };
-          }
-        }
+        const settledMatchAfterLock = await getSettledMatch();
+        if (settledMatchAfterLock) return settledMatchAfterLock;
 
         await assertNotBlocked(tx, currentUserId, match.userId);
 
@@ -697,8 +717,19 @@ export const chatRouter = createTRPCRouter({
           data: { matchingResultId: matchingResult.id },
         });
 
-        await tx.matchingQueue.deleteMany({
+        await tx.matchingQueue.upsert({
           where: { userId: currentUserId },
+          update: {
+            matchedUserId: match.userId,
+            matchingResultId: matchingResult.id,
+            topic: input.topic,
+          },
+          create: {
+            matchedUserId: match.userId,
+            matchingResultId: matchingResult.id,
+            topic: input.topic,
+            userId: currentUserId,
+          },
         });
         await tx.friendship.createMany({
           data: [
