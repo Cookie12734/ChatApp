@@ -248,7 +248,7 @@ export function GlobalSearchDialog({
           </DialogDescription>
         </DialogHeader>
         <div
-          className="border-connect-ink/15 flex gap-1 overflow-x-auto border-b px-3 py-2"
+          className="border-connect-ink/15 grid grid-cols-2 gap-1 border-b px-3 py-2 sm:flex sm:overflow-x-auto"
           role="tablist"
           aria-label="検索対象"
         >
@@ -262,7 +262,7 @@ export function GlobalSearchDialog({
                 setScope(value);
                 setMessage(undefined);
               }}
-              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-md px-3 text-sm font-semibold ${scope === value ? "bg-connect-ink text-connect-paper" : "hover:bg-connect-highlight text-connect-muted"}`}
+              className={`flex min-h-10 min-w-0 items-center gap-1 rounded-md px-2 text-xs font-semibold sm:shrink-0 sm:gap-2 sm:px-3 sm:text-sm ${scope === value ? "bg-connect-ink text-connect-paper" : "hover:bg-connect-highlight text-connect-muted"}`}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}

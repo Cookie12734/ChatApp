@@ -95,6 +95,7 @@ import {
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
+type ChatGroup = RouterOutputs["group"]["list"]["groups"][number];
 type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
 type ChatEventPayload =
@@ -118,6 +119,26 @@ type FriendChatPanelProps = {
   initialSearchOpen?: boolean;
   initialServerId?: string;
 };
+
+function getGroupDisplayName(group: ChatGroup) {
+  const customName = group.name?.trim();
+  if (customName) return customName;
+
+  const currentUserId = group.myMembership?.user.id;
+  return (
+    group.members
+      .filter(({ user }) => user.id !== currentUserId)
+      .slice(0, 3)
+      .map(({ user }) => getDisplayName(user))
+      .join("、") || "グループDM"
+  );
+}
+
+function getGroupPreview(group: ChatGroup) {
+  const content = group.lastMessage?.content.trim();
+  if (content?.length) return content;
+  return `${group.members.length}人の会話`;
+}
 type EditingMessage =
   | { content: string; kind: "direct"; messageId: string }
   | { content: string; kind: "server"; messageId: string };
@@ -454,6 +475,7 @@ export function FriendChatPanel({
           ? 5000
           : 30000,
   });
+  const groupConversations = api.group.list.useQuery();
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -2733,8 +2755,8 @@ export function FriendChatPanel({
               </button>
             </div>
 
-            <div className="text-connect-muted flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide uppercase">
-              <span>DM</span>
+            <div className="text-connect-muted flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide">
+              <span>会話</span>
               <GroupDmDialog
                 initialGroupId={selectedGroupId}
                 open={isGroupDmOpen}
@@ -2743,15 +2765,47 @@ export function FriendChatPanel({
                 <button
                   type="button"
                   className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
-                  aria-label="新しいグループDM"
-                  title="新しいグループDM"
+                  aria-label="グループDMを開く"
+                  title="グループDMを開く"
                 >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  <Users className="h-4 w-4" aria-hidden="true" />
                 </button>
               </GroupDmDialog>
             </div>
 
             <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
+              {groupConversations.isLoading && (
+                <div className="bg-connect-surface mx-2 h-14 animate-pulse rounded-md" />
+              )}
+
+              {groupConversations.data?.groups.map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedGroupId(group.id);
+                    setIsGroupDmOpen(true);
+                  }}
+                  className={`flex min-h-14 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-ink text-connect-paper" : "hover:bg-connect-surface"}`}
+                >
+                  <span
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-paper/15" : "bg-connect-highlight text-connect-action"}`}
+                  >
+                    <Users className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {getGroupDisplayName(group)}
+                    </span>
+                    <span
+                      className={`mt-0.5 block truncate text-xs ${isGroupDmOpen && selectedGroupId === group.id ? "text-connect-focus-soft" : "text-connect-muted"}`}
+                    >
+                      {getGroupPreview(group)}
+                    </span>
+                  </span>
+                </button>
+              ))}
+
               {friends.isLoading && (
                 <div className="space-y-2 px-2">
                   {[0, 1, 2].map((item) => (
@@ -2916,6 +2970,7 @@ export function FriendChatPanel({
           <div className="flex min-w-0 flex-1 flex-col">
             <div
               ref={messageViewport.containerRef}
+              data-chat-viewport
               onScroll={messageViewport.handleScroll}
               className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5"
             >

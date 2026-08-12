@@ -116,14 +116,14 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await input.fill(content);
   await input.press("Enter");
 
-  const pendingMessage = page.locator("article").filter({ hasText: content });
-  await expect(pendingMessage).toHaveCSS("color", "rgb(125, 135, 129)");
+  const pendingMessage = page
+    .locator('article[aria-live="polite"]')
+    .filter({ hasText: content });
+  await expect(pendingMessage).toHaveClass(/text-connect-neutral/);
   await expect(pendingMessage.getByText("送信中", { exact: true })).toHaveCount(
     1,
   );
-  await expect(pendingMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
-    timeout: 10_000,
-  });
+  await expect(pendingMessage).toHaveCount(0, { timeout: 10_000 });
   await expect(pendingMessage.getByText("送信中", { exact: true })).toHaveCount(
     0,
   );
@@ -136,9 +136,9 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await input.press("Enter");
 
   const followupMessage = page
-    .locator("article")
+    .locator('article[aria-live="polite"]')
     .filter({ hasText: followupContent });
-  await expect(followupMessage).toHaveCSS("color", "rgb(125, 135, 129)");
+  await expect(followupMessage).toHaveClass(/text-connect-neutral/);
   await expect(
     followupMessage.getByText("送信中", { exact: true }),
   ).toHaveCount(1);
@@ -149,9 +149,7 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
   await expect(
     followupMessage.getByText("E2E Owner", { exact: true }),
   ).toHaveCount(0);
-  await expect(followupMessage).toHaveCSS("color", "rgb(24, 34, 31)", {
-    timeout: 10_000,
-  });
+  await expect(followupMessage).toHaveCount(0, { timeout: 10_000 });
   await expect(
     followupMessage.getByText("送信中", { exact: true }),
   ).toHaveCount(0);
@@ -159,7 +157,7 @@ test("送信待ちのメッセージを灰色で即時表示する", async ({ pa
 
 test("スクロール中の新着件数と未読線を表示する", async ({ page }) => {
   await login(page);
-  const viewport = page.locator(".chat-scrollbar").first();
+  const viewport = page.locator("[data-chat-viewport]");
   await expect
     .poll(() =>
       viewport.evaluate(
@@ -181,6 +179,7 @@ test("スクロール中の新着件数と未読線を表示する", async ({ pa
     data: {
       audienceIds: [],
       kind: "server",
+      serverId,
       payload: {
         change: "created",
         channelId,
@@ -227,7 +226,7 @@ test("既読更新に失敗しても同じメッセージを再試行する", as
   await login(page);
   await expect.poll(() => attempts).toBeGreaterThanOrEqual(1);
 
-  const viewport = page.locator(".chat-scrollbar").first();
+  const viewport = page.locator("[data-chat-viewport]");
   await viewport.evaluate((element) => {
     element.scrollTop = 0;
     element.dispatchEvent(new Event("scroll", { bubbles: true }));
@@ -319,6 +318,11 @@ test("プロフィールアイコンからブロックしてメッセージと�
   const matchingForm = page.locator("form").filter({
     has: page.getByLabel("話したいこと"),
   });
+  await matchingForm
+    .getByRole("checkbox", {
+      name: "内容を確認し、会話を始めることに同意します",
+    })
+    .check();
   await matchingForm
     .getByRole("button", { name: "マッチング", exact: true })
     .click();

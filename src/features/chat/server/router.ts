@@ -1109,7 +1109,7 @@ export const chatRouter = createTRPCRouter({
       let newlyMatchedPeerId: string | undefined;
       const result = await ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`
-          SELECT pg_advisory_xact_lock(hashtext(${currentUserId}))
+          SELECT pg_advisory_xact_lock(hashtext(${currentUserId}))::text AS "lock"
         `;
 
         const getSettledMatch = async () => {
