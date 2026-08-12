@@ -66,12 +66,12 @@ export default async function ServerInvitePage({
   const serverImage = getServerImageUrl(server.id, code);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center overflow-x-hidden bg-[#f6f0e4] px-5 py-10 text-[#18221f]">
+    <main className="bg-connect-paper text-connect-ink flex min-h-dvh items-center justify-center overflow-x-hidden px-5 py-10">
       <section
-        className="w-full max-w-lg rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-6 text-center shadow-[10px_10px_0_#d8efee] sm:p-8"
+        className="border-connect-ink/15 bg-connect-surface w-full max-w-lg rounded-md border p-6 text-center shadow-[10px_10px_0_var(--color-focus-on-dark)] sm:p-8"
         aria-labelledby="invite-title"
       >
-        <div className="mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.75rem] border-4 border-[#fff8ed] bg-[#18221f] text-[#f6f0e4] shadow-[0_0_0_1px_rgba(24,34,31,0.12)]">
+        <div className="border-connect-surface bg-connect-ink text-connect-paper mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.75rem] border-4 shadow-[0_0_0_1px_var(--color-rule-soft)]">
           <Image
             src={serverImage}
             alt={`${server.name}のサーバーアイコン`}
@@ -83,7 +83,7 @@ export default async function ServerInvitePage({
           />
         </div>
 
-        <p className="mt-6 text-sm font-semibold text-[#9f4122]">
+        <p className="text-connect-danger mt-6 text-sm font-semibold">
           サーバーへの招待
         </p>
         <h1
@@ -93,22 +93,22 @@ export default async function ServerInvitePage({
           {server.name}
         </h1>
 
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-[#53615a]">
+        <div className="text-connect-muted mt-4 flex items-center justify-center gap-2 text-sm font-medium">
           <Users className="h-4 w-4" aria-hidden="true" />
           <span>メンバー {formattedMemberCount}人</span>
         </div>
 
-        <p className="mx-auto mt-5 max-w-md text-sm leading-7 text-pretty [overflow-wrap:anywhere] whitespace-pre-wrap text-[#53615a]">
+        <p className="text-connect-muted mx-auto mt-5 max-w-md text-sm leading-7 text-pretty [overflow-wrap:anywhere] whitespace-pre-wrap">
           {description?.length
             ? description
             : "このサーバーに参加して、メンバーとの会話を始めましょう。"}
         </p>
 
-        <div className="mt-7 border-t border-[#18221f]/10 pt-6">
+        <div className="border-connect-ink/10 mt-7 border-t pt-6">
           {full === "1" && (
             <p
               role="alert"
-              className="mb-4 text-sm font-semibold text-[#9f4122]"
+              className="text-connect-danger mb-4 text-sm font-semibold"
             >
               このサーバーは定員（250人）に達しています。
             </p>
@@ -116,7 +116,7 @@ export default async function ServerInvitePage({
           {limit === "1" && (
             <p
               role="alert"
-              className="mb-4 text-sm font-semibold text-[#9f4122]"
+              className="text-connect-danger mb-4 text-sm font-semibold"
             >
               参加できるサーバー数の上限（100件）に達しています。
             </p>
@@ -124,7 +124,7 @@ export default async function ServerInvitePage({
           {isMember ? (
             <Button
               asChild
-              className="min-h-12 w-full bg-[#18221f] px-5 text-[#f6f0e4] hover:bg-[#2f3c37] motion-reduce:transition-none"
+              className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 min-h-12 w-full px-5 motion-reduce:transition-none"
             >
               <Link href={`/?serverId=${encodeURIComponent(server.id)}`}>
                 サーバーを開く
@@ -136,20 +136,20 @@ export default async function ServerInvitePage({
           ) : null}
 
           {!isMember && (
-            <p className="mt-3 text-xs leading-5 text-[#68716b]">
+            <p className="text-connect-neutral mt-3 text-xs leading-5">
               参加すると、このサーバーのメンバーとして表示されます。
             </p>
           )}
         </div>
 
-        <p className="mt-6 text-xs [overflow-wrap:anywhere] text-[#68716b]">
+        <p className="text-connect-neutral mt-6 text-xs [overflow-wrap:anywhere]">
           {session.user?.name
             ? `${session.user.name} としてログイン中`
             : "ログイン中のアカウントで続行します"}
         </p>
         <Link
           href="/"
-          className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md px-3 text-sm font-semibold text-[#114744] underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-connect-action focus-visible:ring-connect-action mt-3 inline-flex min-h-11 items-center justify-center rounded-md px-3 text-sm font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           ホームに戻る
         </Link>

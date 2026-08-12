@@ -25,6 +25,9 @@ export const env = createEnv({
       .enum(["true", "false"])
       .default("false")
       .transform((value) => value === "true"),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().optional(),
   },
 
   /**
@@ -49,6 +52,9 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     TRUST_PROXY_HEADERS: process.env.TRUST_PROXY_HEADERS,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

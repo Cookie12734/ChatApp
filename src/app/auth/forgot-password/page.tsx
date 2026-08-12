@@ -4,13 +4,13 @@ import { ForgotPasswordForm } from "~/features/auth/components/forgot-password-f
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
-      <section className="w-full max-w-md rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-8 shadow-[10px_10px_0_#d8efee]">
-        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-[#e4f2dc] text-[#114744]">
+    <main className="bg-connect-paper text-connect-ink flex min-h-screen items-center justify-center px-5 py-8">
+      <section className="border-connect-ink/15 bg-connect-surface w-full max-w-md rounded-md border p-8 shadow-[10px_10px_0_var(--color-focus-on-dark)]">
+        <div className="bg-connect-highlight text-connect-action flex h-12 w-12 items-center justify-center rounded-md">
           <KeyRound className="h-6 w-6" aria-hidden="true" />
         </div>
         <h1 className="mt-6 text-3xl font-semibold">パスワードを再設定する</h1>
-        <p className="mt-4 mb-6 leading-7 text-[#53615a]">
+        <p className="text-connect-muted mt-4 mb-6 leading-7">
           登録したメールアドレスへ再設定リンクを送ります。
         </p>
         <ForgotPasswordForm />

@@ -35,42 +35,54 @@ model Session {
 }
 
 model User {
-  id                      String                 @id @default(cuid())
-  userId                  String                 @unique
-  name                    String?
-  email                   String?                @unique
-  emailVerified           DateTime?
-  passwordHash            String?
-  image                   String?
-  bio                     String?
-  statusMessage           String?
-  presenceStatus          UserPresenceStatus     @default(ONLINE)
-  sessionVersion          Int                    @default(0)
-  lastSeenAt              DateTime?
-  matchingRatingTotal     Int                    @default(0)
-  matchingRatingCount     Int                    @default(0)
-  accounts                Account[]
-  blockedBy               UserBlock[]            @relation("BlockedUsers")
-  blockedUsers            UserBlock[]            @relation("UserBlocks")
-  channelReads            ServerChannelRead[]
-  receivedDirectMessages  DirectMessage[]        @relation("ReceivedDirectMessages")
-  createdServers          ChatServer[]           @relation("CreatedServers")
-  friendships             Friendship[]           @relation("UserFriendships")
-  friendOf                Friendship[]           @relation("FriendOf")
-  matchingQueue           MatchingQueue?
-  matchingResultsAsFirst  MatchingResult[]       @relation("FirstMatchedUser")
-  matchingResultsAsSecond MatchingResult[]       @relation("SecondMatchedUser")
-  matchingTopicProfiles   MatchingTopicProfile[]
-  notifications           Notification[]
-  reportedMessages        MessageReport[]        @relation("ReportedUsers")
-  reviewedReports         MessageReport[]        @relation("ReviewedReports")
-  submittedReports        MessageReport[]        @relation("SubmittedReports")
-  sentServerMessages      ServerMessage[]        @relation("SentServerMessages")
-  sentDirectMessages      DirectMessage[]        @relation("SentDirectMessages")
-  receivedFriendRequests  FriendRequest[]        @relation("ReceivedFriendRequests")
-  serverMemberships       ServerMember[]
-  sentFriendRequests      FriendRequest[]        @relation("SentFriendRequests")
-  sessions                Session[]
+  id                        String                    @id @default(cuid())
+  userId                    String                    @unique
+  name                      String?
+  email                     String?                   @unique
+  emailVerified             DateTime?
+  passwordHash              String?
+  image                     String?
+  bio                       String?
+  statusMessage             String?
+  presenceStatus            UserPresenceStatus        @default(ONLINE)
+  sessionVersion            Int                       @default(0)
+  lastSeenAt                DateTime?
+  matchingRatingTotal       Int                       @default(0)
+  matchingRatingCount       Int                       @default(0)
+  accounts                  Account[]
+  attachments               MessageAttachment[]
+  blockedBy                 UserBlock[]               @relation("BlockedUsers")
+  blockedUsers              UserBlock[]               @relation("UserBlocks")
+  channelReads              ServerChannelRead[]
+  createdGroupConversations GroupConversation[]       @relation("CreatedGroupConversations")
+  receivedDirectMessages    DirectMessage[]           @relation("ReceivedDirectMessages")
+  createdServers            ChatServer[]              @relation("CreatedServers")
+  friendships               Friendship[]              @relation("UserFriendships")
+  friendOf                  Friendship[]              @relation("FriendOf")
+  matchingQueue             MatchingQueue?
+  matchingResultsAsFirst    MatchingResult[]          @relation("FirstMatchedUser")
+  matchingResultsAsSecond   MatchingResult[]          @relation("SecondMatchedUser")
+  matchingTopicProfiles     MatchingTopicProfile[]
+  notifications             Notification[]
+  notificationPreference    NotificationPreference?
+  pushSubscriptions         PushSubscription[]
+  groupMemberships          GroupConversationMember[]
+  sentGroupMessages         GroupMessage[]            @relation("SentGroupMessages")
+  directMessageReactions    DirectMessageReaction[]
+  serverMessageReactions    ServerMessageReaction[]
+  groupMessageReactions     GroupMessageReaction[]
+  savedDirectMessages       SavedDirectMessage[]
+  savedServerMessages       SavedServerMessage[]
+  savedGroupMessages        SavedGroupMessage[]
+  reportedMessages          MessageReport[]           @relation("ReportedUsers")
+  reviewedReports           MessageReport[]           @relation("ReviewedReports")
+  submittedReports          MessageReport[]           @relation("SubmittedReports")
+  sentServerMessages        ServerMessage[]           @relation("SentServerMessages")
+  sentDirectMessages        DirectMessage[]           @relation("SentDirectMessages")
+  receivedFriendRequests    FriendRequest[]           @relation("ReceivedFriendRequests")
+  serverMemberships         ServerMember[]
+  sentFriendRequests        FriendRequest[]           @relation("SentFriendRequests")
+  sessions                  Session[]
 }
 
 model VerificationToken {
@@ -159,21 +171,153 @@ model Notification {
   @@index([userId, readAt, createdAt])
 }
 
+model NotificationPreference {
+  userId             String   @id
+  directMessages     Boolean  @default(true)
+  groupMessages      Boolean  @default(true)
+  mentions           Boolean  @default(true)
+  friendRequests     Boolean  @default(true)
+  matching           Boolean  @default(true)
+  showMessagePreview Boolean  @default(false)
+  quietHoursStart    Int?
+  quietHoursEnd      Int?
+  timeZone           String?
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id             String    @id @default(cuid())
+  userId         String
+  endpoint       String    @unique
+  p256dh         String
+  auth           String
+  expirationTime DateTime?
+  createdAt      DateTime  @default(now())
+  lastUsedAt     DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model DirectMessage {
-  id         String    @id @default(cuid())
-  clientId   String?
-  content    String
-  createdAt  DateTime  @default(now())
-  readAt     DateTime?
-  receiverId String
-  senderId   String
-  receiver   User      @relation("ReceivedDirectMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  sender     User      @relation("SentDirectMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  id          String                  @id @default(cuid())
+  clientId    String?
+  content     String
+  createdAt   DateTime                @default(now())
+  readAt      DateTime?
+  receiverId  String
+  senderId    String
+  replyToId   String?
+  receiver    User                    @relation("ReceivedDirectMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender      User                    @relation("SentDirectMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo     DirectMessage?          @relation("DirectMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     DirectMessage[]         @relation("DirectMessageReplies")
+  reactions   DirectMessageReaction[]
+  attachments MessageAttachment[]
+  savedBy     SavedDirectMessage[]
 
   @@unique([senderId, clientId])
   @@index([receiverId, readAt, createdAt])
   @@index([receiverId, senderId, createdAt])
   @@index([senderId, receiverId, createdAt])
+  @@index([replyToId])
+}
+
+model DirectMessageReaction {
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime      @default(now())
+  message   DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId, emoji])
+  @@index([userId, createdAt])
+}
+
+model SavedDirectMessage {
+  userId    String
+  messageId String
+  createdAt DateTime      @default(now())
+  message   DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@index([messageId])
+  @@index([userId, createdAt])
+}
+
+model GroupConversation {
+  id          String                    @id @default(cuid())
+  name        String?
+  createdById String
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  createdBy   User                      @relation("CreatedGroupConversations", fields: [createdById], references: [id], onDelete: Cascade)
+  members     GroupConversationMember[]
+  messages    GroupMessage[]
+
+  @@index([createdById, updatedAt])
+}
+
+model GroupConversationMember {
+  groupId   String
+  userId    String
+  role      GroupMemberRole   @default(MEMBER)
+  readAt    DateTime          @default(now())
+  createdAt DateTime          @default(now())
+  group     GroupConversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId, createdAt])
+}
+
+model GroupMessage {
+  id          String                 @id @default(cuid())
+  clientId    String?
+  content     String
+  groupId     String
+  senderId    String
+  replyToId   String?
+  createdAt   DateTime               @default(now())
+  group       GroupConversation      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User                   @relation("SentGroupMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo     GroupMessage?          @relation("GroupMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     GroupMessage[]         @relation("GroupMessageReplies")
+  reactions   GroupMessageReaction[]
+  attachments MessageAttachment[]
+  savedBy     SavedGroupMessage[]
+
+  @@unique([senderId, clientId])
+  @@index([groupId, createdAt])
+  @@index([senderId, createdAt])
+  @@index([replyToId])
+}
+
+model GroupMessageReaction {
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime     @default(now())
+  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId, emoji])
+  @@index([userId, createdAt])
+}
+
+model SavedGroupMessage {
+  userId    String
+  messageId String
+  createdAt DateTime     @default(now())
+  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@index([messageId])
+  @@index([userId, createdAt])
 }
 
 model MatchingQueue {
@@ -198,15 +342,36 @@ model MatchingResult {
   topic                         MatchingTopic
   firstUserRatedAt              DateTime?
   secondUserRatedAt             DateTime?
+  firstUserRating               MatchingRating?
+  secondUserRating              MatchingRating?
   firstUserConversationConsent  Boolean?
   secondUserConversationConsent Boolean?
+  firstUserChatConsentAt        DateTime?
+  secondUserChatConsentAt       DateTime?
   createdAt                     DateTime        @default(now())
   firstUser                     User            @relation("FirstMatchedUser", fields: [firstUserId], references: [id], onDelete: Cascade)
   secondUser                    User            @relation("SecondMatchedUser", fields: [secondUserId], references: [id], onDelete: Cascade)
   queues                        MatchingQueue[]
+  rematchRequest                RematchRequest?
 
   @@index([firstUserId, firstUserRatedAt, createdAt])
   @@index([secondUserId, secondUserRatedAt, createdAt])
+  @@index([firstUserId, createdAt, id])
+  @@index([secondUserId, createdAt, id])
+}
+
+model RematchRequest {
+  id                    String               @id @default(cuid())
+  matchingResultId      String               @unique
+  firstUserRequestedAt  DateTime?
+  secondUserRequestedAt DateTime?
+  status                RematchRequestStatus @default(PENDING)
+  expiresAt             DateTime
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  matchingResult        MatchingResult       @relation(fields: [matchingResultId], references: [id], onDelete: Cascade)
+
+  @@index([status, expiresAt])
 }
 
 model MatchingTopicProfile {
@@ -234,20 +399,24 @@ model UserBlock {
 }
 
 model ChatServer {
-  id          String          @id @default(cuid())
+  id          String           @id @default(cuid())
   name        String
   description String?
   image       String?
-  inviteCode  String          @unique @default(cuid())
+  inviteCode  String           @unique @default(cuid())
+  visibility  ServerVisibility @default(PRIVATE)
+  category    ServerCategory?
+  tags        String[]         @default([])
   createdById String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  createdBy   User            @relation("CreatedServers", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   User             @relation("CreatedServers", fields: [createdById], references: [id], onDelete: Cascade)
   channels    ServerChannel[]
   members     ServerMember[]
   messages    ServerMessage[]
 
   @@index([createdById])
+  @@index([visibility, category, createdAt])
 }
 
 model ServerMember {
@@ -292,22 +461,79 @@ model ServerChannelRead {
 }
 
 model ServerMessage {
-  id        String         @id @default(cuid())
-  clientId  String?
-  content   String
-  createdAt DateTime       @default(now())
-  pinnedAt  DateTime?
-  channelId String?
-  serverId  String
-  senderId  String
-  channel   ServerChannel? @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  sender    User           @relation("SentServerMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  server    ChatServer     @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  id          String                  @id @default(cuid())
+  clientId    String?
+  content     String
+  createdAt   DateTime                @default(now())
+  pinnedAt    DateTime?
+  channelId   String?
+  serverId    String
+  senderId    String
+  replyToId   String?
+  channel     ServerChannel?          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender      User                    @relation("SentServerMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  server      ChatServer              @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  replyTo     ServerMessage?          @relation("ServerMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     ServerMessage[]         @relation("ServerMessageReplies")
+  reactions   ServerMessageReaction[]
+  attachments MessageAttachment[]
+  savedBy     SavedServerMessage[]
 
   @@unique([senderId, clientId])
   @@index([channelId, createdAt])
   @@index([serverId, createdAt])
   @@index([senderId, createdAt])
+  @@index([replyToId])
+}
+
+model ServerMessageReaction {
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime      @default(now())
+  message   ServerMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId, emoji])
+  @@index([userId, createdAt])
+}
+
+model SavedServerMessage {
+  userId    String
+  messageId String
+  createdAt DateTime      @default(now())
+  message   ServerMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, messageId])
+  @@index([messageId])
+  @@index([userId, createdAt])
+}
+
+model MessageAttachment {
+  id              String         @id @default(cuid())
+  uploaderId      String
+  kind            AttachmentKind
+  fileName        String
+  mimeType        String
+  size            Int
+  data            Bytes?
+  externalUrl     String?
+  directMessageId String?
+  serverMessageId String?
+  groupMessageId  String?
+  expiresAt       DateTime?
+  createdAt       DateTime       @default(now())
+  uploader        User           @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  directMessage   DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+  serverMessage   ServerMessage? @relation(fields: [serverMessageId], references: [id], onDelete: Cascade)
+  groupMessage    GroupMessage?  @relation(fields: [groupMessageId], references: [id], onDelete: Cascade)
+
+  @@index([uploaderId, createdAt])
+  @@index([directMessageId])
+  @@index([serverMessageId])
+  @@index([groupMessageId])
+  @@index([expiresAt])
 }
 
 model MessageReport {
@@ -360,12 +586,53 @@ enum MatchingTopic {
 
 enum ServerMemberRole {
   OWNER
+  ADMIN
+  MODERATOR
   MEMBER
+  READ_ONLY
+}
+
+enum ServerVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ServerCategory {
+  COMMUNITY
+  GAMES
+  STUDY
+  HOBBIES
+  WELLBEING
+  OTHER
+}
+
+enum GroupMemberRole {
+  OWNER
+  MEMBER
+}
+
+enum AttachmentKind {
+  IMAGE
+  PDF
+  LINK
+}
+
+enum MatchingRating {
+  NEGATIVE
+  NEUTRAL
+  POSITIVE
+}
+
+enum RematchRequestStatus {
+  PENDING
+  MATCHED
+  EXPIRED
 }
 
 enum MessageKind {
   DIRECT
   SERVER
+  GROUP
 }
 
 enum ReportReason {

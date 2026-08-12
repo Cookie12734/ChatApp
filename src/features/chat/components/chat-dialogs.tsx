@@ -40,16 +40,16 @@ export function PinnedMessagesDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-xl">
-        <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+      <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto p-0 sm:max-w-xl">
+        <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle>ピン留めしたメッセージ</DialogTitle>
           <DialogDescription className="sr-only">
             このチャンネルでピン留めされているメッセージの一覧です。
           </DialogDescription>
         </DialogHeader>
-        <div className="divide-y divide-[#18221f]/10 px-5 py-2">
+        <div className="divide-connect-ink/10 divide-y px-5 py-2">
           {isLoading && (
-            <p className="py-6 text-sm text-[#68716b]">読み込み中...</p>
+            <p className="text-connect-neutral py-6 text-sm">読み込み中...</p>
           )}
           {messages?.map((message) => {
             const author = {
@@ -72,7 +72,7 @@ export function PinnedMessagesDialog({
                     <span className="text-sm font-semibold">
                       {getDisplayName(author)}
                     </span>
-                    <time className="text-xs text-[#68716b]">
+                    <time className="text-connect-neutral text-xs">
                       {formatMessageTime(message.createdAt)}
                     </time>
                   </div>
@@ -87,7 +87,7 @@ export function PinnedMessagesDialog({
             );
           })}
           {messages?.length === 0 && (
-            <p className="py-6 text-sm text-[#68716b]">
+            <p className="text-connect-neutral py-6 text-sm">
               ピン留めされたメッセージはありません
             </p>
           )}
@@ -106,21 +106,21 @@ export function ExternalLinkDialog({
 }) {
   return (
     <Dialog open={url !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-[#fff8ed] text-[#18221f] sm:max-w-md">
+      <DialogContent className="bg-connect-surface text-connect-ink sm:max-w-md">
         <DialogHeader>
           <DialogTitle>外部リンクを開きますか？</DialogTitle>
-          <DialogDescription className="text-[#68716b]">
+          <DialogDescription className="text-connect-neutral">
             次のリンクを新しいタブで開きます。
           </DialogDescription>
         </DialogHeader>
-        <p className="max-h-32 overflow-y-auto rounded-md bg-[#f6f0e4] px-3 py-2 text-sm break-all text-[#53615a]">
+        <p className="bg-connect-paper text-connect-muted max-h-32 overflow-y-auto rounded-md px-3 py-2 text-sm break-all">
           {url}
         </p>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex min-h-10 items-center rounded-md border border-[#18221f]/15 px-4 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+            className="border-connect-ink/15 text-connect-muted hover:bg-connect-paper inline-flex min-h-10 items-center rounded-md border px-4 text-sm font-semibold transition"
           >
             キャンセル
           </button>
@@ -130,7 +130,7 @@ export function ExternalLinkDialog({
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
-              className="inline-flex min-h-10 items-center rounded-md bg-[#114744] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3936]"
+              className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-10 items-center rounded-md px-4 text-sm font-semibold transition"
             >
               開く
             </a>

@@ -42,9 +42,9 @@ export function PresenceStatusMenu({
           side="top"
           align="start"
           sideOffset={8}
-          className="z-50 min-w-60 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1.5 text-[#18221f] shadow-xl outline-none"
+          className="border-connect-ink/15 bg-connect-surface text-connect-ink z-50 min-w-60 rounded-md border p-1.5 shadow-xl outline-none"
         >
-          <DropdownMenu.Label className="px-3 py-2 text-xs font-semibold tracking-wide text-[#68716b] uppercase">
+          <DropdownMenu.Label className="text-connect-neutral px-3 py-2 text-xs font-semibold tracking-wide uppercase">
             オンライン状態
           </DropdownMenu.Label>
           <DropdownMenu.RadioGroup
@@ -62,7 +62,7 @@ export function PresenceStatusMenu({
                 value={option.value}
                 disabled={updatePresence.isPending}
                 onSelect={(event) => event.preventDefault()}
-                className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-sm font-medium transition outline-none data-disabled:cursor-wait data-disabled:opacity-60 data-highlighted:bg-[#e4f2dc]"
+                className="data-highlighted:bg-connect-highlight flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-sm font-medium transition outline-none data-disabled:cursor-wait data-disabled:opacity-60"
               >
                 <span
                   className={`h-3 w-3 shrink-0 rounded-full ${option.dotClassName}`}
@@ -71,7 +71,7 @@ export function PresenceStatusMenu({
                 <span className="min-w-0 flex-1">{option.label}</span>
                 <DropdownMenu.ItemIndicator>
                   <Check
-                    className="h-4 w-4 text-[#114744]"
+                    className="text-connect-action h-4 w-4"
                     aria-hidden="true"
                   />
                 </DropdownMenu.ItemIndicator>
@@ -80,7 +80,7 @@ export function PresenceStatusMenu({
           </DropdownMenu.RadioGroup>
           {updatePresence.error && (
             <p
-              className="mx-2 mt-1 rounded border border-[#cc5f2f]/25 bg-[#fff1e8] px-2 py-1.5 text-xs text-[#9f4122]"
+              className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger mx-2 mt-1 rounded border px-2 py-1.5 text-xs"
               role="alert"
             >
               {updatePresence.error.message}

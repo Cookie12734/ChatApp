@@ -34,13 +34,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
+    <main className="bg-connect-paper text-connect-ink min-h-screen px-5 py-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="max-w-lg">
-          <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4]">
+          <div className="bg-connect-ink text-connect-paper mb-6 flex h-12 w-12 items-center justify-center rounded-md">
             <MessageCircle className="h-6 w-6" aria-hidden="true" />
           </div>
-          <p className="mb-4 text-sm font-semibold text-[#9f4122] uppercase">
+          <p className="text-connect-danger mb-4 text-sm font-semibold uppercase">
             connect
           </p>
           <h1 className="text-4xl leading-tight font-semibold sm:text-5xl">
@@ -48,12 +48,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <br />
             静かに戻る。
           </h1>
-          <p className="mt-5 leading-8 text-[#53615a]">
+          <p className="text-connect-muted mt-5 leading-8">
             ログインすると、チャットとフレンドの通知へ戻れます。
           </p>
           {statusMessage && (
             <p
-              className="mt-6 rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 py-3 text-sm text-[#114744]"
+              className="border-connect-action/20 bg-connect-highlight text-connect-action mt-6 rounded-md border px-4 py-3 text-sm"
               role="status"
             >
               {statusMessage}
@@ -61,7 +61,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           )}
           {reason === "session_expired" && (
             <p
-              className="mt-6 rounded-md border border-[#9f4122]/20 bg-[#fff1e8] px-4 py-3 text-sm text-[#8c351c]"
+              className="border-connect-danger/20 bg-connect-danger-soft text-connect-danger-deep mt-6 rounded-md border px-4 py-3 text-sm"
               role="status"
             >
               セッションの有効期限が切れました。もう一度ログインしてください。
@@ -69,7 +69,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           )}
         </section>
 
-        <section className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-6 shadow-[10px_10px_0_#d8efee] sm:p-8">
+        <section className="border-connect-ink/15 bg-connect-surface rounded-md border p-6 shadow-[10px_10px_0_var(--color-focus-on-dark)] sm:p-8">
           <h2 className="mb-6 text-2xl font-semibold">ログイン</h2>
           <LoginForm
             callbackUrl={redirectTo}

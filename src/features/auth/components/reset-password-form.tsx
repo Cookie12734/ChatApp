@@ -19,14 +19,14 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       {state.error && (
         <p
-          className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 py-3 text-sm text-[#9f4122]"
+          className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger rounded-md border px-4 py-3 text-sm"
           role="alert"
         >
           {state.error}
         </p>
       )}
       <div className="flex flex-col gap-2">
-        <label htmlFor="password" className="text-sm text-[#5d665f]">
+        <label htmlFor="password" className="text-connect-label text-sm">
           新しいパスワード
         </label>
         <input
@@ -37,11 +37,11 @@ export function ResetPasswordForm({ token }: { token: string }) {
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+          className="border-connect-ink/20 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label htmlFor="confirmPassword" className="text-sm text-[#5d665f]">
+        <label htmlFor="confirmPassword" className="text-connect-label text-sm">
           パスワード確認
         </label>
         <input
@@ -52,13 +52,13 @@ export function ResetPasswordForm({ token }: { token: string }) {
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+          className="border-connect-ink/20 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
         />
       </div>
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 py-3 font-semibold text-[#f6f0e4] disabled:opacity-50"
+        className="bg-connect-ink text-connect-paper inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 font-semibold disabled:opacity-50"
       >
         {isPending ? "更新中..." : "パスワードを更新"}
         {!isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}

@@ -1,3 +1,4 @@
+import { type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -11,10 +12,76 @@ import {
   getFriendRequestLockIds,
   getPendingFriendRequestWhere,
 } from "~/features/friend/server/friend-request-permissions";
+import { getExcludedDiscoveryUserIds } from "~/features/friend/server/user-discovery";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { addProfileImageUrl } from "~/lib/static-image";
 import { userIdSchema } from "~/lib/input";
+import { sendPushNotification } from "~/features/notification/server/push";
+
+const discoveryLimit = z.number().int().min(1).max(20);
+
+const searchUsersInput = z.object({
+  limit: discoveryLimit.optional(),
+  query: z.string().trim().min(2).max(50),
+});
+
+const recommendedUsersInput = z
+  .object({ limit: discoveryLimit.optional() })
+  .optional();
+
+async function getUserDiscoveryContext(
+  database: PrismaClient,
+  currentUserId: string,
+) {
+  const [blocks, friendships, pendingRequests, memberships] = await Promise.all(
+    [
+      database.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      }),
+      database.friendship.findMany({
+        where: {
+          OR: [{ userId: currentUserId }, { friendId: currentUserId }],
+        },
+        select: { friendId: true, userId: true },
+      }),
+      database.friendRequest.findMany({
+        where: {
+          status: "PENDING",
+          OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
+        },
+        select: { receiverId: true, senderId: true },
+      }),
+      database.serverMember.findMany({
+        where: { userId: currentUserId },
+        select: { serverId: true },
+      }),
+    ],
+  );
+
+  return {
+    excludedUserIds: getExcludedDiscoveryUserIds({
+      blockedPeerIds: getBlockedPeerIds(currentUserId, blocks),
+      currentUserId,
+      friendships,
+      pendingRequests,
+    }),
+    sharedServerIds: memberships.map((membership) => membership.serverId),
+  };
+}
+
+function addDiscoveryPreview(
+  user: { name: string | null; userId: string },
+  sharedServerCount: number,
+) {
+  return {
+    ...addProfileImageUrl({ name: user.name, userId: user.userId }),
+    sharedServerCount,
+  };
+}
 
 export const friendRouter = createTRPCRouter({
   getOverview: protectedProcedure.query(async ({ ctx }) => {
@@ -127,6 +194,119 @@ export const friendRouter = createTRPCRouter({
     };
   }),
 
+  searchUsers: protectedProcedure
+    .input(searchUsersInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const limit = input.limit ?? 20;
+      const query = input.query.trim();
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "friend:search:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+
+      const { excludedUserIds, sharedServerIds } =
+        await getUserDiscoveryContext(ctx.db, currentUserId);
+      const [exactUser, matchingUsers] = await Promise.all([
+        ctx.db.user.findFirst({
+          where: {
+            id: { notIn: excludedUserIds },
+            userId: { equals: query, mode: "insensitive" },
+          },
+          select: { id: true, name: true, userId: true },
+        }),
+        ctx.db.user.findMany({
+          where: {
+            id: { notIn: excludedUserIds },
+            OR: [
+              { userId: { contains: query, mode: "insensitive" } },
+              { name: { contains: query, mode: "insensitive" } },
+            ],
+          },
+          orderBy: { userId: "asc" },
+          take: limit,
+          select: { id: true, name: true, userId: true },
+        }),
+      ]);
+      const uniqueUsers = new Map<
+        string,
+        { id: string; name: string | null; userId: string }
+      >();
+      if (exactUser) uniqueUsers.set(exactUser.id, exactUser);
+      for (const user of matchingUsers) uniqueUsers.set(user.id, user);
+      const users = [...uniqueUsers.values()].slice(0, limit);
+      const sharedServerCounts =
+        users.length > 0 && sharedServerIds.length > 0
+          ? await ctx.db.serverMember.groupBy({
+              by: ["userId"],
+              where: {
+                serverId: { in: sharedServerIds },
+                userId: { in: users.map((user) => user.id) },
+              },
+              _count: { serverId: true },
+            })
+          : [];
+      const countByUserId = new Map(
+        sharedServerCounts.map((item) => [item.userId, item._count.serverId]),
+      );
+
+      return {
+        users: users.map(({ id, ...user }) =>
+          addDiscoveryPreview(user, countByUserId.get(id) ?? 0),
+        ),
+      };
+    }),
+
+  getRecommendedUsers: protectedProcedure
+    .input(recommendedUsersInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const limit = input?.limit ?? 12;
+
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "friend:recommendations:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+
+      const { excludedUserIds, sharedServerIds } =
+        await getUserDiscoveryContext(ctx.db, currentUserId);
+      if (sharedServerIds.length === 0) return { users: [] };
+
+      const recommendations = await ctx.db.serverMember.groupBy({
+        by: ["userId"],
+        where: {
+          serverId: { in: sharedServerIds },
+          userId: { notIn: excludedUserIds },
+        },
+        _count: { serverId: true },
+        orderBy: [{ _count: { serverId: "desc" } }, { userId: "asc" }],
+        take: limit,
+      });
+      const users = await ctx.db.user.findMany({
+        where: { id: { in: recommendations.map((item) => item.userId) } },
+        select: { id: true, name: true, userId: true },
+      });
+      const userById = new Map(users.map((user) => [user.id, user]));
+
+      return {
+        users: recommendations.flatMap((recommendation) => {
+          const user = userById.get(recommendation.userId);
+          return user
+            ? [addDiscoveryPreview(user, recommendation._count.serverId)]
+            : [];
+        }),
+      };
+    }),
+
   sendRequest: protectedProcedure
     .input(z.object({ userId: userIdSchema }))
     .mutation(async ({ ctx, input }) => {
@@ -165,7 +345,7 @@ export const friendRouter = createTRPCRouter({
         receiver.id,
       );
 
-      return ctx.db.$transaction(async (tx) => {
+      const request = await ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`
           SELECT "id"
           FROM "User"
@@ -240,6 +420,13 @@ export const friendRouter = createTRPCRouter({
 
         return request;
       });
+      await sendPushNotification(ctx.db, {
+        kind: "FRIEND_REQUEST",
+        recipientId: receiver.id,
+        title: "フレンド申請",
+        url: "/friends",
+      });
+      return request;
     }),
 
   acceptRequest: protectedProcedure
@@ -531,6 +718,44 @@ export const friendRouter = createTRPCRouter({
             ],
           },
         });
+
+        const sharedGroups = await tx.groupConversation.findMany({
+          where: {
+            AND: [
+              { members: { some: { userId: currentUserId } } },
+              { members: { some: { userId: blocked.id } } },
+            ],
+          },
+          select: { createdById: true, id: true },
+        });
+        const ownedSharedGroupIds = sharedGroups
+          .filter(({ createdById }) => createdById === currentUserId)
+          .map(({ id }) => id);
+        const joinedSharedGroupIds = sharedGroups
+          .filter(({ createdById }) => createdById !== currentUserId)
+          .map(({ id }) => id);
+        if (ownedSharedGroupIds.length > 0) {
+          await tx.groupConversationMember.deleteMany({
+            where: {
+              groupId: { in: ownedSharedGroupIds },
+              userId: blocked.id,
+            },
+          });
+        }
+        if (joinedSharedGroupIds.length > 0) {
+          await tx.groupConversationMember.deleteMany({
+            where: {
+              groupId: { in: joinedSharedGroupIds },
+              userId: currentUserId,
+            },
+          });
+          await tx.groupConversation.deleteMany({
+            where: {
+              id: { in: joinedSharedGroupIds },
+              members: { none: {} },
+            },
+          });
+        }
 
         return block;
       });

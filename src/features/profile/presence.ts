@@ -22,7 +22,7 @@ export const presenceOptions = [
   },
   {
     displayLabel: "オフライン",
-    dotClassName: "bg-[#68716b]",
+    dotClassName: "bg-connect-neutral",
     label: "オンライン状態を隠す",
     value: "INVISIBLE",
   },

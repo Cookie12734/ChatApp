@@ -1,0 +1,10 @@
+{
+  "date": "2026-08-12",
+  "framework": "Next.js 15 App Router with React 19",
+  "styling": "Tailwind CSS 4 with global CSS tokens",
+  "font": "serif display hierarchy with existing system UI body and native mono",
+  "palette": "warm paper, deep green, rust accent",
+  "motion": "motion-cut; no animation library",
+  "spacing": "4-point scale",
+  "preserve": ["palette", "routes", "component ownership"]
+}

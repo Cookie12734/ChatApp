@@ -14,17 +14,17 @@ export default async function FriendsPage() {
   }
 
   return (
-    <main className="flex min-h-screen overflow-hidden bg-[#f6f0e4] text-[#18221f]">
+    <main className="bg-connect-paper text-connect-ink grid h-dvh min-h-dvh grid-cols-1 grid-rows-[4rem_minmax(0,1fr)] overflow-hidden">
       <ServerRail />
-      <div className="min-h-screen flex-1 overflow-y-auto px-5 py-6 sm:px-8 lg:px-10">
+      <div className="row-start-2 min-h-0 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6 lg:px-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#18221f]/15 pb-5">
+          <header className="border-connect-ink/15 flex flex-wrap items-center justify-between gap-4 border-b pb-5">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4]">
+              <span className="bg-connect-ink text-connect-paper flex h-10 w-10 items-center justify-center rounded-md">
                 <Users className="h-5 w-5" aria-hidden="true" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-[#9f4122] uppercase">
+                <p className="text-connect-danger text-sm font-semibold uppercase">
                   connect
                 </p>
                 <h1 className="text-2xl font-semibold">フレンド</h1>

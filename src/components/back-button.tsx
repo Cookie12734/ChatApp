@@ -28,7 +28,7 @@ export function BackButton({ href, label = "戻る" }: BackButtonProps) {
 
         router.back();
       }}
-      className="inline-flex h-10 items-center gap-2 rounded-md border border-[#18221f]/20 bg-[#fff8ed] px-3 text-sm font-semibold text-[#18221f] transition hover:border-[#18221f]/45"
+      className="border-connect-ink/20 bg-connect-surface text-connect-ink hover:border-connect-ink/45 inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
       {label}

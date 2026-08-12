@@ -20,15 +20,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f0e4] px-5 py-6 text-[#18221f] sm:px-8 lg:px-10">
+    <main className="bg-connect-paper text-connect-ink min-h-screen px-5 py-6 sm:px-8 lg:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#18221f]/15 pb-5">
+        <header className="border-connect-ink/15 flex flex-wrap items-center justify-between gap-4 border-b pb-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4]">
+            <span className="bg-connect-ink text-connect-paper flex h-10 w-10 items-center justify-center rounded-md">
               <UserRound className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-[#9f4122] uppercase">
+              <p className="text-connect-danger text-sm font-semibold uppercase">
                 connect
               </p>
               <h1 className="text-2xl font-semibold">プロフィール</h1>

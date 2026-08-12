@@ -12,7 +12,7 @@ function JoinButton() {
     <Button
       type="submit"
       disabled={pending}
-      className="min-h-12 w-full bg-[#18221f] px-5 text-[#f6f0e4] hover:bg-[#2f3c37] motion-reduce:transition-none"
+      className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 min-h-12 w-full px-5 motion-reduce:transition-none"
     >
       <LogIn aria-hidden="true" />
       {pending ? "参加しています..." : "サーバーに参加する"}

@@ -52,10 +52,10 @@ export function ServerProfileSettingsDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-lg">
-        <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+      <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto p-0 sm:max-w-lg">
+        <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle>サーバープロフィールを編集</DialogTitle>
-          <DialogDescription className="text-sm text-[#68716b]">
+          <DialogDescription className="text-connect-neutral text-sm">
             このサーバー内だけで使う表示名と自己紹介を設定できます。
           </DialogDescription>
         </DialogHeader>
@@ -68,32 +68,32 @@ export function ServerProfileSettingsDialog({
           }}
         >
           <label className="block">
-            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 flex items-center justify-between gap-3 text-sm font-semibold">
               <span>サーバー内の表示名</span>
-              <span className="font-normal text-[#68716b]">
+              <span className="text-connect-neutral font-normal">
                 {nickname.length}/32
               </span>
             </span>
             <input
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
               placeholder="未設定の場合は全体の表示名を使用"
               maxLength={32}
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 flex items-center justify-between gap-3 text-sm font-semibold">
               <span>サーバー内の自己紹介</span>
-              <span className="font-normal text-[#68716b]">
+              <span className="text-connect-neutral font-normal">
                 {bio.length}/160
               </span>
             </span>
             <textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
-              className="min-h-28 w-full resize-y rounded-md border border-[#18221f]/20 bg-white px-4 py-3 leading-7 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-28 w-full resize-y rounded-md border px-4 py-3 leading-7 focus:ring-2 focus:outline-none"
               placeholder="このサーバーでの自己紹介"
               maxLength={160}
             />
@@ -101,7 +101,7 @@ export function ServerProfileSettingsDialog({
 
           {updateServerProfile.error && (
             <p
-              className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]"
+              className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger rounded-md border px-3 py-2 text-sm"
               role="alert"
             >
               {updateServerProfile.error.message}
@@ -112,14 +112,14 @@ export function ServerProfileSettingsDialog({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="min-h-11 rounded-md border border-[#18221f]/15 bg-white px-4 text-sm font-semibold text-[#53615a] transition hover:bg-[#f1e4d0] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+              className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-navigation focus-visible:ring-connect-action min-h-11 rounded-md border px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
             >
               キャンセル
             </button>
             <button
               type="submit"
               disabled={updateServerProfile.isPending}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
+              className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 focus-visible:ring-connect-action inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
             >
               <Save className="h-4 w-4" aria-hidden="true" />
               {updateServerProfile.isPending ? "保存中..." : "変更を保存"}

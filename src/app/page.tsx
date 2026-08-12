@@ -4,11 +4,14 @@ import { auth } from "~/features/auth";
 import { FriendChatPanel } from "~/features/chat/components/friend-chat-panel";
 
 type HomePageProps = {
-  searchParams: Promise<{ serverId?: string }>;
+  searchParams: Promise<{ search?: string; serverId?: string }>;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const [session, { serverId }] = await Promise.all([auth(), searchParams]);
+  const [session, { search, serverId }] = await Promise.all([
+    auth(),
+    searchParams,
+  ]);
   const callbackUrl = serverId
     ? `/?serverId=${encodeURIComponent(serverId)}`
     : "/";
@@ -17,5 +20,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     redirect(`/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
   }
 
-  return <FriendChatPanel initialServerId={serverId} />;
+  return (
+    <FriendChatPanel
+      initialSearchOpen={search === "1"}
+      initialServerId={serverId}
+    />
+  );
 }

@@ -1,6 +1,8 @@
 import { chatRouter } from "~/features/chat/server/router";
 import { friendRouter } from "~/features/friend/server/router";
+import { groupRouter } from "~/features/group/server/router";
 import { moderationRouter } from "~/features/moderation/server/router";
+import { notificationRouter } from "~/features/notification/server/router";
 import { profileRouter } from "~/features/profile/server/router";
 import { serverRouter } from "~/features/server/server/router";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -13,7 +15,9 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   chat: chatRouter,
   friend: friendRouter,
+  group: groupRouter,
   moderation: moderationRouter,
+  notification: notificationRouter,
   profile: profileRouter,
   server: serverRouter,
 });

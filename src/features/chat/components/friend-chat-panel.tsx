@@ -2,20 +2,24 @@
 
 import {
   Ban,
+  Bookmark,
   Check,
   ChevronDown,
   Copy,
   Ellipsis,
+  FileText,
   Flag,
-  Hash,
   Inbox,
   LogOut,
   Menu,
   MessageCircle,
+  Link as LinkIcon,
   Pencil,
   Pin,
   Plus,
+  Quote,
   RefreshCw,
+  Reply,
   Search,
   Send,
   Settings,
@@ -24,6 +28,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type FormEvent,
@@ -39,6 +44,11 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
+import { GlobalSearchDialog } from "~/features/chat/components/global-search-dialog";
+import {
+  MessageAttachmentPicker,
+  type PendingAttachment,
+} from "~/features/chat/components/message-attachment-picker";
 import {
   ExternalLinkDialog,
   PinnedMessagesDialog,
@@ -56,8 +66,16 @@ import {
 import { ServerMemberList } from "~/features/chat/components/server-member-list";
 import { useMessageViewport } from "~/features/chat/components/use-message-viewport";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
+import {
+  MATCHING_SAFETY_NOTICE,
+  MATCHING_TOPICS,
+  SAFETY_RESOURCES,
+  type MatchingTopic,
+} from "~/features/chat/matching-prompts";
 import { shouldGroupMessage } from "~/features/chat/message-grouping";
+import { groupReactions } from "~/features/chat/reaction-groups";
 import { FriendPanel } from "~/features/friend/components/friend-panel";
+import { GroupDmDialog } from "~/features/group/components/group-dm-dialog";
 import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
@@ -66,6 +84,14 @@ import { PresenceStatusMenu } from "~/features/profile/components/presence-statu
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { getRealtimeUnreadCount } from "~/features/server/server/server-overview";
+import {
+  canManageServer,
+  canManageServerChannels,
+  canManageServerReports,
+  canReactToServerMessage,
+  canSendServerMessage,
+  type ServerMemberRole,
+} from "~/features/server/server/message-permissions";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
@@ -73,6 +99,7 @@ type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
 type ChatEventPayload =
   | { kind: "direct"; userIds: string[] }
+  | { groupId: string; kind: "group"; userIds: string[] }
   | {
       change: "created" | "deleted" | "updated";
       channelId: string | null;
@@ -88,6 +115,7 @@ type ChatEventPayload =
       userName: string;
     };
 type FriendChatPanelProps = {
+  initialSearchOpen?: boolean;
   initialServerId?: string;
 };
 type EditingMessage =
@@ -98,6 +126,13 @@ type MessageContextMenu =
   | { kind: "server"; messageId: string; x: number; y: number };
 type ReportReason = "HARASSMENT" | "OTHER" | "SELF_HARM" | "SPAM";
 type MatchingRating = "NEGATIVE" | "NEUTRAL" | "POSITIVE";
+type ServerCategory =
+  | "COMMUNITY"
+  | "GAMES"
+  | "STUDY"
+  | "HOBBIES"
+  | "WELLBEING"
+  | "OTHER";
 type ReportTarget = {
   content: string;
   messageId: string;
@@ -124,6 +159,75 @@ type PendingServerMessage = PendingMessage & {
   serverId: string;
 };
 
+type ReplyTarget = {
+  content: string;
+  id: string;
+  kind: "direct" | "server";
+};
+
+type VisibleMessageAttachment = {
+  fileName: string;
+  id: string;
+  kind: "IMAGE" | "LINK" | "PDF";
+};
+
+function MessageAttachmentList({
+  attachments,
+}: {
+  attachments: VisibleMessageAttachment[];
+}) {
+  if (attachments.length === 0) return null;
+
+  return (
+    <div className="mt-2 grid max-w-2xl gap-2 sm:grid-cols-2">
+      {attachments.map((attachment) => {
+        const href = `/api/attachments/${attachment.id}`;
+        if (attachment.kind === "IMAGE") {
+          return (
+            <a
+              key={attachment.id}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
+            >
+              <Image
+                src={href}
+                alt={attachment.fileName}
+                width={640}
+                height={480}
+                unoptimized
+                loading="lazy"
+                className="h-auto max-h-80 w-full object-contain"
+              />
+              <span className="block truncate px-3 py-2 text-xs font-semibold">
+                {attachment.fileName}
+              </span>
+            </a>
+          );
+        }
+
+        return (
+          <a
+            key={attachment.id}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
+          >
+            {attachment.kind === "PDF" ? (
+              <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <LinkIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="truncate">{attachment.fileName}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 function shouldGroupPendingMessage(
   message: PendingMessage,
   previousPendingMessage: PendingMessage | undefined,
@@ -137,13 +241,6 @@ function shouldGroupPendingMessage(
       : previousMessage,
   );
 }
-
-const matchingTopics = [
-  { label: "雑談", value: "CASUAL" },
-  { label: "ゲーム", value: "GAME" },
-  { label: "悩み事", value: "WORRIES" },
-] as const;
-type MatchingTopic = (typeof matchingTopics)[number]["value"];
 
 const reportReasons: { label: string; value: ReportReason }[] = [
   { label: "嫌がらせ", value: "HARASSMENT" },
@@ -222,8 +319,8 @@ function FriendListItem({
       onClick={onSelect}
       className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition ${
         selected
-          ? "bg-[#18221f] text-[#f6f0e4]"
-          : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+          ? "bg-connect-ink text-connect-paper"
+          : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
       }`}
     >
       <div
@@ -232,10 +329,10 @@ function FriendListItem({
       >
         <Avatar
           user={item.friend}
-          className="h-10 w-10 rounded-full border border-black/10"
+          className="border-connect-ink/10 h-10 w-10 rounded-full border"
         />
         {item.unreadCount > 0 && (
-          <span className="absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#f1e4d0] bg-[#9f4122] px-1 text-[11px] font-semibold text-white">
+          <span className="border-connect-navigation bg-connect-danger text-connect-surface absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 px-1 text-[11px] font-semibold">
             {item.unreadCount}
           </span>
         )}
@@ -244,13 +341,18 @@ function FriendListItem({
         <span className="block truncate text-sm font-semibold">
           {getDisplayName(item.friend)}
         </span>
-        <span className="block truncate text-xs text-[#53615a]">{preview}</span>
+        <span className="text-connect-muted block truncate text-xs">
+          {preview}
+        </span>
       </span>
     </button>
   );
 }
 
-export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
+export function FriendChatPanel({
+  initialSearchOpen = false,
+  initialServerId,
+}: FriendChatPanelProps) {
   const utils = api.useUtils();
   const [selectedServerId, setSelectedServerId] = useState<string | null>(
     initialServerId ?? null,
@@ -263,13 +365,24 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const [friendSearch, setFriendSearch] = useState("");
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [isMatchingOpen, setIsMatchingOpen] = useState(false);
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] =
+    useState(initialSearchOpen);
+  const [isGroupDmOpen, setIsGroupDmOpen] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>();
   const [matchingTopic, setMatchingTopic] = useState<MatchingTopic>("CASUAL");
   const [matchingState, setMatchingState] = useState<"idle" | "waiting">(
     "idle",
   );
   const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
+  const [matchingSafetyAccepted, setMatchingSafetyAccepted] = useState(false);
   const [draft, setDraft] = useState("");
   const [serverDraft, setServerDraft] = useState("");
+  const [directAttachments, setDirectAttachments] = useState<
+    PendingAttachment[]
+  >([]);
+  const [serverAttachments, setServerAttachments] = useState<
+    PendingAttachment[]
+  >([]);
   const [newChannelName, setNewChannelName] = useState("");
   const [isNewChannelFormOpen, setIsNewChannelFormOpen] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -281,6 +394,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   } | null>(null);
   const [messageContextMenu, setMessageContextMenu] =
     useState<MessageContextMenu | null>(null);
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [profileContextMenu, setProfileContextMenu] =
     useState<ProfileContextMenu | null>(null);
   const [editingMessage, setEditingMessage] = useState<EditingMessage | null>(
@@ -295,6 +409,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     null,
   );
   const [serverNameDraft, setServerNameDraft] = useState("");
+  const [serverVisibilityDraft, setServerVisibilityDraft] = useState<
+    "PRIVATE" | "PUBLIC"
+  >("PRIVATE");
+  const [serverCategoryDraft, setServerCategoryDraft] = useState<
+    ServerCategory | ""
+  >("");
+  const [serverTagsDraft, setServerTagsDraft] = useState("");
   const [serverIconFile, setServerIconFile] = useState<File | null>(null);
   const [serverSettingsMessage, setServerSettingsMessage] = useState<
     string | null
@@ -399,11 +520,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     );
   }, [serverMembers.data]);
   const isSelectedServerOwner = selectedServer?.role === "OWNER";
+  const canManageSelectedServer = canManageServer(selectedServer?.role);
+  const canManageSelectedChannels = canManageServerChannels(
+    selectedServer?.role,
+  );
+  const canManageSelectedReports = canManageServerReports(selectedServer?.role);
+  const canReactToSelectedServerMessages = canReactToServerMessage(
+    selectedServer?.role,
+  );
+  const canSendSelectedServerMessages = canSendServerMessage(
+    selectedServer?.role,
+  );
   const serverReports = api.moderation.getServerReports.useQuery(
     { serverId: selectedServerId ?? "" },
     {
       enabled: Boolean(
-        isServerReportsOpen && isSelectedServerOwner && selectedServerId,
+        isServerReportsOpen && canManageSelectedReports && selectedServerId,
       ),
     },
   );
@@ -943,6 +1075,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         return;
       }
 
+      if (payload.kind === "group") {
+        void utils.group.list.invalidate();
+        return;
+      }
+
       if (payload.senderId !== selectedFriendId) return;
       if (typingResetTimerRef.current) {
         clearTimeout(typingResetTimerRef.current);
@@ -974,6 +1111,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     selectedServerId,
     utils.chat.getConversation,
     utils.chat.getFriends,
+    utils.group.list,
     utils.server.getConversation,
     utils.server.getMembers,
     utils.server.getOverview,
@@ -1014,8 +1152,40 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     setServerMessage(null);
   }, []);
 
+  useEffect(() => {
+    setDraft(
+      selectedFriendId
+        ? (localStorage.getItem(`connect:draft:direct:${selectedFriendId}`) ??
+            "")
+        : "",
+    );
+  }, [selectedFriendId]);
+
+  useEffect(() => {
+    setDirectAttachments([]);
+  }, [selectedFriendId]);
+
+  useEffect(() => {
+    setServerDraft(
+      selectedServerChannel?.id
+        ? (localStorage.getItem(
+            `connect:draft:server:${selectedServerChannel.id}`,
+          ) ?? "")
+        : "",
+    );
+  }, [selectedServerChannel?.id]);
+
+  useEffect(() => {
+    setServerAttachments([]);
+  }, [selectedServerChannel?.id]);
+
   const handleDraftChange = (value: string) => {
     setDraft(value);
+    if (selectedFriendId) {
+      const key = `connect:draft:direct:${selectedFriendId}`;
+      if (value) localStorage.setItem(key, value);
+      else localStorage.removeItem(key);
+    }
 
     if (!value.trim()) {
       if (localTypingStopTimerRef.current) {
@@ -1042,6 +1212,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     }, 1600);
   };
 
+  const handleServerDraftChange = (value: string) => {
+    setServerDraft(value);
+    if (!selectedServerChannel?.id) return;
+    const key = `connect:draft:server:${selectedServerChannel.id}`;
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  };
+
   const cancelMatching = api.chat.cancelMatching.useMutation({
     onSuccess: async () => {
       await utils.chat.getMatchingStatus.invalidate();
@@ -1066,10 +1244,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       onError: (error) => setMessage(getErrorMessage(error)),
     });
 
+  const confirmMatchingSafety = api.chat.confirmMatchingSafety.useMutation({
+    onError: (error) => setMatchingMessage(getErrorMessage(error)),
+  });
+
   const matchRandom = api.chat.matchRandom.useMutation({
     onSuccess: async (result) => {
       if (result.status === "matched") {
+        if (result.matchId) {
+          await confirmMatchingSafety.mutateAsync({
+            consent: true,
+            matchId: result.matchId,
+          });
+        }
         openDirectFriend(result.friend.id);
+        setMatchingSafetyAccepted(false);
+        sessionStorage.removeItem("connect:matching-safety-confirmed");
         setMatchingState("idle");
         setMatchingMessage(
           `${getDisplayName(result.friend)}さんとマッチしました`,
@@ -1141,8 +1331,23 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       return;
     }
 
+    const safetyConfirmed =
+      matchingSafetyAccepted ||
+      sessionStorage.getItem("connect:matching-safety-confirmed") === "1";
+    if (!safetyConfirmed) {
+      setIsNavigationOpen(false);
+      setIsMatchingOpen(true);
+      setMatchingMessage("安全上の確認に同意して会話を開始してください");
+      return;
+    }
+
     const friend = status.friend;
+    if (status.matchId) {
+      confirmMatchingSafety.mutate({ consent: true, matchId: status.matchId });
+    }
     openDirectFriend(friend.id);
+    setMatchingSafetyAccepted(false);
+    sessionStorage.removeItem("connect:matching-safety-confirmed");
     setMatchingState("idle");
     setMatchingMessage(`${getDisplayName(friend)}さんとマッチしました`);
     void Promise.all([
@@ -1153,6 +1358,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     cancelMatching.mutate();
   }, [
     cancelMatching,
+    confirmMatchingSafety,
+    matchingSafetyAccepted,
     matchingState,
     matchingStatus.data,
     openDirectFriend,
@@ -1162,6 +1369,29 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   ]);
 
   const sendMessage = api.chat.sendMessage.useMutation();
+  const toggleDirectReaction = api.chat.toggleReaction.useMutation({
+    onSuccess: async () => {
+      if (selectedFriendId) {
+        await utils.chat.getConversation.invalidate({
+          friendId: selectedFriendId,
+        });
+      }
+    },
+  });
+  const toggleServerReaction = api.server.toggleMessageReaction.useMutation({
+    onSuccess: async () => {
+      await utils.server.getConversation.invalidate();
+    },
+  });
+  const toggleSavedMessage = api.chat.toggleSavedMessage.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.chat.getConversation.invalidate(),
+        utils.server.getConversation.invalidate(),
+        utils.chat.getSavedMessages.invalidate(),
+      ]);
+    },
+  });
   const sendServerMessage = api.server.sendMessage.useMutation();
 
   const createChannel = api.server.createChannel.useMutation({
@@ -1342,6 +1572,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     },
     onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
   });
+  const updateServerDiscovery = api.server.updateDiscovery.useMutation({
+    onError: (error) => setServerSettingsMessage(getErrorMessage(error)),
+  });
 
   const rotateServerInvite = api.server.rotateInvite.useMutation({
     onSuccess: async () => {
@@ -1384,7 +1617,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const selectServer = (membership: ChatServerMembership) => {
-    setIsNavigationOpen(true);
+    setIsNavigationOpen(false);
     setSelectedServerId(membership.server.id);
     setSelectedServerChannelId(membership.server.channels[0]?.id ?? null);
     setIsFriendsOpen(false);
@@ -1404,7 +1637,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event: MouseEvent<HTMLElement>,
     channel: ChatServerMembership["server"]["channels"][number],
   ) => {
-    if (!isSelectedServerOwner) return;
+    if (!canManageSelectedChannels) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -1427,6 +1660,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const handleStartMatching = () => {
+    if (!matchingSafetyAccepted) {
+      setMatchingMessage("安全上の確認に同意してから開始してください");
+      return;
+    }
+    sessionStorage.setItem("connect:matching-safety-confirmed", "1");
     setMatchingMessage(null);
     matchRandom.mutate({ topic: matchingTopic });
   };
@@ -1485,13 +1723,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const handleCancelMatching = () => {
     setMatchingState("idle");
     setMatchingMessage(null);
+    setMatchingSafetyAccepted(false);
+    sessionStorage.removeItem("connect:matching-safety-confirmed");
     cancelMatching.mutate();
   };
 
   const openServerSettings = () => {
-    if (!selectedServer) return;
+    if (!selectedServer || !canManageSelectedServer) return;
 
     setServerNameDraft(selectedServer.server.name);
+    setServerVisibilityDraft(selectedServer.server.visibility);
+    setServerCategoryDraft(selectedServer.server.category ?? "");
+    setServerTagsDraft(selectedServer.server.tags.join(", "));
     setServerIconFile(null);
     setServerSettingsMessage(null);
     setIsServerMenuOpen(false);
@@ -1499,7 +1742,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const openServerReports = () => {
-    if (!selectedServer || !isSelectedServerOwner) return;
+    if (!selectedServer || !canManageSelectedReports) return;
 
     setModerationNotice(null);
     setIsServerSettingsOpen(false);
@@ -1524,7 +1767,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
-    if (!selectedServer?.server.id || !serverNameDraft.trim()) return;
+    if (
+      !selectedServer?.server.id ||
+      !canManageSelectedServer ||
+      !serverNameDraft.trim()
+    ) {
+      return;
+    }
 
     try {
       if (serverIconFile) {
@@ -1546,7 +1795,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         }
       }
 
-      updateServer.mutate({
+      const tags = [
+        ...new Set(
+          serverTagsDraft
+            .toLowerCase()
+            .split(/[\s,]+/u)
+            .filter(Boolean),
+        ),
+      ].slice(0, 5);
+      await updateServerDiscovery.mutateAsync({
+        category: serverCategoryDraft || null,
+        serverId: selectedServer.server.id,
+        tags,
+        visibility: serverVisibilityDraft,
+      });
+      await updateServer.mutateAsync({
         description: selectedServer.server.description ?? undefined,
         name: serverNameDraft,
         serverId: selectedServer.server.id,
@@ -1565,13 +1828,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedFriendId || !canSendDirectMessage || !draft.trim()) return;
+    if (
+      !selectedFriendId ||
+      !canSendDirectMessage ||
+      (!draft.trim() && directAttachments.length === 0)
+    )
+      return;
     const clientId = crypto.randomUUID();
-    const content = draft.trim();
+    const content = draft.trim() || "添付ファイル";
     const friendId = selectedFriendId;
+    const activeAttachments = directAttachments;
 
     broadcastTyping(false);
     setDraft("");
+    setDirectAttachments([]);
+    localStorage.removeItem(`connect:draft:direct:${friendId}`);
     setMessage(null);
     setPendingDirectMessages((messages) => [
       ...messages,
@@ -1589,8 +1860,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       clearTimeout(localTypingStopTimerRef.current);
     }
 
+    const activeReply = replyTarget?.kind === "direct" ? replyTarget : null;
+    setReplyTarget(null);
     sendMessage.mutate(
-      { clientId, content, friendId },
+      {
+        attachmentIds: activeAttachments.map(({ id }) => id),
+        clientId,
+        content,
+        friendId,
+        replyToId: activeReply?.id,
+      },
       {
         onError: (error) => {
           setPendingDirectMessages((messages) =>
@@ -1599,7 +1878,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             ),
           );
           setDraft((current) => current || content);
+          setDirectAttachments(activeAttachments);
+          localStorage.setItem(`connect:draft:direct:${friendId}`, content);
           setMessage(getErrorMessage(error));
+          setReplyTarget(activeReply);
         },
         onSuccess: (savedMessage) => {
           setPendingDirectMessages((messages) =>
@@ -1627,16 +1909,20 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     if (
       !selectedServerId ||
       !selectedServerChannel?.id ||
-      !serverDraft.trim()
+      !canSendSelectedServerMessages ||
+      (!serverDraft.trim() && serverAttachments.length === 0)
     ) {
       return;
     }
     const channelId = selectedServerChannel.id;
     const clientId = crypto.randomUUID();
-    const content = serverDraft.trim();
+    const content = serverDraft.trim() || "添付ファイル";
     const serverId = selectedServerId;
+    const activeAttachments = serverAttachments;
 
     setServerDraft("");
+    setServerAttachments([]);
+    localStorage.removeItem(`connect:draft:server:${channelId}`);
     setServerMessage(null);
     setPendingServerMessages((messages) => [
       ...messages,
@@ -1650,8 +1936,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       },
     ]);
     requestAnimationFrame(messageViewport.scrollToBottom);
+    const activeReply = replyTarget?.kind === "server" ? replyTarget : null;
+    setReplyTarget(null);
     sendServerMessage.mutate(
-      { channelId, clientId, content, serverId },
+      {
+        attachmentIds: activeAttachments.map(({ id }) => id),
+        channelId,
+        clientId,
+        content,
+        replyToId: activeReply?.id,
+        serverId,
+      },
       {
         onError: (error) => {
           setPendingServerMessages((messages) =>
@@ -1660,7 +1955,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             ),
           );
           setServerDraft((current) => current || content);
+          setServerAttachments(activeAttachments);
+          localStorage.setItem(`connect:draft:server:${channelId}`, content);
           setServerMessage(getErrorMessage(error));
+          setReplyTarget(activeReply);
         },
         onSuccess: (savedMessage) => {
           setPendingServerMessages((messages) =>
@@ -1682,7 +1980,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleCreateChannel = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedServer?.server.id || !newChannelName.trim()) return;
+    if (
+      !selectedServer?.server.id ||
+      !canManageSelectedChannels ||
+      !newChannelName.trim()
+    ) {
+      return;
+    }
 
     createChannel.mutate({
       name: newChannelName,
@@ -1695,7 +1999,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     channelId: string,
   ) => {
     event.preventDefault();
-    if (!selectedServer?.server.id || !editingChannelName.trim()) return;
+    if (
+      !selectedServer?.server.id ||
+      !canManageSelectedChannels ||
+      !editingChannelName.trim()
+    ) {
+      return;
+    }
 
     updateChannel.mutate({
       channelId,
@@ -1705,7 +2015,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const handleDeleteChannel = (channelId: string) => {
-    if (!selectedServer?.server.id) return;
+    if (!selectedServer?.server.id || !canManageSelectedChannels) return;
     if (
       !window.confirm(
         "このチャンネルを削除しますか？チャンネル内のメッセージもすべて削除されます。",
@@ -1723,7 +2033,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
   const handleUpdateServerMemberRole = (
     memberId: string,
-    role: "MEMBER" | "OWNER",
+    role: ServerMemberRole,
   ) => {
     if (!selectedServer?.server.id) return;
     if (
@@ -1833,6 +2143,83 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
     });
   };
 
+  const startReply = () => {
+    if (!messageContextMenu || !messageContextTarget) return;
+    if (
+      messageContextMenu.kind === "server" &&
+      !canSendSelectedServerMessages
+    ) {
+      return;
+    }
+    setReplyTarget({
+      content: messageContextTarget.content,
+      id: messageContextTarget.id,
+      kind: messageContextMenu.kind,
+    });
+    setMessageContextMenu(null);
+  };
+
+  const quoteContextMessage = () => {
+    if (!messageContextMenu || !messageContextTarget) return;
+    if (
+      messageContextMenu.kind === "server" &&
+      !canSendSelectedServerMessages
+    ) {
+      return;
+    }
+    const quoted = messageContextTarget.content
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+    if (messageContextMenu.kind === "server") {
+      handleServerDraftChange(
+        `${serverDraft.trimEnd()}${serverDraft ? "\n" : ""}${quoted}\n`.slice(
+          0,
+          1000,
+        ),
+      );
+    } else {
+      handleDraftChange(
+        `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(0, 1000),
+      );
+    }
+    setMessageContextMenu(null);
+  };
+
+  const toggleContextSaved = () => {
+    if (!messageContextMenu || !messageContextTarget) return;
+    toggleSavedMessage.mutate({
+      kind: messageContextMenu.kind === "direct" ? "DIRECT" : "SERVER",
+      messageId: messageContextTarget.id,
+    });
+    setMessageContextMenu(null);
+  };
+
+  const reactToContextMessage = (
+    emoji:
+      | "\u{1F44D}"
+      | "\u{2764}\u{FE0F}"
+      | "\u{1F602}"
+      | "\u{1F389}"
+      | "\u{1F62E}"
+      | "\u{1F64F}",
+  ) => {
+    if (!messageContextMenu || !messageContextTarget) return;
+    if (messageContextMenu.kind === "direct") {
+      toggleDirectReaction.mutate({
+        emoji,
+        messageId: messageContextTarget.id,
+      });
+    } else if (selectedServerId && canReactToSelectedServerMessages) {
+      toggleServerReaction.mutate({
+        emoji,
+        messageId: messageContextTarget.id,
+        serverId: selectedServerId,
+      });
+    }
+    setMessageContextMenu(null);
+  };
+
   const handleMessageEditSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editingMessage?.content.trim()) return;
@@ -1845,7 +2232,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       return;
     }
 
-    if (!selectedServer?.server.id) return;
+    if (!selectedServer?.server.id || !canSendSelectedServerMessages) return;
     updateServerMessage.mutate({
       content: editingMessage.content,
       messageId: editingMessage.messageId,
@@ -1854,7 +2241,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const handleToggleServerMessagePin = (messageId: string) => {
-    if (!selectedServer?.server.id) return;
+    if (!selectedServer?.server.id || !canManageSelectedReports) return;
 
     toggleServerMessagePin.mutate({
       messageId,
@@ -1869,7 +2256,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   const handleDeleteServerMessage = (messageId: string) => {
-    if (!selectedServer?.server.id) return;
+    if (
+      !selectedServer?.server.id ||
+      (!canManageSelectedReports && !canSendSelectedServerMessages)
+    ) {
+      return;
+    }
     setMessageContextMenu(null);
     if (!window.confirm("このメッセージを削除しますか？")) return;
 
@@ -1905,15 +2297,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   const isServerContextMessageMine =
     serverMessageContextTarget?.senderId ===
     serverConversationData?.currentUser.id;
-  const canEditContextMessage = [
-    isDirectContextMessageMine,
-    isServerContextMessageMine,
-  ].some(Boolean);
-  const canDeleteContextMessage = [
-    isDirectContextMessageMine,
-    isServerContextMessageMine,
-    Boolean(serverMessageContextTarget && isSelectedServerOwner),
-  ].some(Boolean);
+  const canEditContextMessage = Boolean(
+    isDirectContextMessageMine ||
+    (isServerContextMessageMine && canSendSelectedServerMessages),
+  );
+  const canDeleteContextMessage = Boolean(
+    isDirectContextMessageMine ||
+    (serverMessageContextTarget &&
+      (canManageSelectedReports ||
+        (isServerContextMessageMine && canSendSelectedServerMessages))),
+  );
   const canReportContextMessage = [
     Boolean(directMessageContextTarget && !isDirectContextMessageMine),
     Boolean(serverMessageContextTarget && !isServerContextMessageMine),
@@ -1966,52 +2359,90 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
   };
 
   return (
-    <main className="flex h-dvh min-h-dvh overflow-hidden bg-[#f6f0e4] text-[#18221f]">
+    <main className="bg-connect-paper text-connect-ink grid h-dvh min-h-dvh grid-cols-1 grid-rows-[4rem_minmax(0,1fr)] overflow-hidden md:grid-cols-[300px_minmax(0,1fr)]">
       <ServerRail
         memberships={serverOverview.data?.memberships}
         onSelectHome={selectHome}
         onSelectServer={selectServer}
+        onSearch={() => setIsGlobalSearchOpen(true)}
         selectedServerId={selectedServerId}
+      />
+      <GlobalSearchDialog
+        open={isGlobalSearchOpen}
+        onOpenChange={setIsGlobalSearchOpen}
+        onOpenDirect={selectFriend}
+        onOpenGroup={(groupId) => {
+          setSelectedGroupId(groupId);
+          setIsGroupDmOpen(true);
+        }}
+        onOpenServer={(serverId, channelId) => {
+          const membership = serverOverview.data?.memberships.find(
+            (item) => item.server.id === serverId,
+          );
+          if (membership) selectServer(membership);
+          else {
+            setSelectedServerId(serverId);
+            setSelectedFriendId(null);
+            setIsNavigationOpen(false);
+          }
+          if (channelId) setSelectedServerChannelId(channelId);
+        }}
       />
       <aside
         className={`${
           isNavigationOpen ? "flex" : "hidden"
-        } w-[calc(100vw-4rem)] shrink-0 flex-col border-r border-[#18221f]/15 bg-[#f1e4d0] md:flex md:w-[300px] md:max-w-[300px]`}
+        } border-connect-ink/15 bg-connect-navigation col-start-1 row-start-2 min-h-0 w-full min-w-0 flex-col border-r md:flex`}
+        aria-label={
+          selectedServer ? "スペース内ナビゲーション" : "会話ナビゲーション"
+        }
       >
         {selectedServer ? (
           <>
-            <div className="relative border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
+            <div className="border-connect-ink/15 relative border-b px-3 py-3 shadow-sm">
               <button
                 type="button"
                 onClick={() => setIsServerMenuOpen((isOpen) => !isOpen)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-[#fff8ed]"
+                className="hover:bg-connect-surface flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition"
                 aria-expanded={isServerMenuOpen}
               >
                 <span className="min-w-0">
                   <span className="block truncate text-lg font-semibold">
                     {selectedServer.server.name}
                   </span>
-                  <span className="mt-1 block text-xs text-[#53615a]">
+                  <span className="text-connect-muted mt-1 block text-xs">
                     {serverMembers.data?.length ?? 0} メンバー
                   </span>
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-[#53615a] transition ${
+                  className={`text-connect-muted h-4 w-4 shrink-0 transition ${
                     isServerMenuOpen ? "rotate-180" : ""
                   }`}
                   aria-hidden="true"
                 />
               </button>
               {isServerMenuOpen && (
-                <div className="absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm shadow-xl">
-                  {isSelectedServerOwner && (
+                <div className="border-connect-ink/15 bg-connect-surface absolute top-[calc(100%-0.5rem)] right-3 left-3 z-40 rounded-md border p-1 text-sm shadow-xl">
+                  {canManageSelectedServer && (
                     <button
                       type="button"
                       onClick={openServerSettings}
-                      className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition hover:bg-[#e4f2dc]"
+                      className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition"
                     >
                       <Settings className="h-4 w-4" aria-hidden="true" />
                       サーバー設定
+                    </button>
+                  )}
+                  {canManageSelectedReports && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsServerMenuOpen(false);
+                        openServerReports();
+                      }}
+                      className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition"
+                    >
+                      <Flag className="h-4 w-4" aria-hidden="true" />
+                      通報一覧
                     </button>
                   )}
                   <button
@@ -2021,7 +2452,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       handleLeaveServer();
                     }}
                     disabled={isSelectedServerOwner || leaveServer.isPending}
-                    className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium text-[#9f4122] transition hover:bg-[#fff1e8] disabled:opacity-50"
+                    className="text-connect-danger hover:bg-connect-danger-soft flex min-h-10 w-full items-center gap-2 rounded px-3 text-left font-medium transition disabled:opacity-50"
                     title={
                       isSelectedServerOwner
                         ? "所有権を移譲してから退出してください"
@@ -2037,10 +2468,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                <p className="text-xs font-semibold tracking-wide text-[#53615a] uppercase">
-                  テキストチャンネル
+                <p className="text-connect-muted text-xs font-semibold tracking-wide uppercase">
+                  チャンネル
                 </p>
-                {isSelectedServerOwner && (
+                {canManageSelectedChannels && (
                   <button
                     type="button"
                     onClick={() => {
@@ -2049,7 +2480,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       setEditingChannelName("");
                       setChannelContextMenu(null);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-7 w-7 items-center justify-center rounded-md transition"
                     aria-label="チャンネル追加フォームを開く"
                     title="チャンネルを追加"
                   >
@@ -2058,7 +2489,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 )}
               </div>
 
-              {isSelectedServerOwner && isNewChannelFormOpen && (
+              {canManageSelectedChannels && isNewChannelFormOpen && (
                 <form
                   onSubmit={handleCreateChannel}
                   className="mb-3 flex gap-2"
@@ -2066,7 +2497,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   <input
                     value={newChannelName}
                     onChange={(event) => setNewChannelName(event.target.value)}
-                    className="min-h-9 min-w-0 flex-1 rounded-md border border-[#18221f]/15 bg-[#fff8ed] px-2 text-sm text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-9 min-w-0 flex-1 rounded-md border px-2 text-sm focus:ring-2 focus:outline-none"
                     placeholder="new-channel"
                     maxLength={32}
                     aria-label="チャンネル名"
@@ -2075,7 +2506,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   <button
                     type="submit"
                     disabled={!newChannelName.trim() || createChannel.isPending}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-45"
+                    className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-45"
                     aria-label="チャンネルを追加"
                     title="チャンネルを追加"
                   >
@@ -2087,7 +2518,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       setIsNewChannelFormOpen(false);
                       setNewChannelName("");
                     }}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition"
                     aria-label="キャンセル"
                     title="キャンセル"
                   >
@@ -2108,10 +2539,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         onSubmit={(event) =>
                           handleUpdateChannel(event, channel.id)
                         }
-                        className="flex min-h-10 items-center gap-1 rounded-md bg-[#fff8ed] px-2"
+                        className="bg-connect-surface flex min-h-10 items-center gap-1 rounded-md px-2"
                       >
-                        <Hash
-                          className="h-4 w-4 shrink-0 text-[#53615a]"
+                        <MessageCircle
+                          className="text-connect-muted h-4 w-4 shrink-0"
                           aria-hidden="true"
                         />
                         <input
@@ -2119,7 +2550,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           onChange={(event) =>
                             setEditingChannelName(event.target.value)
                           }
-                          className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#18221f] focus:outline-none"
+                          className="text-connect-ink min-w-0 flex-1 bg-transparent text-sm font-medium focus:outline-none"
                           maxLength={32}
                           autoFocus
                           aria-label="チャンネル名を編集"
@@ -2130,7 +2561,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             !editingChannelName.trim() ||
                             updateChannel.isPending
                           }
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#114744] text-white transition hover:bg-[#0d3936] disabled:cursor-not-allowed disabled:opacity-45"
+                          className="bg-connect-action text-connect-surface hover:bg-connect-action-hover flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-45"
                           aria-label="保存"
                           title="保存"
                         >
@@ -2143,7 +2574,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             setEditingChannelName("");
                             setChannelContextMenu(null);
                           }}
-                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#f1e4d0]"
+                          className="text-connect-muted hover:bg-connect-navigation flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition"
                           aria-label="キャンセル"
                           title="キャンセル"
                         >
@@ -2159,8 +2590,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       onContextMenu={(event) => openChannelMenu(event, channel)}
                       className={`group flex min-h-10 items-center gap-1 rounded-md px-2 transition ${
                         isSelected
-                          ? "bg-[#18221f] text-[#f6f0e4]"
-                          : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                          ? "bg-connect-ink text-connect-paper"
+                          : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
                       }`}
                     >
                       <button
@@ -2173,21 +2604,24 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         }}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        <Hash className="h-5 w-5 shrink-0" aria-hidden="true" />
+                        <MessageCircle
+                          className="h-5 w-5 shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="truncate text-sm font-medium">
                           {channel.name}
                         </span>
                         {channel.unreadCount > 0 && (
-                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#9f4122] px-1 text-[11px] font-semibold text-white">
+                          <span className="bg-connect-danger text-connect-surface ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold">
                             {channel.unreadCount}
                           </span>
                         )}
                       </button>
-                      {isSelectedServerOwner && (
+                      {canManageSelectedChannels && (
                         <button
                           type="button"
                           onClick={(event) => openChannelMenu(event, channel)}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition hover:bg-black/10 focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                          className="hover:bg-connect-ink/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-current focus-visible:outline-none"
                           aria-label={`${channel.name}の操作`}
                           aria-haspopup="menu"
                           aria-expanded={
@@ -2204,14 +2638,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </div>
             </div>
 
-            <div className="mt-auto border-t border-[#18221f]/15 px-4 py-3">
+            <div className="border-connect-ink/15 mt-auto border-t px-4 py-3">
               {currentServerUser && (
                 <PresenceStatusMenu
                   currentStatus={currentServerUser.presenceStatus}
                 >
                   <button
                     type="button"
-                    className="flex min-h-12 w-full items-center gap-3 rounded-md px-1 py-1 text-left transition hover:bg-[#fff8ed] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                    className="hover:bg-connect-surface focus-visible:ring-connect-action flex min-h-12 w-full items-center gap-3 rounded-md px-1 py-1 text-left transition focus-visible:ring-2 focus-visible:outline-none"
                     aria-label={`オンライン状態を変更。現在は${getPresenceDisplayLabel(
                       currentServerUser.presenceStatus,
                     )}`}
@@ -2219,10 +2653,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     <span className="relative shrink-0">
                       <Avatar
                         user={currentServerUser}
-                        className="h-10 w-10 rounded-full border border-black/10"
+                        className="border-connect-ink/10 h-10 w-10 rounded-full border"
                       />
                       <span
-                        className={`absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#f1e4d0] ${getPresenceDotClassName(
+                        className={`border-connect-navigation absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 ${getPresenceDotClassName(
                           currentServerUser.presenceStatus,
                         )}`}
                       />
@@ -2232,7 +2666,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         {selectedServer.nickname?.trim() ??
                           getDisplayName(currentServerUser)}
                       </span>
-                      <span className="block truncate text-xs text-[#53615a]">
+                      <span className="text-connect-muted block truncate text-xs">
                         {getPresenceDisplayLabel(
                           currentServerUser.presenceStatus,
                         )}
@@ -2245,13 +2679,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           </>
         ) : (
           <>
-            <div className="border-b border-[#18221f]/15 px-3 py-3 shadow-sm">
-              <label className="flex h-11 items-center gap-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] px-3 text-sm text-[#68716b]">
+            <div className="border-connect-ink/15 border-b px-3 py-3 shadow-sm">
+              <label className="border-connect-ink/10 bg-connect-surface text-connect-neutral flex h-11 items-center gap-2 rounded-md border px-3 text-sm">
                 <Search className="h-4 w-4" aria-hidden="true" />
                 <input
                   value={friendSearch}
                   onChange={(event) => setFriendSearch(event.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-[#18221f] placeholder:text-[#9aa49e] focus:outline-none"
+                  className="text-connect-ink placeholder:text-connect-placeholder min-w-0 flex-1 bg-transparent focus:outline-none"
                   placeholder="フレンドを検索"
                   aria-label="フレンドを検索"
                 />
@@ -2264,8 +2698,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 onClick={openFriends}
                 className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   isFriendsOpen
-                    ? "bg-[#18221f] text-[#f6f0e4]"
-                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    ? "bg-connect-ink text-connect-paper"
+                    : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
                 }`}
               >
                 <Users className="h-5 w-5" aria-hidden="true" />
@@ -2276,8 +2710,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 onClick={openDirectMessages}
                 className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   !isFriendsOpen && !isMatchingOpen
-                    ? "bg-[#18221f] text-[#f6f0e4]"
-                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    ? "bg-connect-ink text-connect-paper"
+                    : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
                 }`}
               >
                 <MessageCircle className="h-5 w-5" aria-hidden="true" />
@@ -2290,8 +2724,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 onClick={openMatching}
                 className={`flex h-11 w-full items-center gap-3 rounded-md px-2 text-left transition ${
                   isMatchingOpen
-                    ? "bg-[#18221f] text-[#f6f0e4]"
-                    : "text-[#53615a] hover:bg-[#fff8ed] hover:text-[#18221f]"
+                    ? "bg-connect-ink text-connect-paper"
+                    : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
                 }`}
               >
                 <Shuffle className="h-5 w-5" aria-hidden="true" />
@@ -2299,17 +2733,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               </button>
             </div>
 
-            <div className="flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide text-[#53615a] uppercase">
+            <div className="text-connect-muted flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide uppercase">
               <span>DM</span>
-              <button
-                type="button"
-                onClick={openFriends}
-                className="flex h-11 w-11 items-center justify-center rounded-md transition hover:bg-[#fff8ed] hover:text-[#18221f]"
-                aria-label="フレンドを追加・管理"
-                title="フレンドを追加・管理"
+              <GroupDmDialog
+                initialGroupId={selectedGroupId}
+                open={isGroupDmOpen}
+                onOpenChange={setIsGroupDmOpen}
               >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-              </button>
+                <button
+                  type="button"
+                  className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
+                  aria-label="新しいグループDM"
+                  title="新しいグループDM"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </GroupDmDialog>
             </div>
 
             <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
@@ -2318,7 +2757,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {[0, 1, 2].map((item) => (
                     <div
                       key={item}
-                      className="h-12 animate-pulse rounded-md bg-[#fff8ed]"
+                      className="bg-connect-surface h-12 animate-pulse rounded-md"
                     />
                   ))}
                 </div>
@@ -2335,13 +2774,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               ))}
 
               {friends.data?.length === 0 && (
-                <div className="mx-2 rounded-md border border-[#18221f]/10 bg-[#fff8ed] p-4 text-sm leading-6 text-[#53615a]">
-                  <Inbox className="mb-3 h-5 w-5 text-[#cc5f2f]" />
+                <div className="border-connect-ink/10 bg-connect-surface text-connect-muted mx-2 rounded-md border p-4 text-sm leading-6">
+                  <Inbox className="text-connect-signal mb-3 h-5 w-5" />
                   <p>フレンドを追加すると、ここからDMを始められます。</p>
                   <button
                     type="button"
                     onClick={openFriends}
-                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#18221f] px-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+                    className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-3 font-semibold transition"
                   >
                     <Users className="h-4 w-4" aria-hidden="true" />
                     フレンドを追加
@@ -2352,7 +2791,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               {friends.data &&
                 friends.data.length > 0 &&
                 filteredFriends.length === 0 && (
-                  <p className="px-2 py-3 text-sm text-[#53615a]">
+                  <p className="text-connect-muted px-2 py-3 text-sm">
                     該当するフレンドはいません
                   </p>
                 )}
@@ -2364,37 +2803,37 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       <section
         className={`${
           isNavigationOpen ? "hidden md:flex" : "flex"
-        } min-w-0 flex-1 flex-col bg-[#fff8ed]`}
+        } bg-connect-surface col-start-1 row-start-2 min-h-0 min-w-0 flex-col md:col-start-2`}
       >
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#18221f]/15 bg-[#e4f2dc] px-4 shadow-sm">
+        <header className="border-connect-ink/15 bg-connect-highlight flex h-14 shrink-0 items-center justify-between border-b px-4 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setIsNavigationOpen(true)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] md:hidden"
+              className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition md:hidden"
               aria-label="ナビゲーションを開く"
               title="ナビゲーションを開く"
             >
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
             {selectedServer ? (
-              <Hash
-                className="h-5 w-5 shrink-0 text-[#68716b]"
+              <MessageCircle
+                className="text-connect-neutral h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
             ) : isFriendsOpen ? (
               <Users
-                className="h-5 w-5 shrink-0 text-[#68716b]"
+                className="text-connect-neutral h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
             ) : isMatchingOpen ? (
               <Shuffle
-                className="h-5 w-5 shrink-0 text-[#68716b]"
+                className="text-connect-neutral h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
             ) : (
               <MessageCircle
-                className="h-5 w-5 shrink-0 text-[#68716b]"
+                className="text-connect-neutral h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
             )}
@@ -2403,7 +2842,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <h1 className="truncate font-semibold">
                   {selectedServerChannel?.name ?? "チャンネル"}
                 </h1>
-                <p className="truncate text-xs text-[#68716b]">
+                <p className="text-connect-neutral truncate text-xs">
                   {selectedServer.server.name}
                 </p>
               </div>
@@ -2420,7 +2859,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   <h1 className="truncate font-semibold">
                     {getDisplayName(selectedFriend)}
                   </h1>
-                  <p className="truncate font-mono text-xs text-[#68716b]">
+                  <p className="text-connect-neutral truncate font-mono text-xs">
                     @{selectedFriend.userId}
                   </p>
                 </div>
@@ -2439,7 +2878,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <button
                   type="button"
                   onClick={() => setIsPinnedMessagesOpen(true)}
-                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                  className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
                   aria-label="ピン留めしたメッセージ"
                   title="ピン留めしたメッセージ"
                 >
@@ -2448,18 +2887,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <button
                   type="button"
                   onClick={() => setIsMemberListOpen(true)}
-                  className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f] lg:hidden"
+                  className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 items-center justify-center gap-2 rounded-md px-3 transition-colors"
                   aria-label="メンバー一覧"
                   title="メンバー一覧"
                 >
                   <Users className="h-5 w-5" aria-hidden="true" />
+                  <span className="hidden whitespace-nowrap xl:inline">
+                    メンバー
+                  </span>
                 </button>
               </>
             )}
             <ProfileSettingsDialog>
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#fff8ed] hover:text-[#18221f]"
+                className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
                 aria-label="設定"
               >
                 <Settings className="h-5 w-5" aria-hidden="true" />
@@ -2483,10 +2925,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     <div className="space-y-4">
                       {[0, 1, 2].map((item) => (
                         <div key={item} className="flex gap-3">
-                          <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
+                          <div className="bg-connect-navigation h-10 w-10 animate-pulse rounded-full" />
                           <div className="space-y-2">
-                            <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
-                            <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
+                            <div className="bg-connect-navigation h-4 w-36 animate-pulse rounded" />
+                            <div className="bg-connect-navigation h-10 w-80 max-w-[70vw] animate-pulse rounded" />
                           </div>
                         </div>
                       ))}
@@ -2496,15 +2938,16 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {serverConversationData && !hasServerMessages && (
                     <div className="flex min-h-full items-end pb-8">
                       <div>
-                        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#18221f] text-2xl font-semibold text-[#f6f0e4]">
+                        <div className="bg-connect-ink text-connect-paper mb-4 flex h-20 w-20 items-center justify-center rounded-2xl text-2xl font-semibold">
                           {selectedServer.server.name.slice(0, 2).toUpperCase()}
                         </div>
                         <h2 className="text-3xl font-semibold">
                           {selectedServer.server.name}へようこそ
                         </h2>
-                        <p className="mt-2 max-w-xl leading-7 text-[#53615a]">
-                          #{selectedServerChannel?.name ?? "general"}
-                          の最初のメッセージを送って、会話を始めましょう。
+                        <p className="text-connect-muted mt-2 max-w-xl leading-7">
+                          {canSendSelectedServerMessages
+                            ? `#${selectedServerChannel?.name ?? "general"} の最初のメッセージを送って、会話を始めましょう。`
+                            : `#${selectedServerChannel?.name ?? "general"} にはまだメッセージがありません。`}
                         </p>
                       </div>
                     </div>
@@ -2520,7 +2963,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               void serverConversation.fetchNextPage()
                             }
                             disabled={serverConversation.isFetchingNextPage}
-                            className="min-h-9 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4] disabled:opacity-50"
+                            className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
                           >
                             {serverConversation.isFetchingNextPage
                               ? "読み込み中..."
@@ -2562,7 +3005,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            className={`group relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                            className={`group hover:bg-connect-paper relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 ${isFollowup ? "py-0.5" : "py-1.5"}`}
                           >
                             {chatMessage.id === firstServerUnreadMessageId && (
                               <NewMessagesSeparator
@@ -2572,7 +3015,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             {isFollowup ? (
                               <time
                                 dateTime={chatMessage.createdAt.toISOString()}
-                                className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
+                                className="text-connect-neutral mt-1 w-10 shrink-0 text-center text-[10px] opacity-0 transition group-hover:opacity-100"
                                 aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
                               >
                                 {formatMessageTime(chatMessage.createdAt)}
@@ -2588,16 +3031,22 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               />
                             )}
                             <div className="min-w-0 flex-1 text-left">
+                              {chatMessage.replyTo && (
+                                <div className="border-connect-action/35 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                                  {getDisplayName(chatMessage.replyTo.sender)}:{" "}
+                                  {chatMessage.replyTo.content}
+                                </div>
+                              )}
                               {!isFollowup && (
                                 <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                                  <span className="text-sm font-semibold text-[#18221f]">
+                                  <span className="text-connect-ink text-sm font-semibold">
                                     {getDisplayName(author)}
                                   </span>
-                                  <time className="text-xs text-[#68716b]">
+                                  <time className="text-connect-neutral text-xs">
                                     {formatMessageTime(chatMessage.createdAt)}
                                   </time>
                                   {chatMessage.pinnedAt && (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#114744]">
+                                    <span className="text-connect-action inline-flex items-center gap-1 text-xs font-medium">
                                       <Pin
                                         className="h-3 w-3"
                                         aria-hidden="true"
@@ -2620,7 +3069,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                         content: event.target.value,
                                       })
                                     }
-                                    className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                    className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6 focus:ring-2 focus:outline-none"
                                     maxLength={1000}
                                     autoFocus
                                   />
@@ -2628,7 +3077,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                     <button
                                       type="button"
                                       onClick={() => setEditingMessage(null)}
-                                      className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                      className="border-connect-ink/15 text-connect-muted hover:bg-connect-paper inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-semibold transition"
                                     >
                                       キャンセル
                                     </button>
@@ -2638,19 +3087,53 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                         !editingMessage.content.trim() ||
                                         updateServerMessage.isPending
                                       }
-                                      className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                      className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-9 items-center rounded-md px-3 text-sm font-semibold transition disabled:opacity-50"
                                     >
                                       保存
                                     </button>
                                   </div>
                                 </form>
                               ) : (
-                                <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
+                                <p className="text-connect-ink text-left leading-7 break-words whitespace-pre-wrap">
                                   <MessageText
                                     content={chatMessage.content}
                                     onOpenLink={setPendingExternalLink}
                                   />
                                 </p>
+                              )}
+                              <MessageAttachmentList
+                                attachments={chatMessage.attachments}
+                              />
+                              {chatMessage.reactions.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {groupReactions(chatMessage.reactions).map(
+                                    ([emoji, reactions]) => (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() =>
+                                          selectedServerId &&
+                                          toggleServerReaction.mutate({
+                                            emoji: emoji as "\u{1F44D}",
+                                            messageId: chatMessage.id,
+                                            serverId: selectedServerId,
+                                          })
+                                        }
+                                        disabled={
+                                          !canReactToSelectedServerMessages
+                                        }
+                                        className="border-connect-ink/15 bg-connect-paper min-h-8 rounded-full border px-2 text-xs disabled:cursor-default"
+                                        title={
+                                          canReactToSelectedServerMessages
+                                            ? undefined
+                                            : "閲覧のみのためリアクションできません"
+                                        }
+                                      >
+                                        {emoji} {reactions.length}
+                                      </button>
+                                    ),
+                                  )}
+                                </div>
                               )}
                             </div>
                             <button
@@ -2658,7 +3141,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onClick={(event) =>
                                 openServerMessageMenu(event, chatMessage)
                               }
-                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none md:pointer-events-none md:absolute md:top-1 md:right-2 md:opacity-0 md:focus-visible:pointer-events-auto md:focus-visible:opacity-100"
+                              className="text-connect-muted hover:bg-connect-highlight focus-visible:ring-connect-action flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none md:absolute md:top-1 md:right-2"
                               aria-label="メッセージ操作"
                               aria-haspopup="menu"
                               aria-expanded={
@@ -2707,9 +3190,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {isMatchingOpen && (
                     <div className="flex h-full items-center justify-center">
                       <div className="max-w-sm text-center">
-                        <Shuffle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
+                        <Shuffle className="text-connect-signal mx-auto mb-4 h-12 w-12" />
                         <h2 className="text-xl font-semibold">マッチング</h2>
-                        <p className="mt-2 text-sm leading-6 text-[#53615a]">
+                        <p className="text-connect-muted mt-2 text-sm leading-6">
                           話したいことを選んで、同じ話題の相手を探せます。
                         </p>
                       </div>
@@ -2723,17 +3206,17 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     !friends.isError && (
                       <div className="flex h-full items-center justify-center">
                         <div className="max-w-sm text-center">
-                          <MessageCircle className="mx-auto mb-4 h-12 w-12 text-[#cc5f2f]" />
+                          <MessageCircle className="text-connect-signal mx-auto mb-4 h-12 w-12" />
                           <h2 className="text-xl font-semibold">
                             DMを選択してください
                           </h2>
-                          <p className="mt-2 text-sm leading-6 text-[#53615a]">
+                          <p className="text-connect-muted mt-2 text-sm leading-6">
                             フレンド一覧から相手を選ぶと、会話を始められます。
                           </p>
                           <button
                             type="button"
                             onClick={openFriends}
-                            className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+                            className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 font-semibold transition"
                           >
                             <Users className="h-4 w-4" aria-hidden="true" />
                             フレンドを追加・管理
@@ -2748,10 +3231,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       <div className="space-y-4">
                         {[0, 1, 2].map((item) => (
                           <div key={item} className="flex gap-3">
-                            <div className="h-10 w-10 animate-pulse rounded-full bg-[#f1e4d0]" />
+                            <div className="bg-connect-navigation h-10 w-10 animate-pulse rounded-full" />
                             <div className="space-y-2">
-                              <div className="h-4 w-36 animate-pulse rounded bg-[#f1e4d0]" />
-                              <div className="h-10 w-80 max-w-[70vw] animate-pulse rounded bg-[#f1e4d0]" />
+                              <div className="bg-connect-navigation h-4 w-36 animate-pulse rounded" />
+                              <div className="bg-connect-navigation h-10 w-80 max-w-[70vw] animate-pulse rounded" />
                             </div>
                           </div>
                         ))}
@@ -2776,7 +3259,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           <h2 className="text-3xl font-semibold">
                             {getDisplayName(directConversation.friend)}
                           </h2>
-                          <p className="mt-2 text-[#53615a]">
+                          <p className="text-connect-muted mt-2">
                             @{directConversation.friend.userId}{" "}
                             とのDMの始まりです。
                           </p>
@@ -2794,7 +3277,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               type="button"
                               onClick={() => void conversation.fetchNextPage()}
                               disabled={conversation.isFetchingNextPage}
-                              className="min-h-9 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4] disabled:opacity-50"
+                              className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
                             >
                               {conversation.isFetchingNextPage
                                 ? "読み込み中..."
@@ -2825,7 +3308,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              className={`group relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 hover:bg-[#f6f0e4] ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                              className={`group hover:bg-connect-paper relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 ${isFollowup ? "py-0.5" : "py-1.5"}`}
                             >
                               {chatMessage.id ===
                                 firstDirectUnreadMessageId && (
@@ -2836,7 +3319,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               {isFollowup ? (
                                 <time
                                   dateTime={chatMessage.createdAt.toISOString()}
-                                  className="mt-1 w-10 shrink-0 text-center text-[10px] text-[#68716b] opacity-0 transition group-hover:opacity-100"
+                                  className="text-connect-neutral mt-1 w-10 shrink-0 text-center text-[10px] opacity-0 transition group-hover:opacity-100"
                                   aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
                                 >
                                   {formatMessageTime(chatMessage.createdAt)}
@@ -2851,12 +3334,18 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 />
                               )}
                               <div className="min-w-0 flex-1 text-left">
+                                {chatMessage.replyTo && (
+                                  <div className="border-connect-action/35 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                                    {getDisplayName(chatMessage.replyTo.sender)}
+                                    : {chatMessage.replyTo.content}
+                                  </div>
+                                )}
                                 {!isFollowup && (
                                   <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
-                                    <span className="text-sm font-semibold text-[#18221f]">
+                                    <span className="text-connect-ink text-sm font-semibold">
                                       {getDisplayName(author)}
                                     </span>
-                                    <time className="text-xs text-[#68716b]">
+                                    <time className="text-connect-neutral text-xs">
                                       {formatMessageTime(chatMessage.createdAt)}
                                     </time>
                                   </div>
@@ -2874,7 +3363,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                           content: event.target.value,
                                         })
                                       }
-                                      className="min-h-24 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-left leading-6 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                                      className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6 focus:ring-2 focus:outline-none"
                                       maxLength={1000}
                                       autoFocus
                                     />
@@ -2882,7 +3371,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                       <button
                                         type="button"
                                         onClick={() => setEditingMessage(null)}
-                                        className="inline-flex min-h-9 items-center rounded-md border border-[#18221f]/15 px-3 text-sm font-semibold text-[#53615a] transition hover:bg-[#f6f0e4]"
+                                        className="border-connect-ink/15 text-connect-muted hover:bg-connect-paper inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-semibold transition"
                                       >
                                         キャンセル
                                       </button>
@@ -2892,19 +3381,43 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                           !editingMessage.content.trim() ||
                                           updateDirectMessage.isPending
                                         }
-                                        className="inline-flex min-h-9 items-center rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                                        className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-9 items-center rounded-md px-3 text-sm font-semibold transition disabled:opacity-50"
                                       >
                                         保存
                                       </button>
                                     </div>
                                   </form>
                                 ) : (
-                                  <p className="text-left leading-7 break-words whitespace-pre-wrap text-[#18221f]">
+                                  <p className="text-connect-ink text-left leading-7 break-words whitespace-pre-wrap">
                                     <MessageText
                                       content={chatMessage.content}
                                       onOpenLink={setPendingExternalLink}
                                     />
                                   </p>
+                                )}
+                                <MessageAttachmentList
+                                  attachments={chatMessage.attachments}
+                                />
+                                {chatMessage.reactions.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {groupReactions(chatMessage.reactions).map(
+                                      ([emoji, reactions]) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() =>
+                                            toggleDirectReaction.mutate({
+                                              emoji: emoji as "\u{1F44D}",
+                                              messageId: chatMessage.id,
+                                            })
+                                          }
+                                          className="border-connect-ink/15 bg-connect-paper min-h-8 rounded-full border px-2 text-xs"
+                                        >
+                                          {emoji} {reactions.length}
+                                        </button>
+                                      ),
+                                    )}
+                                  </div>
                                 )}
                               </div>
                               <button
@@ -2912,7 +3425,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                 onClick={(event) =>
                                   openDirectMessageMenu(event, chatMessage)
                                 }
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#e4f2dc] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none md:pointer-events-none md:absolute md:top-1 md:right-2 md:opacity-0 md:focus-visible:pointer-events-auto md:focus-visible:opacity-100"
+                                className="text-connect-muted hover:bg-connect-highlight focus-visible:ring-connect-action flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none md:absolute md:top-1 md:right-2"
                                 aria-label="メッセージ操作"
                                 aria-haspopup="menu"
                                 aria-expanded={
@@ -2956,7 +3469,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 <button
                   type="button"
                   onClick={messageViewport.scrollToNewMessages}
-                  className="pointer-events-auto inline-flex min-h-10 items-center gap-2 rounded-md bg-[#18221f] px-4 text-sm font-semibold text-[#f6f0e4] shadow-lg transition hover:bg-[#2f3c37] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 focus-visible:ring-connect-action pointer-events-auto inline-flex min-h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold shadow-lg transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   <ChevronDown className="h-4 w-4" aria-hidden="true" />
                   新しいメッセージ {messageViewport.newMessageCount}件
@@ -2968,18 +3481,46 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               {selectedServer ? (
                 <>
                   {serverMessage && (
-                    <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+                    <p className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger mb-2 rounded-md border px-3 py-2 text-sm">
                       {serverMessage}
                     </p>
                   )}
+                  {replyTarget?.kind === "server" &&
+                    canSendSelectedServerMessages && (
+                      <div className="border-connect-ink/15 bg-connect-highlight flex items-center justify-between rounded-t-md border px-3 py-2 text-sm">
+                        <span className="truncate">
+                          返信: {replyTarget.content}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setReplyTarget(null)}
+                          className="flex h-9 w-9 items-center justify-center"
+                          aria-label="返信を解除"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  {canSendSelectedServerMessages && (
+                    <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
+                      <MessageAttachmentPicker
+                        attachments={serverAttachments}
+                        disabled={sendServerMessage.isPending}
+                        onChange={setServerAttachments}
+                        onError={setServerMessage}
+                      />
+                    </div>
+                  )}
                   <form
                     onSubmit={handleServerSubmit}
-                    className="flex items-end gap-2 rounded-md border border-[#18221f]/15 bg-[#f6f0e4] px-3 py-1.5"
+                    className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-action flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
                   >
                     <textarea
                       data-chat-input
                       value={serverDraft}
-                      onChange={(event) => setServerDraft(event.target.value)}
+                      onChange={(event) =>
+                        handleServerDraftChange(event.target.value)
+                      }
                       onKeyDown={(event) => {
                         if (
                           event.key === "Enter" &&
@@ -2990,17 +3531,26 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           event.currentTarget.form?.requestSubmit();
                         }
                       }}
-                      className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
-                      placeholder={`#${selectedServerChannel?.name ?? "general"} へメッセージを送信`}
-                      disabled={!selectedServerChannel?.id}
+                      className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
+                      placeholder={
+                        canSendSelectedServerMessages
+                          ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
+                          : "閲覧のみのためメッセージを送信できません"
+                      }
+                      disabled={
+                        !selectedServerChannel?.id ||
+                        !canSendSelectedServerMessages
+                      }
                       maxLength={1000}
                     />
                     <button
                       type="submit"
                       disabled={
-                        !selectedServerChannel?.id || !serverDraft.trim()
+                        !selectedServerChannel?.id ||
+                        !canSendSelectedServerMessages ||
+                        (!serverDraft.trim() && serverAttachments.length === 0)
                       }
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
+                      className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="送信"
                     >
                       <Send className="h-5 w-5" aria-hidden="true" />
@@ -3012,7 +3562,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   {isMatchingOpen ? (
                     <>
                       {matchingMessage && (
-                        <p className="mb-2 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+                        <p className="border-connect-ink/10 bg-connect-surface text-connect-muted mb-2 rounded-md border px-3 py-2 text-sm">
                           {matchingMessage}
                         </p>
                       )}
@@ -3021,8 +3571,40 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           event.preventDefault();
                           handleStartMatching();
                         }}
-                        className="flex flex-col gap-3 rounded-lg border border-[#18221f]/15 bg-white px-4 py-3 shadow-[6px_6px_0_#d8efee] sm:flex-row sm:items-center"
+                        className="border-connect-ink/15 bg-connect-surface grid gap-3 rounded-lg border px-4 py-3 shadow-[6px_6px_0_var(--color-focus-on-dark)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
                       >
+                        <div className="border-connect-ink/10 bg-connect-highlight space-y-2 rounded-md border p-3 sm:col-span-2">
+                          <p className="text-sm font-semibold">
+                            {
+                              MATCHING_TOPICS.find(
+                                ({ value }) => value === matchingTopic,
+                              )?.prompts[0]
+                            }
+                          </p>
+                          <p className="text-connect-muted text-xs leading-5">
+                            {MATCHING_SAFETY_NOTICE}
+                          </p>
+                          <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
+                            <input
+                              type="checkbox"
+                              checked={matchingSafetyAccepted}
+                              onChange={(event) =>
+                                setMatchingSafetyAccepted(event.target.checked)
+                              }
+                              disabled={matchingState === "waiting"}
+                              className="accent-connect-action h-5 w-5"
+                            />
+                            内容を確認し、会話を始めることに同意します
+                          </label>
+                          <a
+                            href={SAFETY_RESOURCES.officialUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-connect-action inline-flex min-h-10 items-center text-xs font-semibold underline"
+                          >
+                            相談先と安全情報を確認
+                          </a>
+                        </div>
                         <select
                           value={matchingTopic}
                           onChange={(event) =>
@@ -3031,10 +3613,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             )
                           }
                           disabled={matchingState === "waiting"}
-                          className="min-h-11 flex-1 rounded-md border border-[#18221f]/15 bg-[#fff8ed] px-3 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none disabled:opacity-50"
+                          className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-11 flex-1 rounded-md border px-3 focus:ring-2 focus:outline-none disabled:opacity-50"
                           aria-label="話したいこと"
                         >
-                          {matchingTopics.map((topic) => (
+                          {MATCHING_TOPICS.map((topic) => (
                             <option key={topic.value} value={topic.value}>
                               {topic.label}
                             </option>
@@ -3045,9 +3627,10 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             type="submit"
                             disabled={
                               matchRandom.isPending ||
+                              !matchingSafetyAccepted ||
                               matchingState === "waiting"
                             }
-                            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+                            className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md px-4 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
                           >
                             <Shuffle className="h-5 w-5" aria-hidden="true" />
                             {matchingState === "waiting"
@@ -3061,7 +3644,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               type="button"
                               onClick={handleCancelMatching}
                               disabled={cancelMatching.isPending}
-                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[#53615a] transition hover:bg-[#f1e4d0] hover:text-[#18221f] disabled:opacity-50"
+                              className="text-connect-muted hover:bg-connect-navigation hover:text-connect-ink flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition disabled:opacity-50"
                               aria-label="マッチングをキャンセル"
                               title="キャンセル"
                             >
@@ -3074,11 +3657,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   ) : selectedFriendId ? (
                     <>
                       {privateMatchFeedback?.needsRating && (
-                        <section className="mb-3 rounded-lg border border-[#114744]/20 bg-[#eef7f4] p-4">
-                          <p className="font-semibold text-[#18221f]">
+                        <section className="border-connect-action/20 bg-connect-success-soft mb-3 rounded-lg border p-4">
+                          <p className="text-connect-ink font-semibold">
                             今回のマッチングはいかがでしたか？
                           </p>
-                          <p className="mt-1 text-xs text-[#53615a]">
+                          <p className="text-connect-muted mt-1 text-xs">
                             評価内容は誰にも表示されず、今後のマッチング改善にのみ使用されます。
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -3102,7 +3685,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                                   })
                                 }
                                 disabled={submitMatchRating.isPending}
-                                className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                                className="border-connect-action/20 bg-connect-surface text-connect-action hover:bg-connect-focus-soft min-h-10 rounded-md border px-3 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50"
                               >
                                 {label}
                               </button>
@@ -3111,11 +3694,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         </section>
                       )}
                       {privateMatchFeedback?.needsConversationConsent && (
-                        <section className="mb-3 rounded-lg border border-[#114744]/20 bg-[#eef7f4] p-4">
-                          <p className="font-semibold text-[#18221f]">
+                        <section className="border-connect-action/20 bg-connect-success-soft mb-3 rounded-lg border p-4">
+                          <p className="text-connect-ink font-semibold">
                             この会話を次回のマッチング品質向上の為に使用しますか？
                           </p>
-                          <p className="mt-1 text-xs text-[#53615a]">
+                          <p className="text-connect-muted mt-1 text-xs">
                             同意した場合も、分析するのはあなた自身の発言だけです。会話本文や分析結果は相手に表示されません。
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -3130,7 +3713,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               disabled={
                                 submitConversationAnalysisConsent.isPending
                               }
-                              className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                              className="border-connect-action/20 bg-connect-surface text-connect-action hover:bg-connect-focus-soft min-h-10 rounded-md border px-3 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50"
                             >
                               使用する
                             </button>
@@ -3145,7 +3728,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               disabled={
                                 submitConversationAnalysisConsent.isPending
                               }
-                              className="min-h-10 rounded-md border border-[#114744]/20 bg-white px-3 text-sm font-semibold text-[#114744] transition hover:bg-[#d8efee] disabled:cursor-wait disabled:opacity-50"
+                              className="border-connect-action/20 bg-connect-surface text-connect-action hover:bg-connect-focus-soft min-h-10 rounded-md border px-3 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50"
                             >
                               使用しない
                             </button>
@@ -3153,11 +3736,36 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         </section>
                       )}
                       {message && (
-                        <p className="mb-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+                        <p className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger mb-2 rounded-md border px-3 py-2 text-sm">
                           {message}
                         </p>
                       )}
-                      <div className="mb-2 min-h-5 px-1 text-sm text-[#68716b]">
+                      {replyTarget?.kind === "direct" && (
+                        <div className="border-connect-ink/15 bg-connect-highlight flex items-center justify-between rounded-t-md border px-3 py-2 text-sm">
+                          <span className="truncate">
+                            返信: {replyTarget.content}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setReplyTarget(null)}
+                            className="flex h-9 w-9 items-center justify-center"
+                            aria-label="返信を解除"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                      {canSendDirectMessage && (
+                        <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
+                          <MessageAttachmentPicker
+                            attachments={directAttachments}
+                            disabled={sendMessage.isPending}
+                            onChange={setDirectAttachments}
+                            onError={setMessage}
+                          />
+                        </div>
+                      )}
+                      <div className="text-connect-neutral mb-2 min-h-5 px-1 text-sm">
                         {typingUserName
                           ? `${typingUserName} が入力中...`
                           : canSendDirectMessage
@@ -3166,7 +3774,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       </div>
                       <form
                         onSubmit={handleSubmit}
-                        className="flex items-end gap-2 rounded-md border border-[#18221f]/15 bg-[#f6f0e4] px-3 py-1.5"
+                        className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-action flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
                       >
                         <textarea
                           data-chat-input
@@ -3184,7 +3792,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                               event.currentTarget.form?.requestSubmit();
                             }
                           }}
-                          className="max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 text-[#18221f] outline-none placeholder:text-[#9aa49e] focus:outline-none focus-visible:outline-none"
+                          className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
                           placeholder={
                             !canSendDirectMessage
                               ? "この会話には送信できません"
@@ -3200,9 +3808,9 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                           disabled={
                             !selectedFriendId ||
                             !canSendDirectMessage ||
-                            !draft.trim()
+                            (!draft.trim() && directAttachments.length === 0)
                           }
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:cursor-not-allowed disabled:opacity-50 md:hidden"
+                          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="送信"
                         >
                           <Send className="h-5 w-5" aria-hidden="true" />
@@ -3218,8 +3826,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           {selectedServer && (
             <ServerMemberList
               currentUserId={currentServerUser?.id}
+              currentRole={selectedServer.role}
               isOpen={isMemberListOpen}
-              isOwner={Boolean(isSelectedServerOwner)}
               isRemoving={removeServerMember.isPending}
               isUpdatingRole={updateServerMemberRole.isPending}
               members={selectedServerMembers}
@@ -3243,8 +3851,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           }
         }}
       >
-        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-lg">
-          <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+        <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto p-0 sm:max-w-lg">
+          <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
             <DialogTitle>サーバー設定</DialogTitle>
             <DialogDescription className="sr-only">
               サーバー名、アイコン、招待リンクを管理します。
@@ -3252,7 +3860,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           </DialogHeader>
           <form onSubmit={handleServerSettingsSubmit} className="space-y-5 p-5">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#18221f] text-lg font-semibold text-[#f6f0e4]">
+              <div className="bg-connect-ink text-connect-paper flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md text-lg font-semibold">
                 {selectedServer?.server.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -3274,13 +3882,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   onChange={(event) =>
                     setServerIconFile(event.target.files?.[0] ?? null)
                   }
-                  className="block w-full text-sm text-[#53615a] file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-[#18221f] file:px-3 file:font-semibold file:text-[#f6f0e4]"
+                  className="text-connect-muted file:bg-connect-ink file:text-connect-paper block w-full text-sm file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:px-3 file:font-semibold"
                 />
-                <span className="mt-1 block text-xs text-[#68716b]">
+                <span className="text-connect-neutral mt-1 block text-xs">
                   PNG / JPG、128KBまで
                 </span>
                 {serverIconFile && (
-                  <span className="mt-1 block truncate text-xs text-[#68716b]">
+                  <span className="text-connect-neutral mt-1 block truncate text-xs">
                     {serverIconFile.name}
                   </span>
                 )}
@@ -3294,11 +3902,66 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <input
                 value={serverNameDraft}
                 onChange={(event) => setServerNameDraft(event.target.value)}
-                className="min-h-11 w-full rounded-md border border-[#18221f]/15 bg-white px-3 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
                 maxLength={50}
                 required
               />
             </label>
+
+            <fieldset className="border-connect-ink/15 space-y-3 rounded-md border p-4">
+              <legend className="px-1 text-sm font-semibold">
+                公開サーバーディレクトリ
+              </legend>
+              <label className="flex min-h-11 items-center justify-between gap-4">
+                <span>
+                  <span className="block text-sm font-semibold">公開する</span>
+                  <span className="text-connect-muted block text-xs">
+                    名前・説明・カテゴリ・タグ・人数から検索できます
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={serverVisibilityDraft === "PUBLIC"}
+                  onChange={(event) =>
+                    setServerVisibilityDraft(
+                      event.target.checked ? "PUBLIC" : "PRIVATE",
+                    )
+                  }
+                  className="accent-connect-action h-5 w-5"
+                />
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm font-semibold">
+                  カテゴリ
+                  <select
+                    value={serverCategoryDraft}
+                    onChange={(event) =>
+                      setServerCategoryDraft(
+                        event.target.value as ServerCategory | "",
+                      )
+                    }
+                    className="border-connect-ink/15 bg-connect-surface mt-1 min-h-11 w-full rounded-md border px-3"
+                  >
+                    <option value="">未設定</option>
+                    <option value="COMMUNITY">コミュニティ</option>
+                    <option value="GAMES">ゲーム</option>
+                    <option value="STUDY">学習</option>
+                    <option value="HOBBIES">趣味</option>
+                    <option value="WELLBEING">ウェルビーイング</option>
+                    <option value="OTHER">その他</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-semibold">
+                  タグ（最大5件）
+                  <input
+                    value={serverTagsDraft}
+                    onChange={(event) => setServerTagsDraft(event.target.value)}
+                    placeholder="初心者歓迎, 音楽"
+                    className="border-connect-ink/15 bg-connect-surface mt-1 min-h-11 w-full rounded-md border px-3"
+                  />
+                </label>
+              </div>
+            </fieldset>
 
             {selectedServer?.server.inviteCode && (
               <div>
@@ -3310,13 +3973,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     value={`/servers/invite/${selectedServer.server.inviteCode}`}
                     readOnly
                     onFocus={(event) => event.currentTarget.select()}
-                    className="min-h-11 min-w-0 flex-1 rounded-md border border-[#18221f]/15 bg-white px-3 text-sm text-[#53615a] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-muted focus:border-connect-action focus:ring-connect-focus-soft min-h-11 min-w-0 flex-1 rounded-md border px-3 text-sm focus:ring-2 focus:outline-none"
                     aria-label="招待リンク"
                   />
                   <button
                     type="button"
                     onClick={handleCopyServerInvite}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
+                    className="border-connect-ink/15 bg-connect-surface hover:bg-connect-highlight inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 font-semibold transition"
                   >
                     <Copy className="h-4 w-4" aria-hidden="true" />
                     コピー
@@ -3329,24 +3992,13 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       })
                     }
                     disabled={rotateServerInvite.isPending}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc] disabled:opacity-50"
+                    className="border-connect-ink/15 bg-connect-surface hover:bg-connect-highlight inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 font-semibold transition disabled:opacity-50"
                   >
                     <RefreshCw className="h-4 w-4" aria-hidden="true" />
                     再発行
                   </button>
                 </div>
               </div>
-            )}
-
-            {isSelectedServerOwner && (
-              <button
-                type="button"
-                onClick={openServerReports}
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
-              >
-                <Flag className="h-4 w-4" aria-hidden="true" />
-                通報一覧を開く
-              </button>
             )}
 
             {serverSettingsMessage && (
@@ -3357,8 +4009,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                     "招待リンクをコピーしました",
                     "招待リンクを再発行しました",
                   ].includes(serverSettingsMessage)
-                    ? "border-sky-200 bg-sky-50 text-sky-900"
-                    : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+                    ? "border-connect-action/20 bg-connect-success-soft text-connect-action"
+                    : "border-connect-signal/25 bg-connect-danger-soft text-connect-danger"
                 }`}
               >
                 {serverSettingsMessage}
@@ -3366,19 +4018,25 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             )}
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-              <button
-                type="button"
-                onClick={handleDeleteServer}
-                disabled={deleteServer.isPending}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-4 font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-                サーバー削除
-              </button>
+              {isSelectedServerOwner && (
+                <button
+                  type="button"
+                  onClick={handleDeleteServer}
+                  disabled={deleteServer.isPending}
+                  className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger hover:bg-connect-danger-hover inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 font-semibold transition disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                  サーバー削除
+                </button>
+              )}
               <button
                 type="submit"
-                disabled={!serverNameDraft.trim() || updateServer.isPending}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#114744] px-4 font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                disabled={
+                  !serverNameDraft.trim() ||
+                  updateServer.isPending ||
+                  updateServerDiscovery.isPending
+                }
+                className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-11 items-center justify-center rounded-md px-4 font-semibold transition disabled:opacity-50"
               >
                 保存
               </button>
@@ -3393,7 +4051,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           if (!isOpen) setReportTarget(null);
         }}
       >
-        <DialogContent className="bg-[#f6f0e4] text-[#18221f] sm:max-w-lg">
+        <DialogContent className="bg-connect-paper text-connect-ink sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>メッセージを通報</DialogTitle>
             <DialogDescription>
@@ -3401,7 +4059,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleMessageReportSubmit} className="space-y-4">
-            <p className="max-h-28 overflow-y-auto rounded-md border border-[#18221f]/15 bg-white px-3 py-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+            <p className="border-connect-ink/15 bg-connect-surface text-connect-muted max-h-28 overflow-y-auto rounded-md border px-3 py-2 text-sm break-words whitespace-pre-wrap">
               {reportTarget?.content}
             </p>
             <label className="block">
@@ -3411,7 +4069,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                 onChange={(event) =>
                   setReportReason(event.target.value as ReportReason)
                 }
-                className="min-h-11 w-full rounded-md border border-[#18221f]/15 bg-white px-3 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
               >
                 {reportReasons.map((reason) => (
                   <option key={reason.value} value={reason.value}>
@@ -3427,7 +4085,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <textarea
                 value={reportDetails}
                 onChange={(event) => setReportDetails(event.target.value)}
-                className="min-h-28 w-full resize-y rounded-md border border-[#18221f]/15 bg-white px-3 py-2 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft min-h-28 w-full resize-y rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
                 maxLength={500}
               />
             </label>
@@ -3435,14 +4093,14 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               <button
                 type="button"
                 onClick={() => setReportTarget(null)}
-                className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#18221f]/15 bg-white px-4 font-semibold transition hover:bg-[#e4f2dc]"
+                className="border-connect-ink/15 bg-connect-surface hover:bg-connect-highlight inline-flex min-h-11 items-center justify-center rounded-md border px-4 font-semibold transition"
               >
                 キャンセル
               </button>
               <button
                 type="submit"
                 disabled={submitMessageReport.isPending}
-                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#9f4122] px-4 font-semibold text-white transition hover:bg-[#7f321b] disabled:opacity-50"
+                className="bg-connect-danger text-connect-surface hover:bg-connect-danger-strong inline-flex min-h-11 items-center justify-center rounded-md px-4 font-semibold transition disabled:opacity-50"
               >
                 {submitMessageReport.isPending ? "送信中..." : "通報する"}
               </button>
@@ -3452,7 +4110,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       </Dialog>
 
       <Dialog open={isServerReportsOpen} onOpenChange={setIsServerReportsOpen}>
-        <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] text-[#18221f] sm:max-w-2xl">
+        <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>サーバーの通報一覧</DialogTitle>
             <DialogDescription>
@@ -3460,12 +4118,12 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             </DialogDescription>
           </DialogHeader>
           {serverReports.isLoading ? (
-            <p className="py-8 text-center text-sm text-[#53615a]">
+            <p className="text-connect-muted py-8 text-center text-sm">
               読み込み中...
             </p>
           ) : serverReports.error ? (
             <p
-              className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]"
+              className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger rounded-md border px-3 py-2 text-sm"
               role="alert"
             >
               {getErrorMessage(serverReports.error)}
@@ -3475,7 +4133,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               {serverReports.data.map((report) => (
                 <article
                   key={report.id}
-                  className="rounded-md border border-[#18221f]/15 bg-white p-4"
+                  className="border-connect-ink/15 bg-connect-surface rounded-md border p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
@@ -3485,15 +4143,15 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                             ? `@${report.reportedUser.userId}`
                             : "削除されたユーザー")}
                       </p>
-                      <p className="text-xs text-[#68716b]">
+                      <p className="text-connect-neutral text-xs">
                         {report.createdAt.toLocaleString("ja-JP")}
                       </p>
                     </div>
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-semibold ${
                         report.status === "REVIEWED"
-                          ? "bg-[#e4f2dc] text-[#114744]"
-                          : "bg-[#fff1e8] text-[#9f4122]"
+                          ? "bg-connect-highlight text-connect-action"
+                          : "bg-connect-danger-soft text-connect-danger"
                       }`}
                     >
                       {report.status === "REVIEWED" ? "確認済み" : "未確認"}
@@ -3504,11 +4162,11 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                       (reason) => reason.value === report.reason,
                     )?.label ?? report.reason}
                   </p>
-                  <p className="mt-2 rounded-md bg-[#f6f0e4] px-3 py-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+                  <p className="bg-connect-paper text-connect-muted mt-2 rounded-md px-3 py-2 text-sm break-words whitespace-pre-wrap">
                     {report.contentSnapshot}
                   </p>
                   {report.details && (
-                    <p className="mt-2 text-sm break-words whitespace-pre-wrap text-[#53615a]">
+                    <p className="text-connect-muted mt-2 text-sm break-words whitespace-pre-wrap">
                       詳細: {report.details}
                     </p>
                   )}
@@ -3522,7 +4180,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                         })
                       }
                       disabled={markServerReportReviewed.isPending}
-                      className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#114744] px-3 text-sm font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+                      className="bg-connect-action text-connect-surface hover:bg-connect-action-hover mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition disabled:opacity-50"
                     >
                       <Check className="h-4 w-4" aria-hidden="true" />
                       確認済みにする
@@ -3532,7 +4190,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
               ))}
             </div>
           ) : (
-            <p className="py-8 text-center text-sm text-[#53615a]">
+            <p className="text-connect-muted py-8 text-center text-sm">
               通報はありません。
             </p>
           )}
@@ -3558,8 +4216,8 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         <div
           className={`fixed right-4 bottom-4 z-[100] flex max-w-sm items-start gap-3 rounded-md border px-4 py-3 text-sm shadow-xl ${
             moderationNotice.kind === "success"
-              ? "border-[#114744]/20 bg-[#e4f2dc] text-[#114744]"
-              : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+              ? "border-connect-action/20 bg-connect-highlight text-connect-action"
+              : "border-connect-signal/25 bg-connect-danger-soft text-connect-danger"
           }`}
           role={moderationNotice.kind === "success" ? "status" : "alert"}
         >
@@ -3567,7 +4225,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           <button
             type="button"
             onClick={() => setModerationNotice(null)}
-            className="rounded p-0.5 transition hover:bg-black/5"
+            className="hover:bg-connect-ink/5 rounded p-0.5 transition"
             aria-label="通知を閉じる"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -3575,46 +4233,49 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
         </div>
       )}
 
-      {channelContextMenu && channelContextTarget && selectedServer && (
-        <div
-          ref={contextMenuRef}
-          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
-          style={{ left: channelContextMenu.x, top: channelContextMenu.y }}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) =>
-            handleContextMenuKeyDown(event, () => setChannelContextMenu(null))
-          }
-          role="menu"
-        >
-          <button
-            type="button"
-            onClick={() => openChannelEditor(channelContextTarget)}
-            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
-            role="menuitem"
-          >
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            編集
-          </button>
-          <button
-            type="button"
-            onClick={() => handleDeleteChannel(channelContextTarget.id)}
-            disabled={
-              selectedServer.server.channels.length <= 1 ||
-              deleteChannel.isPending
+      {canManageSelectedChannels &&
+        channelContextMenu &&
+        channelContextTarget &&
+        selectedServer && (
+          <div
+            ref={contextMenuRef}
+            className="border-connect-ink/15 bg-connect-surface text-connect-ink fixed z-50 w-48 rounded-md border p-1 text-sm shadow-xl"
+            style={{ left: channelContextMenu.x, top: channelContextMenu.y }}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) =>
+              handleContextMenuKeyDown(event, () => setChannelContextMenu(null))
             }
-            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-not-allowed disabled:opacity-45"
-            role="menuitem"
+            role="menu"
           >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-            削除
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={() => openChannelEditor(channelContextTarget)}
+              className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
+              role="menuitem"
+            >
+              <Pencil className="h-4 w-4" aria-hidden="true" />
+              編集
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDeleteChannel(channelContextTarget.id)}
+              disabled={
+                selectedServer.server.channels.length <= 1 ||
+                deleteChannel.isPending
+              }
+              className="text-connect-danger hover:bg-connect-danger-soft flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition disabled:cursor-not-allowed disabled:opacity-45"
+              role="menuitem"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              削除
+            </button>
+          </div>
+        )}
 
       {profileContextMenu && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          className="border-connect-ink/15 bg-connect-surface text-connect-ink fixed z-50 w-48 rounded-md border p-1 text-sm shadow-xl"
           style={{ left: profileContextMenu.x, top: profileContextMenu.y }}
           onClick={(event) => event.stopPropagation()}
           onContextMenu={(event) => event.preventDefault()}
@@ -3628,7 +4289,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             type="button"
             onClick={handleBlockUser}
             disabled={blockUser.isPending}
-            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-wait disabled:opacity-45"
+            className="text-connect-danger hover:bg-connect-danger-soft flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition disabled:cursor-wait disabled:opacity-45"
             role="menuitem"
           >
             <Ban className="h-4 w-4" aria-hidden="true" />
@@ -3640,7 +4301,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
       {messageContextMenu && messageContextTarget && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 w-48 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-1 text-sm text-[#18221f] shadow-xl"
+          className="border-connect-ink/15 bg-connect-surface text-connect-ink fixed z-50 w-48 rounded-md border p-1 text-sm shadow-xl"
           style={{ left: messageContextMenu.x, top: messageContextMenu.y }}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) =>
@@ -3648,10 +4309,71 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
           }
           role="menu"
         >
+          {(messageContextMenu.kind === "direct" ||
+            canSendSelectedServerMessages) && (
+            <>
+              <button
+                type="button"
+                onClick={startReply}
+                className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
+                role="menuitem"
+              >
+                <Reply className="h-4 w-4" aria-hidden="true" />
+                返信
+              </button>
+              <button
+                type="button"
+                onClick={quoteContextMessage}
+                className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
+                role="menuitem"
+              >
+                <Quote className="h-4 w-4" aria-hidden="true" />
+                引用
+              </button>
+            </>
+          )}
+          {(messageContextMenu.kind === "direct" ||
+            canReactToSelectedServerMessages) && (
+            <div
+              className="flex min-h-10 items-center gap-1 px-2"
+              aria-label="リアクション"
+            >
+              {(
+                [
+                  "\u{1F44D}",
+                  "\u{2764}\u{FE0F}",
+                  "\u{1F602}",
+                  "\u{1F389}",
+                  "\u{1F62E}",
+                  "\u{1F64F}",
+                ] as const
+              ).map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => reactToContextMessage(emoji)}
+                  className="hover:bg-connect-highlight flex h-8 w-8 items-center justify-center rounded text-sm"
+                  role="menuitem"
+                  aria-label={`${emoji}でリアクション`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={toggleContextSaved}
+            className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
+            role="menuitem"
+          >
+            <Bookmark className="h-4 w-4" aria-hidden="true" />
+            {messageContextTarget.savedBy?.length ? "保存を解除" : "保存"}
+          </button>
           <button
             type="button"
             onClick={() => void handleCopyMessage()}
-            className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+            className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
             role="menuitem"
           >
             <Copy className="h-4 w-4" aria-hidden="true" />
@@ -3661,21 +4383,21 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
             <button
               type="button"
               onClick={openMessageReport}
-              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8]"
+              className="text-connect-danger hover:bg-connect-danger-soft flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
               role="menuitem"
             >
               <Flag className="h-4 w-4" aria-hidden="true" />
               通報
             </button>
           )}
-          {serverMessageContextTarget && isSelectedServerOwner && (
+          {serverMessageContextTarget && canManageSelectedReports && (
             <button
               type="button"
               onClick={() =>
                 handleToggleServerMessagePin(serverMessageContextTarget.id)
               }
               disabled={toggleServerMessagePin.isPending}
-              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc] disabled:opacity-45"
+              className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition disabled:opacity-45"
               role="menuitem"
             >
               <Pin className="h-4 w-4" aria-hidden="true" />
@@ -3693,7 +4415,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   messageContextTarget,
                 )
               }
-              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition hover:bg-[#e4f2dc]"
+              className="hover:bg-connect-highlight flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition"
               role="menuitem"
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -3713,7 +4435,7 @@ export function FriendChatPanel({ initialServerId }: FriendChatPanelProps) {
                   ? deleteServerMessage.isPending
                   : deleteDirectMessage.isPending
               }
-              className="flex min-h-10 w-full items-center gap-2 rounded px-3 text-left text-[#9f4122] transition hover:bg-[#fff1e8] disabled:cursor-not-allowed disabled:opacity-45"
+              className="text-connect-danger hover:bg-connect-danger-soft flex min-h-10 w-full items-center gap-2 rounded px-3 text-left transition disabled:cursor-not-allowed disabled:opacity-45"
               role="menuitem"
             >
               <Trash2 className="h-4 w-4" aria-hidden="true" />
