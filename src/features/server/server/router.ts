@@ -24,6 +24,7 @@ import { addUnreadCountsToServerChannels } from "~/features/server/server/server
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { normalizeOptionalText } from "~/lib/input";
 import { addProfileImageUrl, getServerImageUrl } from "~/lib/static-image";
 
 const MAX_CREATED_SERVERS = 10;
@@ -116,16 +117,6 @@ function normalizeDescription(description: string | undefined) {
   }
 
   return description;
-}
-
-function normalizeOptionalText(value: string | undefined) {
-  const trimmed = value?.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  return trimmed;
 }
 
 function getServerMessageWhere({

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
+import { canViewProfile } from "~/features/profile/server/profile-permissions";
+import { userIdSchema } from "~/lib/input";
 import {
   createFallbackAvatarSvg,
   decodeStaticImageDataUrl,
@@ -18,12 +20,55 @@ export async function GET(
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { userId } = await params;
+  const parsedUserId = userIdSchema.safeParse((await params).userId);
+  if (!parsedUserId.success) return new Response("Not found", { status: 404 });
+
+  const userId = parsedUserId.data;
   const user = await db.user.findUnique({
     where: { userId },
-    select: { image: true, name: true, userId: true },
+    select: { id: true, image: true, name: true, userId: true },
   });
   if (!user) return new Response("Not found", { status: 404 });
+
+  if (user.id !== session.user.id) {
+    const [block, friendship, sharedServer] = await Promise.all([
+      db.userBlock.findFirst({
+        where: {
+          OR: [
+            { blockerId: session.user.id, blockedId: user.id },
+            { blockerId: user.id, blockedId: session.user.id },
+          ],
+        },
+        select: { id: true },
+      }),
+      db.friendship.findUnique({
+        where: {
+          userId_friendId: {
+            friendId: user.id,
+            userId: session.user.id,
+          },
+        },
+        select: { id: true },
+      }),
+      db.serverMember.findFirst({
+        where: {
+          userId: session.user.id,
+          server: { members: { some: { userId: user.id } } },
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    if (
+      !canViewProfile({
+        isBlocked: Boolean(block),
+        isFriend: Boolean(friendship),
+        sharesServer: Boolean(sharedServer),
+      })
+    ) {
+      return new Response("Not found", { status: 404 });
+    }
+  }
 
   const decoded = user.image ? decodeStaticImageDataUrl(user.image) : null;
   if (decoded) {

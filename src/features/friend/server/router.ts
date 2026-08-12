@@ -14,16 +14,7 @@ import {
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { addProfileImageUrl } from "~/lib/static-image";
-
-const userIdSchema = z
-  .string()
-  .trim()
-  .min(3, "ユーザーIDは3文字以上で入力してください")
-  .max(32, "ユーザーIDは32文字以内で入力してください")
-  .regex(
-    /^[a-zA-Z0-9_]+$/,
-    "ユーザーIDは半角英数字とアンダースコアのみ使用できます",
-  );
+import { userIdSchema } from "~/lib/input";
 
 export const friendRouter = createTRPCRouter({
   getOverview: protectedProcedure.query(async ({ ctx }) => {

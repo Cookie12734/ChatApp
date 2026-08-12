@@ -6,6 +6,7 @@ import {
   presenceStatuses,
 } from "~/features/profile/presence";
 import { canViewProfile } from "~/features/profile/server/profile-permissions";
+import { normalizeOptionalText, userIdSchema } from "~/lib/input";
 import { getProfileImageUrl } from "~/lib/static-image";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
@@ -34,18 +35,8 @@ const presenceInput = z.object({
 
 const profileDetailInput = z.object({
   serverId: z.string().min(1).optional(),
-  userId: z.string().trim().min(1).max(32),
+  userId: userIdSchema,
 });
-
-function normalizeOptionalText(value: string | undefined) {
-  const trimmed = value?.trim();
-
-  if (trimmed === undefined || trimmed.length === 0) {
-    return null;
-  }
-
-  return trimmed;
-}
 
 export const profileRouter = createTRPCRouter({
   getMine: protectedProcedure.query(async ({ ctx }) => {
