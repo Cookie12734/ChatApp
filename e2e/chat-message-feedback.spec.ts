@@ -31,9 +31,6 @@ async function login(page: Page) {
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async () => {
-  await prisma.user.deleteMany({
-    where: { email: { startsWith: "codex-e2e-" } },
-  });
   const passwordHash = await bcrypt.hash(password, 4);
   const [owner, member] = await Promise.all([
     prisma.user.create({
