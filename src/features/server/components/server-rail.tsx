@@ -1,9 +1,19 @@
 "use client";
 
-import { LogOut, Plus, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
+import {
+  Bell,
+  LogOut,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
+import { NotificationSettingsDialog } from "~/features/notification/components/notification-settings-dialog";
 import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { type RouterOutputs, api } from "~/trpc/react";
 
@@ -13,6 +23,7 @@ type ServerMembership =
 type ServerRailProps = {
   memberships?: ServerMembership[];
   onSelectHome?: () => void;
+  onSearch?: () => void;
   onSelectServer?: (membership: ServerMembership) => void;
   selectedServerId?: string | null;
 };
@@ -20,6 +31,7 @@ type ServerRailProps = {
 export function ServerRail({
   memberships,
   onSelectHome,
+  onSearch,
   onSelectServer,
   selectedServerId,
 }: ServerRailProps) {
@@ -33,6 +45,29 @@ export function ServerRail({
           : false,
   });
   const items = memberships ?? overview.data?.memberships ?? [];
+  const unsubscribePush = api.notification.unsubscribePush.useMutation();
+  const handleSignOut = async () => {
+    try {
+      const registration =
+        await navigator.serviceWorker?.getRegistration("/sw.js");
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) {
+        const endpoint = subscription.endpoint;
+        try {
+          await subscription.unsubscribe();
+        } catch {
+          // Still remove the server record when browser cleanup fails.
+        }
+        try {
+          await unsubscribePush.mutateAsync({ endpoint });
+        } catch {
+          // Server cleanup is best effort; signing out must still complete.
+        }
+      }
+    } finally {
+      await signOut({ redirectTo: "/auth/login" });
+    }
+  };
   const homeIndicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
     selectedServerId ? "h-0 w-0 group-hover:h-5 group-hover:w-1" : "h-10 w-1"
   }`;
@@ -154,13 +189,43 @@ export function ServerRail({
         <Link
           href="/servers/new"
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
-          aria-label="Create server"
-          title="Create server"
+          aria-label="サーバーを作成"
+          title="サーバーを作成"
         >
           <Plus className="h-5 w-5" aria-hidden="true" />
         </Link>
       </div>
       <div className="mt-auto flex flex-col gap-3">
+        {onSearch ? (
+          <button
+            type="button"
+            onClick={onSearch}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="横断検索"
+            title="横断検索（Ctrl / ⌘ + K）"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : (
+          <Link
+            href="/?search=1"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="横断検索"
+            title="横断検索"
+          >
+            <Search className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        )}
+        <NotificationSettingsDialog>
+          <button
+            type="button"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="通知設定"
+            title="通知設定"
+          >
+            <Bell className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </NotificationSettingsDialog>
         <Link
           href="/safety"
           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
@@ -173,20 +238,21 @@ export function ServerRail({
           <button
             type="button"
             className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-            aria-label="Profile"
-            title="Profile"
+            aria-label="プロフィール設定"
+            title="プロフィール設定"
           >
             <UserRound className="h-5 w-5" aria-hidden="true" />
           </button>
         </ProfileSettingsDialog>
-        <Link
-          href="/api/auth/signout"
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
           className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-          aria-label="Sign out"
-          title="Sign out"
+          aria-label="ログアウト"
+          title="ログアウト"
         >
           <LogOut className="h-5 w-5" aria-hidden="true" />
-        </Link>
+        </button>
       </div>
     </aside>
   );

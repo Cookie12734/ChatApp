@@ -5,6 +5,7 @@ import {
   canOpenChatEventConnection,
   canReceiveChatEvent,
   getChatEventRecord,
+  shouldReplayLocalChatEvent,
   takePendingLocalEventIds,
 } from "./chat-events.ts";
 
@@ -82,10 +83,19 @@ test("chat event connections stop at the configured per-user limit", () => {
 });
 
 test("local chat event IDs are drained even when no subscriber targets them", () => {
-  const localEventIds = new Set(["1", "3", "4", "5"]);
+  const localEventVersions = new Map(["1", "3", "4", "5"].map((id) => [id, 1]));
 
-  assert.deepEqual(takePendingLocalEventIds(localEventIds, 2n, 2), [3n, 4n]);
-  assert.deepEqual([...localEventIds], ["3", "4", "5"]);
-  assert.deepEqual(takePendingLocalEventIds(localEventIds, 4n), [5n]);
-  assert.deepEqual([...localEventIds], ["5"]);
+  assert.deepEqual(takePendingLocalEventIds(localEventVersions, 2n, 2), [
+    3n,
+    4n,
+  ]);
+  assert.deepEqual([...localEventVersions.keys()], ["3", "4", "5"]);
+  assert.deepEqual(takePendingLocalEventIds(localEventVersions, 4n), [5n]);
+  assert.deepEqual([...localEventVersions.keys()], ["5"]);
+});
+
+test("a local event is replayed when the subscriber set changed", () => {
+  assert.equal(shouldReplayLocalChatEvent(3, 3), false);
+  assert.equal(shouldReplayLocalChatEvent(3, 4), true);
+  assert.equal(shouldReplayLocalChatEvent(undefined, 4), true);
 });

@@ -16,8 +16,8 @@ export function ProfileSettingsDialog({ children }: { children: ReactNode }) {
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[92dvh] overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-5xl">
-        <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+      <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto p-0 sm:max-w-5xl">
+        <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle>プロフィール設定</DialogTitle>
           <DialogDescription className="sr-only">
             プロフィール画像、表示名、自己紹介、ステータスを編集します。

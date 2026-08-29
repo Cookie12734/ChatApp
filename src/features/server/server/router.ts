@@ -4,27 +4,39 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
+import { assertNotBlocked } from "~/features/friend/server/blocking";
 import { getEffectivePresenceStatus } from "~/features/profile/presence";
 import { isSameServerMessage } from "~/features/chat/server/message-idempotency";
 import {
   decodeMessageCursor,
+  encodeMessageCursor,
   getMessageCursorWhere,
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
 } from "~/features/chat/message-page";
 import {
+  canManageServerChannels,
+  canManageServerInvites,
   canManageServer,
   canManageServerMember,
+  canManageServerMembers,
+  canChangeServerMemberRole,
   canDeleteServerMessage,
-  canEditMessage,
+  canEditServerMessage,
   canPinServerMessage,
+  canReactToServerMessage,
+  canRemoveServerMember,
+  canSendServerMessage,
   isServerOwner,
+  SERVER_ROLES,
 } from "~/features/server/server/message-permissions";
 import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { normalizeOptionalText } from "~/lib/input";
 import { addProfileImageUrl, getServerImageUrl } from "~/lib/static-image";
+import { sendPushNotification } from "~/features/notification/server/push";
 
 const MAX_CREATED_SERVERS = 10;
 const MAX_JOINED_SERVERS = 100;
@@ -71,7 +83,7 @@ const memberIdInput = serverIdInput.extend({
 });
 
 const memberRoleInput = memberIdInput.extend({
-  role: z.enum(["MEMBER", "OWNER"]),
+  role: z.enum(SERVER_ROLES),
 });
 
 const serverProfileInput = serverIdInput.extend({
@@ -97,6 +109,7 @@ const markChannelReadInput = channelIdInput.extend({
 });
 
 const sendMessageInput = serverIdInput.extend({
+  attachmentIds: z.array(z.string().min(1)).max(4).default([]),
   channelId: z.string().min(1).optional(),
   clientId: z.string().uuid(),
   content: z
@@ -104,6 +117,65 @@ const sendMessageInput = serverIdInput.extend({
     .trim()
     .min(1, "メッセージを入力してください")
     .max(1000, "メッセージは1000文字以内で入力してください"),
+  replyToId: z.string().min(1).optional(),
+});
+
+const reactionEmoji = z.enum([
+  "\u{1F44D}",
+  "\u{2764}\u{FE0F}",
+  "\u{1F602}",
+  "\u{1F389}",
+  "\u{1F62E}",
+  "\u{1F64F}",
+]);
+
+const serverCategory = z.enum([
+  "COMMUNITY",
+  "GAMES",
+  "STUDY",
+  "HOBBIES",
+  "WELLBEING",
+  "OTHER",
+]);
+
+const discoveryTags = z
+  .array(
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1)
+      .max(20)
+      .regex(
+        /^[\p{L}\p{N}-]+$/u,
+        "タグは文字・数字・ハイフンで入力してください",
+      ),
+  )
+  .max(5)
+  .transform((tags) => [...new Set(tags)]);
+
+const searchPublicServersInput = z
+  .object({
+    category: serverCategory.optional(),
+    cursor: z.string().nullish(),
+    limit: z.number().int().min(1).max(30).default(20),
+    maxMembers: z.number().int().min(1).max(250).optional(),
+    minMembers: z.number().int().min(1).max(250).optional(),
+    query: z.string().trim().max(80).optional(),
+    tags: discoveryTags.optional(),
+  })
+  .refine(
+    ({ maxMembers, minMembers }) =>
+      maxMembers === undefined ||
+      minMembers === undefined ||
+      minMembers <= maxMembers,
+    { message: "人数の範囲が正しくありません", path: ["maxMembers"] },
+  );
+
+const updateDiscoveryInput = serverIdInput.extend({
+  category: serverCategory.nullable().optional(),
+  tags: discoveryTags,
+  visibility: z.enum(["PRIVATE", "PUBLIC"]),
 });
 
 const updateMessageInput = messageIdInput.extend({
@@ -116,16 +188,6 @@ function normalizeDescription(description: string | undefined) {
   }
 
   return description;
-}
-
-function normalizeOptionalText(value: string | undefined) {
-  const trimmed = value?.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  return trimmed;
 }
 
 function getServerMessageWhere({
@@ -149,6 +211,186 @@ function getServerMessageWhere({
 }
 
 export const serverRouter = createTRPCRouter({
+  searchPublic: protectedProcedure
+    .input(searchPublicServersInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 30,
+          scope: "server:discovery:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+      const cursor = decodeMessageCursor(input.cursor);
+      if (input.cursor && !cursor) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "検索位置が無効です",
+        });
+      }
+      const memberRangeIds =
+        input.minMembers !== undefined || input.maxMembers !== undefined
+          ? await ctx.db.$queryRaw<Array<{ serverId: string }>>`
+              SELECT "serverId"
+              FROM "ServerMember"
+              GROUP BY "serverId"
+              HAVING COUNT(*) >= ${input.minMembers ?? 1}
+                AND COUNT(*) <= ${input.maxMembers ?? 250}
+            `
+          : undefined;
+      if (memberRangeIds?.length === 0) {
+        return { nextCursor: undefined, servers: [] };
+      }
+      const servers = await ctx.db.chatServer.findMany({
+        where: {
+          category: input.category,
+          id: memberRangeIds
+            ? { in: memberRangeIds.map(({ serverId }) => serverId) }
+            : undefined,
+          visibility: "PUBLIC",
+          ...(input.query
+            ? {
+                OR: [
+                  { name: { contains: input.query, mode: "insensitive" } },
+                  {
+                    description: {
+                      contains: input.query,
+                      mode: "insensitive",
+                    },
+                  },
+                ],
+              }
+            : {}),
+          ...(input.tags?.length ? { tags: { hasSome: input.tags } } : {}),
+          ...(cursor ? { AND: [getMessageCursorWhere(cursor)] } : {}),
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: input.limit + 1,
+        select: {
+          _count: { select: { members: true } },
+          category: true,
+          createdAt: true,
+          description: true,
+          id: true,
+          members: {
+            where: { userId: currentUserId },
+            select: { id: true },
+            take: 1,
+          },
+          name: true,
+          tags: true,
+        },
+      });
+      const boundary =
+        servers.length > input.limit ? servers[input.limit - 1] : undefined;
+      return {
+        nextCursor: boundary ? encodeMessageCursor(boundary) : undefined,
+        servers: servers.slice(0, input.limit).map((server) => ({
+          category: server.category,
+          description: server.description,
+          id: server.id,
+          image: getServerImageUrl(server.id),
+          isMember: server.members.length > 0,
+          memberCount: server._count.members,
+          name: server.name,
+          tags: server.tags,
+        })),
+      };
+    }),
+
+  updateDiscovery: protectedProcedure
+    .input(updateDiscoveryInput)
+    .mutation(async ({ ctx, input }) => {
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: ctx.session.user.id,
+          },
+        },
+        select: { role: true },
+      });
+      if (!canManageServer(membership?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "公開設定を変更する権限がありません",
+        });
+      }
+      return ctx.db.chatServer.update({
+        where: { id: input.serverId },
+        data: {
+          category: input.category ?? null,
+          tags: input.tags,
+          visibility: input.visibility,
+        },
+        select: { category: true, id: true, tags: true, visibility: true },
+      });
+    }),
+
+  joinPublic: protectedProcedure
+    .input(serverIdInput)
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 20,
+          scope: "server:join:user",
+          subject: currentUserId,
+          windowMs: 60 * 60 * 1000,
+        },
+      ]);
+      return ctx.db.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT "id" FROM "ChatServer"
+          WHERE "id" = ${input.serverId}
+          FOR UPDATE
+        `;
+        const server = await tx.chatServer.findUnique({
+          where: { id: input.serverId },
+          select: { id: true, visibility: true },
+        });
+        if (server?.visibility !== "PUBLIC") {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "公開サーバーが見つかりません",
+          });
+        }
+        const existing = await tx.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
+          },
+          select: { id: true },
+        });
+        if (existing) return { alreadyMember: true, serverId: input.serverId };
+
+        const [joinedCount, memberCount] = await Promise.all([
+          tx.serverMember.count({ where: { userId: currentUserId } }),
+          tx.serverMember.count({ where: { serverId: input.serverId } }),
+        ]);
+        if (joinedCount >= MAX_JOINED_SERVERS) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "参加できるサーバー数の上限です",
+          });
+        }
+        if (memberCount >= 250) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "このサーバーは満員です",
+          });
+        }
+        await tx.serverMember.create({
+          data: { serverId: input.serverId, userId: currentUserId },
+        });
+        return { alreadyMember: false, serverId: input.serverId };
+      });
+    }),
+
   getOverview: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
 
@@ -171,7 +413,10 @@ export const serverRouter = createTRPCRouter({
               id: true,
               name: true,
               description: true,
+              category: true,
               inviteCode: true,
+              tags: true,
+              visibility: true,
               createdById: true,
               createdAt: true,
               updatedAt: true,
@@ -283,7 +528,7 @@ export const serverRouter = createTRPCRouter({
               membership.server.channels,
               unreadGroups,
             ),
-            inviteCode: canManageServer(membership.role)
+            inviteCode: canManageServerInvites(membership.role)
               ? membership.server.inviteCode
               : null,
             image: getServerImageUrl(membership.server.id),
@@ -419,7 +664,7 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { id: true },
+        select: { id: true, role: true },
       });
 
       if (!membership) {
@@ -466,6 +711,31 @@ export const serverRouter = createTRPCRouter({
           : {}),
       };
       const messageInclude = {
+        attachments: {
+          select: {
+            fileName: true,
+            id: true,
+            kind: true,
+            mimeType: true,
+            size: true,
+          },
+        },
+        reactions: { select: { emoji: true, userId: true } },
+        replyTo: {
+          where:
+            blockedPeerIds.length > 0
+              ? { senderId: { notIn: blockedPeerIds } }
+              : undefined,
+          select: {
+            content: true,
+            id: true,
+            sender: { select: { id: true, name: true, userId: true } },
+          },
+        },
+        savedBy: {
+          where: { userId: currentUserId },
+          select: { userId: true },
+        },
         sender: {
           select: {
             id: true,
@@ -618,7 +888,7 @@ export const serverRouter = createTRPCRouter({
             userId: ctx.session.user.id,
           },
         },
-        select: { id: true },
+        select: { id: true, role: true },
       });
 
       if (!membership) {
@@ -665,10 +935,10 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { id: true },
+        select: { id: true, role: true },
       });
 
-      if (!membership) {
+      if (!membership || !canSendServerMessage(membership.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "参加しているサーバーにだけメッセージを送れます",
@@ -696,36 +966,88 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      const content = input.content.trim();
-      const message = await ctx.db.serverMessage.upsert({
-        where: {
-          senderId_clientId: {
-            clientId: input.clientId,
-            senderId: currentUserId,
+      if (input.replyToId) {
+        const replyTarget = await ctx.db.serverMessage.findFirst({
+          where: {
+            channelId: channel.id,
+            id: input.replyToId,
+            serverId: input.serverId,
           },
-        },
-        create: {
-          channelId: channel.id,
-          clientId: input.clientId,
-          content,
-          senderId: currentUserId,
-          serverId: input.serverId,
-        },
-        update: { clientId: input.clientId },
-      });
-
-      if (
-        !isSameServerMessage(message, {
-          channelId: channel.id,
-          content,
-          serverId: input.serverId,
-        })
-      ) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "同じ送信IDを別のメッセージには使用できません",
+          select: { id: true },
         });
+        if (!replyTarget) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "返信元のメッセージが見つかりません",
+          });
+        }
       }
+
+      const content = input.content.trim();
+      const message = await ctx.db.$transaction(async (tx) => {
+        const storedMessage = await tx.serverMessage.upsert({
+          where: {
+            senderId_clientId: {
+              clientId: input.clientId,
+              senderId: currentUserId,
+            },
+          },
+          create: {
+            channelId: channel.id,
+            clientId: input.clientId,
+            content,
+            replyToId: input.replyToId,
+            senderId: currentUserId,
+            serverId: input.serverId,
+          },
+          update: { clientId: input.clientId },
+        });
+
+        if (
+          !isSameServerMessage(storedMessage, {
+            channelId: channel.id,
+            content,
+            serverId: input.serverId,
+          }) ||
+          storedMessage.replyToId !== (input.replyToId ?? null)
+        ) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "同じ送信IDを別のメッセージには使用できません",
+          });
+        }
+
+        if (input.attachmentIds.length > 0) {
+          const attachmentIds = [...new Set(input.attachmentIds)];
+          const attachments = await tx.messageAttachment.findMany({
+            where: {
+              directMessageId: null,
+              groupMessageId: null,
+              id: { in: attachmentIds },
+              OR: [
+                { serverMessageId: storedMessage.id },
+                { expiresAt: { gt: new Date() }, serverMessageId: null },
+              ],
+              uploaderId: currentUserId,
+            },
+            select: { id: true },
+          });
+          if (
+            attachmentIds.length !== input.attachmentIds.length ||
+            attachments.length !== attachmentIds.length
+          ) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "添付ファイルが無効か期限切れです",
+            });
+          }
+          await tx.messageAttachment.updateMany({
+            where: { id: { in: attachmentIds }, serverMessageId: null },
+            data: { expiresAt: null, serverMessageId: storedMessage.id },
+          });
+        }
+        return storedMessage;
+      });
 
       void publishChatEvent(ctx.db, {
         change: "created",
@@ -734,7 +1056,102 @@ export const serverRouter = createTRPCRouter({
         senderId: currentUserId,
         serverId: input.serverId,
       });
+      const mentionedUserIds = [
+        ...content.matchAll(/(?<![a-zA-Z0-9_])@([a-zA-Z0-9_]{3,32})/g),
+      ].flatMap((match) => (match[1] ? [match[1]] : []));
+      if (mentionedUserIds.length > 0) {
+        const mentionedMembers = await ctx.db.serverMember.findMany({
+          where: {
+            serverId: input.serverId,
+            userId: { not: currentUserId },
+            user: {
+              userId: { in: [...new Set(mentionedUserIds)] },
+              NOT: {
+                OR: [
+                  { blockedBy: { some: { blockerId: currentUserId } } },
+                  { blockedUsers: { some: { blockedId: currentUserId } } },
+                ],
+              },
+            },
+          },
+          select: { userId: true },
+        });
+        for (const mentionedMember of mentionedMembers) {
+          await sendPushNotification(ctx.db, {
+            body: content,
+            kind: "MENTION",
+            recipientId: mentionedMember.userId,
+            title: "メンションされました",
+            url: "/",
+          });
+        }
+      }
       return message;
+    }),
+
+  toggleMessageReaction: protectedProcedure
+    .input(messageIdInput.extend({ emoji: reactionEmoji }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const membership = await ctx.db.serverMember.findUnique({
+        where: {
+          serverId_userId: {
+            serverId: input.serverId,
+            userId: currentUserId,
+          },
+        },
+        select: { role: true },
+      });
+      if (!canReactToServerMessage(membership?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "リアクションを追加する権限がありません",
+        });
+      }
+      const message = await ctx.db.serverMessage.findFirst({
+        where: { id: input.messageId, serverId: input.serverId },
+        select: { channelId: true, id: true, senderId: true },
+      });
+      if (!message) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertNotBlocked(ctx.db, currentUserId, message.senderId);
+
+      const result = await ctx.db.$transaction(async (tx) => {
+        const key = {
+          messageId_userId_emoji: {
+            emoji: input.emoji,
+            messageId: message.id,
+            userId: currentUserId,
+          },
+        };
+        const existing = await tx.serverMessageReaction.findUnique({
+          where: key,
+          select: { messageId: true },
+        });
+        if (existing) await tx.serverMessageReaction.delete({ where: key });
+        else {
+          await tx.serverMessageReaction.create({
+            data: {
+              emoji: input.emoji,
+              messageId: message.id,
+              userId: currentUserId,
+            },
+          });
+        }
+        return {
+          count: await tx.serverMessageReaction.count({
+            where: { emoji: input.emoji, messageId: message.id },
+          }),
+          reacted: !existing,
+        };
+      });
+      void publishChatEvent(ctx.db, {
+        change: "updated",
+        channelId: message.channelId,
+        kind: "server",
+        senderId: message.senderId,
+        serverId: input.serverId,
+      });
+      return { ...result, emoji: input.emoji, messageId: message.id };
     }),
 
   updateMessage: protectedProcedure
@@ -748,7 +1165,7 @@ export const serverRouter = createTRPCRouter({
             userId: currentUserId,
           },
         },
-        select: { id: true },
+        select: { id: true, role: true },
       });
 
       if (!membership) {
@@ -770,7 +1187,9 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
-      if (!canEditMessage(currentUserId, message.senderId)) {
+      if (
+        !canEditServerMessage(currentUserId, message.senderId, membership.role)
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "編集できるのは自分のメッセージだけです",
@@ -921,7 +1340,7 @@ export const serverRouter = createTRPCRouter({
           select: { role: true },
         });
 
-        if (!canManageServer(membership?.role)) {
+        if (!canManageServerChannels(membership?.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "チャンネルを追加できるのは管理者だけです",
@@ -978,7 +1397,7 @@ export const serverRouter = createTRPCRouter({
         select: { role: true },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (!canManageServerChannels(membership?.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "チャンネルを編集できるのは管理者だけです",
@@ -1046,7 +1465,7 @@ export const serverRouter = createTRPCRouter({
           select: { role: true },
         });
 
-        if (!canManageServer(membership?.role)) {
+        if (!canManageServerChannels(membership?.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "チャンネルを削除できるのは管理者だけです",
@@ -1128,7 +1547,7 @@ export const serverRouter = createTRPCRouter({
         select: { role: true },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (!canManageServerInvites(membership?.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "招待リンクを再発行できるのは管理者だけです",
@@ -1167,10 +1586,7 @@ export const serverRouter = createTRPCRouter({
           },
         });
 
-        if (
-          !membership ||
-          !isServerOwner(membership.server.createdById, currentUserId)
-        ) {
+        if (!membership || !canManageServerMembers(membership.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "メンバー権限を変更できるのはサーバー所有者だけです",
@@ -1179,7 +1595,7 @@ export const serverRouter = createTRPCRouter({
 
         const target = await tx.serverMember.findFirst({
           where: { id: input.memberId, serverId: input.serverId },
-          select: { id: true, userId: true },
+          select: { id: true, role: true, userId: true },
         });
 
         if (!target) {
@@ -1190,7 +1606,12 @@ export const serverRouter = createTRPCRouter({
         }
 
         if (
-          !canManageServerMember(membership.role, currentUserId, target.userId)
+          !canManageServerMember(
+            membership.role,
+            currentUserId,
+            target.userId,
+          ) ||
+          !canChangeServerMemberRole(membership.role, target.role, input.role)
         ) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -1199,6 +1620,12 @@ export const serverRouter = createTRPCRouter({
         }
 
         if (input.role === "OWNER") {
+          if (!isServerOwner(membership.server.createdById, currentUserId)) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "所有権を移譲できるのは現在の所有者だけです",
+            });
+          }
           await tx.serverMember.updateMany({
             where: { role: "OWNER", serverId: input.serverId },
             data: { role: "MEMBER" },
@@ -1249,10 +1676,7 @@ export const serverRouter = createTRPCRouter({
           },
         });
 
-        if (
-          !membership ||
-          !isServerOwner(membership.server.createdById, currentUserId)
-        ) {
+        if (!membership || !canManageServerMembers(membership.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "メンバーを退出させられるのはサーバー所有者だけです",
@@ -1261,7 +1685,7 @@ export const serverRouter = createTRPCRouter({
 
         const target = await tx.serverMember.findFirst({
           where: { id: input.memberId, serverId: input.serverId },
-          select: { id: true, userId: true },
+          select: { id: true, role: true, userId: true },
         });
 
         if (!target) {
@@ -1279,7 +1703,12 @@ export const serverRouter = createTRPCRouter({
         }
 
         if (
-          !canManageServerMember(membership.role, currentUserId, target.userId)
+          !canManageServerMember(
+            membership.role,
+            currentUserId,
+            target.userId,
+          ) ||
+          !canRemoveServerMember(membership.role, target.role)
         ) {
           throw new TRPCError({
             code: "BAD_REQUEST",

@@ -1,11 +1,13 @@
 import { headers } from "next/headers";
 
 import { Prisma } from "@prisma/client";
+import { env } from "~/env";
 import {
   createRateLimitKey,
   getRateLimitSubjectFromHeaders,
   getRetryAfterSeconds,
   RateLimitExceededError,
+  shouldTrustProxyHeaders,
   type RateLimitRule,
 } from "~/server/rate-limit-policy";
 import { db } from "~/server/db";
@@ -75,5 +77,6 @@ export async function getRequestRateLimitSubject() {
   return getRateLimitSubjectFromHeaders(
     requestHeaders.get("x-forwarded-for"),
     requestHeaders.get("x-real-ip"),
+    shouldTrustProxyHeaders(env.TRUST_PROXY_HEADERS, process.env.VERCEL),
   );
 }

@@ -95,6 +95,7 @@ export async function GET(
       id: serverId,
       OR: [
         { members: { some: { userId: session.user.id } } },
+        { visibility: "PUBLIC" },
         ...(inviteCode ? [{ inviteCode }] : []),
       ],
     },

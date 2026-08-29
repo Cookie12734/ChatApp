@@ -51,7 +51,7 @@ export function ResendVerificationEmailForm({
       <button
         type="submit"
         disabled={isDisabled}
-        className="inline-flex items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-white px-5 py-3 font-semibold text-[#18221f] transition hover:bg-[#eef7f6] disabled:cursor-not-allowed disabled:border-[#d6d9d7] disabled:bg-[#ecefed] disabled:text-[#8a928e]"
+        className="border-connect-ink/20 bg-connect-surface text-connect-ink hover:bg-connect-success-soft disabled:border-connect-disabled-border disabled:bg-connect-disabled-surface disabled:text-connect-disabled-text inline-flex items-center justify-center gap-2 rounded-md border px-5 py-3 font-semibold transition disabled:cursor-not-allowed"
       >
         <RefreshCw
           className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`}
@@ -60,7 +60,7 @@ export function ResendVerificationEmailForm({
         {isPending ? "再送中..." : "メールを再送"}
       </button>
 
-      <p className="min-h-5 text-sm text-[#7d8580]" aria-live="polite">
+      <p className="text-connect-quiet-text min-h-5 text-sm" aria-live="polite">
         {!hasPendingEmail
           ? "再送するには、もう一度登録またはログインしてください"
           : isCoolingDown
@@ -69,13 +69,19 @@ export function ResendVerificationEmailForm({
       </p>
 
       {state.message && (
-        <p className="text-sm font-medium text-[#114744]" aria-live="polite">
+        <p
+          className="text-connect-action text-sm font-medium"
+          aria-live="polite"
+        >
           {state.message}
         </p>
       )}
 
       {state.error && (
-        <p className="text-sm font-medium text-[#9f4122]" aria-live="polite">
+        <p
+          className="text-connect-danger text-sm font-medium"
+          aria-live="polite"
+        >
           {state.error}
         </p>
       )}

@@ -45,21 +45,21 @@ export default async function VerifyEmailPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
-      <section className="w-full max-w-md rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-8 text-center shadow-[10px_10px_0_#d8efee]">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e4f2dc] text-[#114744]">
+    <main className="bg-connect-paper text-connect-ink flex min-h-screen items-center justify-center px-5 py-8">
+      <section className="border-connect-ink/15 bg-connect-surface w-full max-w-md rounded-md border p-8 text-center shadow-[10px_10px_0_var(--color-focus-on-dark)]">
+        <div className="bg-connect-highlight text-connect-action mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
           <MailCheck className="h-7 w-7" aria-hidden="true" />
         </div>
         <h1 className="mt-6 text-3xl font-semibold">
           メールアドレスを確認しますか？
         </h1>
-        <p className="mt-4 leading-7 text-[#53615a]">
+        <p className="text-connect-muted mt-4 leading-7">
           登録時のパスワードを入力するとアカウントが有効になります。登録した覚えがない場合は操作せず、このページを閉じてください。
         </p>
         <VerifyEmailForm token={token} />
         <Link
           href="/auth/login"
-          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-md px-4 text-sm font-semibold text-[#114744] underline-offset-4 hover:underline"
+          className="text-connect-action mt-4 inline-flex min-h-11 items-center justify-center rounded-md px-4 text-sm font-semibold underline-offset-4 hover:underline"
         >
           ログインへ戻る
         </Link>
@@ -80,16 +80,16 @@ function VerifyEmailResult({
   message: string;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
-      <section className="w-full max-w-md rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-8 text-center shadow-[10px_10px_0_#d8efee]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[#fff1e8] text-[#9f4122]">
+    <main className="bg-connect-paper text-connect-ink flex min-h-screen items-center justify-center px-5 py-8">
+      <section className="border-connect-ink/15 bg-connect-surface w-full max-w-md rounded-md border p-8 text-center shadow-[10px_10px_0_var(--color-focus-on-dark)]">
+        <div className="bg-connect-danger-soft text-connect-danger mx-auto flex h-12 w-12 items-center justify-center rounded-md">
           <X className="h-6 w-6" aria-hidden="true" />
         </div>
         <h1 className="mt-6 text-3xl font-semibold">{title}</h1>
-        <p className="mt-4 leading-7 text-[#53615a]">{message}</p>
+        <p className="text-connect-muted mt-4 leading-7">{message}</p>
         <Link
           href={href}
-          className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 font-semibold transition"
         >
           <Check className="h-4 w-4" aria-hidden="true" />
           {linkLabel}

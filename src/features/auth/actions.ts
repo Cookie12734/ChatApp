@@ -25,6 +25,7 @@ import {
   getPasswordResetTokenStatus,
 } from "~/features/auth/lib/password-reset";
 import { getSafeInternalRedirect } from "~/features/auth/lib/redirect-path";
+import { userIdSchema } from "~/lib/input";
 import {
   clearPendingVerificationEmail,
   getPendingVerificationEmailSession,
@@ -89,16 +90,6 @@ function isUniqueConstraintError(error: unknown) {
     error.code === "P2002"
   );
 }
-
-const userIdSchema = z
-  .string()
-  .trim()
-  .min(3, "ユーザーIDは3文字以上で入力してください")
-  .max(32, "ユーザーIDは32文字以内で入力してください")
-  .regex(
-    /^[a-zA-Z0-9_]+$/,
-    "ユーザーIDは半角英数字とアンダースコアのみ使用できます",
-  );
 
 const loginSchema = z.object({
   email: z

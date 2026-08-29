@@ -55,7 +55,7 @@ export function Avatar({
 
   return (
     <span
-      className={`${className} flex items-center justify-center bg-[#114744] font-semibold text-[#f6f0e4]`}
+      className={`${className} bg-connect-action text-connect-paper flex items-center justify-center font-semibold`}
     >
       {getDisplayName(user).slice(0, 1).toUpperCase()}
     </span>
@@ -78,7 +78,7 @@ export function ProfileAvatar({
       <UserProfileDialog serverId={serverId} userId={user.userId}>
         <button
           type="button"
-          className={`${className} inline-flex shrink-0 overflow-hidden rounded-full border border-black/10 focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none`}
+          className={`${className} border-connect-ink/10 focus-visible:ring-connect-action inline-flex shrink-0 overflow-hidden rounded-full border focus-visible:ring-2 focus-visible:outline-none`}
           aria-label={`${getDisplayName(user)}のプロフィールを開く`}
         >
           <Avatar user={user} className="h-full w-full rounded-full" />
@@ -101,7 +101,7 @@ export function MessageText({
         key={`${index}:${part.value}`}
         type="button"
         onClick={() => onOpenLink(part.value)}
-        className="inline cursor-pointer border-0 bg-transparent p-0 align-baseline font-medium text-[#0b5f89] underline decoration-[#0b5f89]/45 underline-offset-2 hover:decoration-current"
+        className="text-connect-link decoration-connect-link/45 inline cursor-pointer border-0 bg-transparent p-0 align-baseline font-medium underline underline-offset-2 hover:decoration-current"
       >
         {part.value}
       </button>
@@ -128,7 +128,7 @@ export function PendingMessageRow({
 
   return (
     <article
-      className={`flex items-start gap-3 px-2 ${isFollowup ? "py-0.5" : "py-1.5"} ${isPending ? "text-[#7d8781]" : "text-[#18221f]"}`}
+      className={`flex items-start gap-3 px-2 ${isFollowup ? "py-0.5" : "py-1.5"} ${isPending ? "text-connect-neutral" : "text-connect-ink"}`}
       aria-live="polite"
     >
       {isFollowup ? (
@@ -146,7 +146,7 @@ export function PendingMessageRow({
             <span className="text-sm font-semibold">
               {getDisplayName(author)}
             </span>
-            <time className="text-xs text-[#68716b]">
+            <time className="text-connect-neutral text-xs">
               {formatMessageTime(message.createdAt)}
             </time>
           </div>
@@ -168,13 +168,13 @@ export function NewMessagesSeparator({
   return (
     <div
       ref={separatorRef}
-      className="mb-1 flex basis-full items-center gap-2 text-xs font-semibold text-[#9f4122]"
+      className="text-connect-danger mb-1 flex basis-full items-center gap-2 text-xs font-semibold"
       role="separator"
       aria-label="ここから新しいメッセージ"
     >
-      <span className="h-px flex-1 bg-[#9f4122]/70" />
+      <span className="bg-connect-danger/70 h-px flex-1" />
       <span>新しいメッセージ</span>
-      <span className="h-px flex-1 bg-[#9f4122]/70" />
+      <span className="bg-connect-danger/70 h-px flex-1" />
     </div>
   );
 }

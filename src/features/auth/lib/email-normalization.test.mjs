@@ -58,6 +58,15 @@ test("credential login limits cover both address and normalized email", () => {
   );
 });
 
+test("an unknown address does not become one shared user bucket", () => {
+  assert.deepEqual(
+    getCredentialsLoginRateLimitRules("person@example.com", "unknown").map(
+      ({ scope }) => scope,
+    ),
+    ["auth:login:global", "auth:login:email"],
+  );
+});
+
 test("signup and verification include shared global abuse ceilings", () => {
   assert.deepEqual(
     getSignupRateLimitRules("person@example.com", "203.0.113.10")[0],
@@ -136,10 +145,7 @@ test("email confirmation requires the same supported password", async () => {
   const passwordHash = await bcrypt.hash("registered-password", 4);
 
   assert.equal(
-    await matchesSupportedBcryptPassword(
-      "registered-password",
-      passwordHash,
-    ),
+    await matchesSupportedBcryptPassword("registered-password", passwordHash),
     true,
   );
   assert.equal(

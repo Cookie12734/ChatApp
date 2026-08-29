@@ -33,12 +33,12 @@ export function ServerCreate() {
   });
 
   return (
-    <main className="min-h-screen bg-[#f6f0e4] text-[#18221f]">
+    <main className="bg-connect-paper text-connect-ink min-h-screen">
       <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between border-b border-[#18221f]/15 pb-5">
+        <header className="border-connect-ink/15 flex items-center justify-between border-b pb-5">
           <Link
             href="/"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] shadow-[5px_5px_0_#d8efee] transition hover:rounded-xl"
+            className="bg-connect-surface flex h-12 w-12 items-center justify-center rounded-2xl shadow-[5px_5px_0_var(--color-focus-on-dark)] transition hover:rounded-xl"
             aria-label="ホームへ戻る"
             title="ホームへ戻る"
           >
@@ -55,7 +55,7 @@ export function ServerCreate() {
 
         <section className="flex flex-1 items-center justify-center py-10">
           <form
-            className="w-full max-w-xl rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-6 shadow-[12px_12px_0_#d9e7d0]"
+            className="border-connect-ink/15 bg-connect-surface w-full max-w-xl rounded-md border p-6 shadow-[12px_12px_0_var(--color-paper-3)]"
             onSubmit={(event) => {
               event.preventDefault();
               setMessage(null);
@@ -65,7 +65,7 @@ export function ServerCreate() {
             }}
           >
             <div className="mb-5">
-              <p className="text-sm font-semibold text-[#667163]">
+              <p className="text-connect-muted text-sm font-semibold">
                 サーバー作成
               </p>
               <h1 className="mt-1 text-3xl font-semibold">
@@ -74,7 +74,7 @@ export function ServerCreate() {
             </div>
 
             {message && (
-              <p className="mb-4 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]">
+              <p className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger mb-4 rounded-md border px-3 py-2 text-sm">
                 {message}
               </p>
             )}
@@ -90,7 +90,7 @@ export function ServerCreate() {
                 id="server-name"
                 value={serverName}
                 onChange={(event) => setServerName(event.target.value)}
-                className="min-h-12 min-w-0 flex-1 rounded-md border border-[#18221f]/20 bg-white px-3 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+                className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-12 min-w-0 flex-1 rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
                 placeholder="例: 作業部屋"
                 required
                 maxLength={50}
@@ -99,7 +99,7 @@ export function ServerCreate() {
               <button
                 type="submit"
                 disabled={createServer.isPending}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#18221f] px-5 py-2 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] disabled:opacity-50"
+                className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-5 py-2 text-sm font-semibold transition disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" aria-hidden="true" />
                 {createServer.isPending ? "作成中..." : "作成"}

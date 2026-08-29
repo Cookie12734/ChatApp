@@ -1,0 +1,87 @@
+/* Hallmark · macrostructure: layered chat rail · tone: functional-calm · anchor hue: teal
+ * pre-emit critique: P5 H5 E5 S5 R5 V4 · genre: modern-minimal
+ * palette: preserved from the existing connect interface · contrast: AA target
+ */
+:root {
+  --color-paper: oklch(0.956541 0.017173 84.587);
+  --color-paper-2: oklch(0.923903 0.030146 78.778);
+  --color-paper-3: oklch(0.944766 0.032708 133.934);
+  --color-surface: oklch(0.981561 0.016341 79.353);
+  --color-ink: oklch(0.241178 0.015345 174.652);
+  --color-ink-2: oklch(0.342719 0.019224 169.79);
+  --color-muted: oklch(0.478407 0.02052 163.966);
+  --color-neutral: oklch(0.478407 0.02052 163.966);
+  --color-label: oklch(0.500241 0.015579 152.319);
+  --color-rule: oklch(0.241178 0.015345 174.652 / 15%);
+  --color-rule-soft: oklch(0.241178 0.015345 174.652 / 12%);
+  --color-rule-strong: oklch(0.241178 0.015345 174.652 / 25%);
+  --color-accent: oklch(0.362801 0.054942 189.627);
+  --color-accent-hover: oklch(0.314305 0.047088 188.523);
+  --color-accent-ink: oklch(0.981561 0.016341 79.353);
+  --color-focus: oklch(0.362801 0.054942 189.627);
+  --color-focus-on-dark: oklch(0.934995 0.024236 193.571);
+  --color-signal: oklch(0.611686 0.151539 42.503);
+  --color-danger: oklch(0.497104 0.132889 38.195);
+  --color-danger-soft: oklch(0.966714 0.019355 55.153);
+  --color-danger-hover: oklch(0.910463 0.050089 46.221);
+  --color-danger-strong: oklch(0.421715 0.112675 37.07);
+  --color-danger-deep: oklch(0.448061 0.124493 36.523);
+  --color-positive-hover: oklch(0.909165 0.054915 136.069);
+  --color-success-soft: oklch(0.968554 0.010297 174.275);
+  --color-warm-rule: oklch(0.887109 0.031597 79.917);
+  --color-warm-muted: oklch(0.528586 0.035285 60.59);
+  --color-disabled-border: oklch(0.882406 0.004225 157.167);
+  --color-disabled-surface: oklch(0.949282 0.004149 157.176);
+  --color-disabled-text: oklch(0.652163 0.010971 164.695);
+  --color-quiet-text: oklch(0.478407 0.02052 163.966);
+  --color-placeholder: oklch(0.478407 0.02052 163.966);
+  --color-scroll: oklch(0.702702 0.032088 167.027);
+  --color-scroll-hover: oklch(0.575075 0.030802 167.062);
+  --color-link: oklch(0.46162 0.098911 238.362);
+
+  --font-display: Georgia, Cambria, "Times New Roman", Times, ui-serif, serif;
+  --font-body:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-outlier: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.953rem;
+  --text-display: clamp(2rem, 3vw + 1rem, 3.5rem);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --rule-hair: 1px;
+  --rule-fine: 2px;
+  --radius-card: 0.375rem;
+  --radius-pill: 999px;
+  --radius-input: 0.375rem;
+  --shadow-card: 0 1px 2px oklch(0.241178 0.015345 174.652 / 8%);
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}

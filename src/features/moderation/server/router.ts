@@ -1,14 +1,14 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { canManageServer } from "~/features/server/server/message-permissions";
+import { canManageServerReports } from "~/features/server/server/message-permissions";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 const reportInput = z.object({
   details: z.string().trim().max(500).optional(),
   messageId: z.string().min(1),
-  messageKind: z.enum(["DIRECT", "SERVER"]),
+  messageKind: z.enum(["DIRECT", "SERVER", "GROUP"]),
   reason: z.enum(["HARASSMENT", "SELF_HARM", "SPAM", "OTHER"]),
 });
 
@@ -30,30 +30,42 @@ export const moderationRouter = createTRPCRouter({
         },
       ]);
 
-      const message =
-        input.messageKind === "DIRECT"
-          ? await ctx.db.directMessage.findFirst({
-              where: {
-                id: input.messageId,
-                receiverId: reporterId,
-              },
-              select: {
-                content: true,
-                senderId: true,
-              },
-            })
-          : await ctx.db.serverMessage.findFirst({
-              where: {
-                id: input.messageId,
-                senderId: { not: reporterId },
-                server: { members: { some: { userId: reporterId } } },
-              },
-              select: {
-                content: true,
-                senderId: true,
-                serverId: true,
-              },
-            });
+      const message = await (async () => {
+        if (input.messageKind === "DIRECT") {
+          return ctx.db.directMessage.findFirst({
+            where: {
+              id: input.messageId,
+              receiverId: reporterId,
+            },
+            select: {
+              content: true,
+              senderId: true,
+            },
+          });
+        }
+        if (input.messageKind === "SERVER") {
+          return ctx.db.serverMessage.findFirst({
+            where: {
+              id: input.messageId,
+              senderId: { not: reporterId },
+              server: { members: { some: { userId: reporterId } } },
+            },
+            select: {
+              content: true,
+              senderId: true,
+              serverId: true,
+            },
+          });
+        }
+        return ctx.db.groupMessage.findFirst({
+          where: {
+            group: { members: { some: { userId: reporterId } } },
+            id: input.messageId,
+            senderId: { not: reporterId },
+          },
+          select: { content: true, senderId: true },
+        });
+      })();
 
       if (!message) {
         throw new TRPCError({
@@ -110,7 +122,7 @@ export const moderationRouter = createTRPCRouter({
         select: { role: true },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (!canManageServerReports(membership?.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "通報を確認できるのはサーバー管理者だけです",
@@ -150,7 +162,7 @@ export const moderationRouter = createTRPCRouter({
         select: { role: true },
       });
 
-      if (!canManageServer(membership?.role)) {
+      if (!canManageServerReports(membership?.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "通報を処理できるのはサーバー管理者だけです",

@@ -122,7 +122,7 @@ export function ProfileForm() {
 
   if (profile.isLoading) {
     return (
-      <div className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-6 text-sm text-[#68716b]">
+      <div className="border-connect-ink/15 bg-connect-surface text-connect-neutral rounded-md border p-6 text-sm">
         読み込み中...
       </div>
     );
@@ -130,7 +130,7 @@ export function ProfileForm() {
 
   if (profile.error) {
     return (
-      <div className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] p-6 text-sm text-[#9f4122]">
+      <div className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger rounded-md border p-6 text-sm">
         {profile.error.message}
       </div>
     );
@@ -139,7 +139,7 @@ export function ProfileForm() {
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <form
-        className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5 shadow-[8px_8px_0_#d8efee]"
+        className="border-connect-ink/15 bg-connect-surface rounded-md border p-5 shadow-[8px_8px_0_var(--color-focus-on-dark)]"
         onSubmit={(event) => {
           event.preventDefault();
           setMessage(null);
@@ -153,12 +153,15 @@ export function ProfileForm() {
       >
         <div className="space-y-5">
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 block text-sm font-semibold">
               アイコン
             </span>
             <div className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-sm font-semibold text-[#18221f] transition hover:border-[#18221f]/45">
-                <Camera className="h-4 w-4 text-[#cc5f2f]" aria-hidden="true" />
+              <label className="border-connect-ink/20 bg-connect-surface text-connect-ink hover:border-connect-ink/45 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition">
+                <Camera
+                  className="text-connect-signal h-4 w-4"
+                  aria-hidden="true"
+                />
                 {isUploading ? "アップロード中..." : "画像を選択"}
                 <input
                   className="sr-only"
@@ -168,20 +171,20 @@ export function ProfileForm() {
                   onChange={uploadIcon}
                 />
               </label>
-              <span className="text-sm text-[#68716b]">
+              <span className="text-connect-neutral text-sm">
                 PNG / JPG、256KBまで
               </span>
             </div>
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 block text-sm font-semibold">
               名前
             </span>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
               placeholder="表示名"
               required
               maxLength={50}
@@ -189,23 +192,23 @@ export function ProfileForm() {
           </label>
 
           <label className="block">
-            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 flex items-center justify-between gap-3 text-sm font-semibold">
               <span>ステータス</span>
-              <span className="font-normal text-[#68716b]">
+              <span className="text-connect-neutral font-normal">
                 {statusMessage.length}/80
               </span>
             </span>
             <input
               value={statusMessage}
               onChange={(event) => setStatusMessage(event.target.value)}
-              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
               placeholder="いまの気分や作業状況"
               maxLength={80}
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 block text-sm font-semibold">
               オンライン状態
             </span>
             <select
@@ -213,7 +216,7 @@ export function ProfileForm() {
               onChange={(event) =>
                 setPresenceStatus(event.target.value as PresenceStatus)
               }
-              className="min-h-11 w-full rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
             >
               {presenceOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -224,16 +227,16 @@ export function ProfileForm() {
           </label>
 
           <label className="block">
-            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-[#53615a]">
+            <span className="text-connect-muted mb-2 flex items-center justify-between gap-3 text-sm font-semibold">
               <span>自己紹介</span>
-              <span className="font-normal text-[#68716b]">
+              <span className="text-connect-neutral font-normal">
                 {bio.length}/160
               </span>
             </span>
             <textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
-              className="min-h-32 w-full resize-y rounded-md border border-[#18221f]/20 bg-white px-4 py-3 leading-7 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-32 w-full resize-y rounded-md border px-4 py-3 leading-7 focus:ring-2 focus:outline-none"
               placeholder="好きなことや今話したいことを書いてください"
               maxLength={160}
             />
@@ -245,8 +248,8 @@ export function ProfileForm() {
             className={`mt-4 rounded-md border px-3 py-2 text-sm ${
               message.includes("保存しました") ||
               message.includes("アップロードしました")
-                ? "border-sky-200 bg-sky-50 text-sky-900"
-                : "border-[#cc5f2f]/25 bg-[#fff1e8] text-[#9f4122]"
+                ? "border-connect-action/20 bg-connect-success-soft text-connect-action"
+                : "border-connect-signal/25 bg-connect-danger-soft text-connect-danger"
             }`}
           >
             {message}
@@ -257,7 +260,7 @@ export function ProfileForm() {
           <button
             type="submit"
             disabled={updateProfile.isPending}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#114744] px-4 py-2 font-semibold text-white transition hover:bg-[#0d3936] disabled:opacity-50"
+            className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 font-semibold transition disabled:opacity-50"
           >
             <Save className="h-4 w-4" aria-hidden="true" />
             {updateProfile.isPending ? "保存中..." : "保存"}
@@ -265,20 +268,20 @@ export function ProfileForm() {
         </div>
       </form>
 
-      <aside className="rounded-md border border-[#18221f]/15 bg-[#f1e4d0] p-5">
+      <aside className="border-connect-ink/15 bg-connect-navigation rounded-md border p-5">
         <h2 className="mb-4 text-base font-semibold">プレビュー</h2>
-        <div className="rounded-md border border-[#18221f]/10 bg-[#fff8ed] p-4">
+        <div className="border-connect-ink/10 bg-connect-surface rounded-md border p-4">
           <div className="flex items-center gap-3">
             {image && !imageFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={image}
                 alt=""
-                className="h-16 w-16 rounded-md border border-[#18221f]/15 object-cover"
+                className="border-connect-ink/15 h-16 w-16 rounded-md border object-cover"
                 onError={() => setImageFailed(true)}
               />
             ) : (
-              <span className="flex h-16 w-16 items-center justify-center rounded-md bg-[#18221f] text-xl font-semibold text-[#f6f0e4]">
+              <span className="bg-connect-ink text-connect-paper flex h-16 w-16 items-center justify-center rounded-md text-xl font-semibold">
                 {initial}
               </span>
             )}
@@ -286,10 +289,10 @@ export function ProfileForm() {
               <p className="truncate text-lg font-semibold">
                 {name.trim() || "名前未設定"}
               </p>
-              <p className="font-mono text-sm text-[#68716b]">
+              <p className="text-connect-neutral font-mono text-sm">
                 @{profile.data?.userId}
               </p>
-              <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-[#68716b]">
+              <p className="text-connect-neutral mt-1 inline-flex items-center gap-1.5 text-sm">
                 <span
                   className={`h-2.5 w-2.5 rounded-full ${getPresenceDotClassName(
                     presenceStatus,
@@ -300,13 +303,13 @@ export function ProfileForm() {
             </div>
           </div>
           {statusMessage.trim() && (
-            <p className="mt-3 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+            <p className="border-connect-ink/10 bg-connect-surface text-connect-muted mt-3 rounded-md border px-3 py-2 text-sm">
               {statusMessage.trim()}
             </p>
           )}
-          <div className="mt-4 rounded-md border border-[#18221f]/10 bg-white p-3 text-sm leading-6 text-[#53615a]">
+          <div className="border-connect-ink/10 bg-connect-surface text-connect-muted mt-4 rounded-md border p-3 text-sm leading-6">
             {bio.trim() || (
-              <span className="inline-flex items-center gap-2 text-[#68716b]">
+              <span className="text-connect-neutral inline-flex items-center gap-2">
                 <UserRound className="h-4 w-4" aria-hidden="true" />
                 自己紹介は未設定です
               </span>
@@ -330,14 +333,16 @@ export function ProfileForm() {
             event.preventDefault();
           }
         }}
-        className="rounded-md border border-[#cc5f2f]/35 bg-[#fff1e8] p-5 lg:col-span-2"
+        className="border-connect-signal/35 bg-connect-danger-soft rounded-md border p-5 lg:col-span-2"
       >
-        <h2 className="text-lg font-semibold text-[#9f4122]">アカウント削除</h2>
-        <p className="mt-2 text-sm leading-6 text-[#7f321b]">
+        <h2 className="text-connect-danger text-lg font-semibold">
+          アカウント削除
+        </h2>
+        <p className="text-connect-danger-strong mt-2 text-sm leading-6">
           この操作は取り消せません。所有中のサーバーがある場合は削除できないため、先に所有権を移譲するかサーバーを削除してください。
         </p>
         <label className="mt-4 block">
-          <span className="mb-2 block text-sm font-semibold text-[#7f321b]">
+          <span className="text-connect-danger-strong mb-2 block text-sm font-semibold">
             確認のため現在のユーザーID「{profile.data?.userId}」を入力
           </span>
           <input
@@ -346,12 +351,12 @@ export function ProfileForm() {
             onChange={(event) => setDeleteConfirmation(event.target.value)}
             autoComplete="off"
             required
-            className="min-h-11 w-full rounded-md border border-[#cc5f2f]/35 bg-white px-4 py-2 text-[#18221f] focus:border-[#9f4122] focus:ring-2 focus:ring-[#ffd8c6] focus:outline-none"
+            className="border-connect-signal/35 bg-connect-surface text-connect-ink focus:border-connect-danger focus:ring-connect-danger-hover min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
           />
         </label>
         {deleteState.error && (
           <p
-            className="mt-3 rounded-md border border-[#cc5f2f]/35 bg-white px-3 py-2 text-sm text-[#9f4122]"
+            className="border-connect-signal/35 bg-connect-surface text-connect-danger mt-3 rounded-md border px-3 py-2 text-sm"
             role="alert"
           >
             {deleteState.error}
@@ -363,7 +368,7 @@ export function ProfileForm() {
             disabled={
               isDeleting || deleteConfirmation.trim() !== profile.data?.userId
             }
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#9f4122] px-4 py-2 font-semibold text-white transition hover:bg-[#7f321b] disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-connect-danger text-connect-surface hover:bg-connect-danger-strong inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDeleting ? "削除中..." : "アカウントを削除"}
           </button>

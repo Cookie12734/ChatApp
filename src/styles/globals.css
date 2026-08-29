@@ -1,6 +1,27 @@
+@import "../../tokens.css";
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
+
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -51,11 +72,41 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --color-connect-paper: var(--color-paper);
+  --color-connect-surface: var(--color-surface);
+  --color-connect-navigation: var(--color-paper-2);
+  --color-connect-highlight: var(--color-paper-3);
+  --color-connect-ink: var(--color-ink);
+  --color-connect-ink-2: var(--color-ink-2);
+  --color-connect-muted: var(--color-muted);
+  --color-connect-neutral: var(--color-neutral);
+  --color-connect-label: var(--color-label);
+  --color-connect-action: var(--color-accent);
+  --color-connect-action-hover: var(--color-accent-hover);
+  --color-connect-focus-soft: var(--color-focus-on-dark);
+  --color-connect-signal: var(--color-signal);
+  --color-connect-danger: var(--color-danger);
+  --color-connect-danger-soft: var(--color-danger-soft);
+  --color-connect-danger-hover: var(--color-danger-hover);
+  --color-connect-danger-strong: var(--color-danger-strong);
+  --color-connect-danger-deep: var(--color-danger-deep);
+  --color-connect-positive-hover: var(--color-positive-hover);
+  --color-connect-success-soft: var(--color-success-soft);
+  --color-connect-placeholder: var(--color-placeholder);
+  --color-connect-link: var(--color-link);
+  --color-connect-warm-rule: var(--color-warm-rule);
+  --color-connect-warm-muted: var(--color-warm-muted);
+  --color-connect-disabled-border: var(--color-disabled-border);
+  --color-connect-disabled-surface: var(--color-disabled-surface);
+  --color-connect-disabled-text: var(--color-disabled-text);
+  --color-connect-quiet-text: var(--color-quiet-text);
+  --font-connect-body: var(--font-body);
+  --font-connect-display: var(--font-body);
 }
 
 :root {
-  --connect-focus: #114744;
-  --connect-placeholder: #53615a;
+  --connect-focus: var(--color-focus);
+  --connect-placeholder: var(--color-placeholder);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -130,9 +181,25 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
   }
   html {
     @apply font-sans;
+  }
+  html,
+  body {
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-family: var(--font-body);
+    font-style: normal;
   }
 }
 
@@ -167,7 +234,7 @@ textarea[data-chat-input]:focus-visible {
 }
 
 .chat-scrollbar {
-  scrollbar-color: #8da69b transparent;
+  scrollbar-color: var(--color-scroll) transparent;
   scrollbar-width: thin;
 }
 
@@ -180,14 +247,14 @@ textarea[data-chat-input]:focus-visible {
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb {
-  background: #8da69b;
+  background: var(--color-scroll);
   background-clip: padding-box;
-  border: 3px solid #fff8ed;
+  border: 3px solid var(--color-surface);
   border-radius: 999px;
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #687f75;
+  background: var(--color-scroll-hover);
   background-clip: padding-box;
 }
 

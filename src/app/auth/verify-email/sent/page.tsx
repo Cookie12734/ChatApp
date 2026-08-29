@@ -12,24 +12,24 @@ export default async function VerifyEmailSentPage() {
     : null;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f0e4] px-5 py-8 text-[#18221f]">
-      <section className="w-full max-w-md rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-8 text-center shadow-[10px_10px_0_#d8efee]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-[#e4f2dc] text-[#114744]">
+    <main className="bg-connect-paper text-connect-ink flex min-h-screen items-center justify-center px-5 py-8">
+      <section className="border-connect-ink/15 bg-connect-surface w-full max-w-md rounded-md border p-8 text-center shadow-[10px_10px_0_var(--color-focus-on-dark)]">
+        <div className="bg-connect-highlight text-connect-action mx-auto flex h-12 w-12 items-center justify-center rounded-md">
           <MailCheck className="h-6 w-6" aria-hidden="true" />
         </div>
         <h1 className="mt-6 text-3xl font-semibold">
           確認メールを送信しました
         </h1>
-        <p className="mt-4 leading-7 text-[#53615a]">
+        <p className="text-connect-muted mt-4 leading-7">
           入力したメールアドレスに確認リンクを送りました。リンクを開くと登録が完了します。
         </p>
-        <p className="mt-4 text-sm leading-6 text-[#68716b]">
+        <p className="text-connect-neutral mt-4 text-sm leading-6">
           開発環境では、ターミナルに確認リンクが表示されます。
         </p>
         {developmentVerificationUrl && (
           <Link
             href={developmentVerificationUrl}
-            className="mt-4 block rounded-md border border-[#18221f]/15 bg-white px-4 py-3 text-sm font-semibold text-[#114744] transition hover:bg-[#eef7f6]"
+            className="border-connect-ink/15 bg-connect-surface text-connect-action hover:bg-connect-success-soft mt-4 block rounded-md border px-4 py-3 text-sm font-semibold transition"
           >
             開発用: メール確認リンクを開く
           </Link>
@@ -40,7 +40,7 @@ export default async function VerifyEmailSentPage() {
         />
         <Link
           href="/auth/login"
-          className="mt-6 inline-flex rounded-md bg-[#18221f] px-5 py-3 font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37]"
+          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 mt-6 inline-flex rounded-md px-5 py-3 font-semibold transition"
         >
           ログインページへ
         </Link>

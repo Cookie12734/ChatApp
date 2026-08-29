@@ -22,6 +22,14 @@ test("a settled match is preserved instead of reset to waiting", () => {
     hasSettledMatch({ matchedUserId: "matched-user", topic: "GAME" }),
     true,
   );
+  assert.equal(
+    hasSettledMatch({
+      matchedUserId: "matched-user",
+      matchingResultId: null,
+      topic: "GAME",
+    }),
+    true,
+  );
   assert.equal(hasSettledMatch({ matchedUserId: null, topic: "GAME" }), false);
   assert.equal(hasSettledMatch(null), false);
 });

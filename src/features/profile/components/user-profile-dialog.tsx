@@ -82,8 +82,8 @@ export function UserProfileDialog({
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[92dvh] overflow-x-hidden overflow-y-auto bg-[#f6f0e4] p-0 text-[#18221f] sm:max-w-xl">
-        <DialogHeader className="border-b border-[#18221f]/15 px-5 py-4">
+      <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-x-hidden overflow-y-auto p-0 sm:max-w-xl">
+        <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle>プロフィール</DialogTitle>
           <DialogDescription className="sr-only">
             ユーザーのプロフィール詳細
@@ -93,30 +93,30 @@ export function UserProfileDialog({
         <div className="p-5">
           {profile.isLoading && (
             <div
-              className="space-y-5 rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5"
+              className="border-connect-ink/15 bg-connect-surface space-y-5 rounded-md border p-5"
               aria-label="プロフィールを読み込み中"
             >
               <div className="flex items-center gap-4">
-                <div className="h-20 w-20 animate-pulse rounded-md bg-[#f1e4d0]" />
+                <div className="bg-connect-navigation h-20 w-20 animate-pulse rounded-md" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-6 w-40 max-w-full animate-pulse rounded bg-[#f1e4d0]" />
-                  <div className="h-4 w-28 animate-pulse rounded bg-[#f1e4d0]" />
+                  <div className="bg-connect-navigation h-6 w-40 max-w-full animate-pulse rounded" />
+                  <div className="bg-connect-navigation h-4 w-28 animate-pulse rounded" />
                 </div>
               </div>
-              <div className="h-20 animate-pulse rounded-md bg-[#f1e4d0]" />
+              <div className="bg-connect-navigation h-20 animate-pulse rounded-md" />
             </div>
           )}
 
           {profile.error && (
             <div
-              className="rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] p-5 text-sm text-[#9f4122]"
+              className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger rounded-md border p-5 text-sm"
               role="alert"
             >
               <p>プロフィールを表示できませんでした。</p>
               <button
                 type="button"
                 onClick={() => void profile.refetch()}
-                className="mt-3 min-h-11 rounded-md border border-[#9f4122]/30 bg-white px-4 font-semibold transition hover:bg-[#ffd8c6] focus-visible:ring-2 focus-visible:ring-[#9f4122] focus-visible:outline-none"
+                className="border-connect-danger/30 bg-connect-surface hover:bg-connect-danger-hover focus-visible:ring-connect-danger mt-3 min-h-11 rounded-md border px-4 font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
               >
                 もう一度試す
               </button>
@@ -124,9 +124,9 @@ export function UserProfileDialog({
           )}
 
           {data && (
-            <section className="rounded-md border border-[#18221f]/15 bg-[#fff8ed] p-5 shadow-[8px_8px_0_#d8efee]">
+            <section className="border-connect-ink/15 bg-connect-surface rounded-md border p-5 shadow-[8px_8px_0_var(--color-focus-on-dark)]">
               {data.serverProfile && (
-                <p className="mb-3 text-xs font-semibold tracking-wide text-[#9f4122] uppercase">
+                <p className="text-connect-danger mb-3 text-xs font-semibold tracking-wide uppercase">
                   サーバープロフィール
                 </p>
               )}
@@ -136,10 +136,10 @@ export function UserProfileDialog({
                   <img
                     src={data.image}
                     alt=""
-                    className="h-20 w-20 shrink-0 rounded-md border border-[#18221f]/15 object-cover sm:h-24 sm:w-24"
+                    className="border-connect-ink/15 h-20 w-20 shrink-0 rounded-md border object-cover sm:h-24 sm:w-24"
                   />
                 ) : (
-                  <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-[#18221f] text-2xl font-semibold text-[#f6f0e4] sm:h-24 sm:w-24 sm:text-3xl">
+                  <span className="bg-connect-ink text-connect-paper flex h-20 w-20 shrink-0 items-center justify-center rounded-md text-2xl font-semibold sm:h-24 sm:w-24 sm:text-3xl">
                     {displayName.slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -147,10 +147,10 @@ export function UserProfileDialog({
                   <h2 className="truncate text-2xl font-semibold sm:text-3xl">
                     {displayName}
                   </h2>
-                  <p className="truncate font-mono text-sm text-[#68716b]">
+                  <p className="text-connect-neutral truncate font-mono text-sm">
                     @{data.userId}
                   </p>
-                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-[#68716b]">
+                  <p className="text-connect-neutral mt-2 inline-flex items-center gap-1.5 text-sm">
                     <span
                       className={`h-2.5 w-2.5 rounded-full ${getPresenceDotClassName(
                         data.presenceStatus,
@@ -163,12 +163,12 @@ export function UserProfileDialog({
               </div>
 
               {data.statusMessage && (
-                <p className="mt-5 rounded-md border border-[#18221f]/10 bg-white px-3 py-2 text-sm text-[#53615a]">
+                <p className="border-connect-ink/10 bg-connect-surface text-connect-muted mt-5 rounded-md border px-3 py-2 text-sm">
                   {data.statusMessage}
                 </p>
               )}
 
-              <div className="mt-5 rounded-md border border-[#18221f]/10 bg-white p-4 leading-7 text-[#53615a]">
+              <div className="border-connect-ink/10 bg-connect-surface text-connect-muted mt-5 rounded-md border p-4 leading-7">
                 {displayedBio ?? "自己紹介は未設定です"}
               </div>
 
@@ -182,7 +182,7 @@ export function UserProfileDialog({
                     >
                       <button
                         type="button"
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none"
+                        className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 focus-visible:ring-connect-action inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                       >
                         <Settings className="h-4 w-4" aria-hidden="true" />
                         サーバープロフィールを編集
@@ -192,7 +192,7 @@ export function UserProfileDialog({
                   <ProfileSettingsDialog>
                     <button
                       type="button"
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#18221f]/20 bg-white px-4 text-sm font-semibold text-[#18221f] transition hover:bg-[#f1e4d0] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:outline-none"
+                      className="border-connect-ink/20 bg-connect-surface text-connect-ink hover:bg-connect-navigation focus-visible:ring-connect-action inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <Settings className="h-4 w-4" aria-hidden="true" />
                       全体のプロフィールを編集
@@ -206,7 +206,7 @@ export function UserProfileDialog({
                       type="button"
                       onClick={() => sendFriendRequest.mutate({ userId })}
                       disabled={sendFriendRequest.isPending}
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 text-sm font-semibold text-[#f6f0e4] transition hover:bg-[#2f3c37] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
+                      className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 focus-visible:ring-connect-action inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
                     >
                       <UserPlus className="h-4 w-4" aria-hidden="true" />
                       {sendFriendRequest.isPending
@@ -224,7 +224,7 @@ export function UserProfileDialog({
                           })
                         }
                         disabled={acceptFriendRequest.isPending}
-                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#114744] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3936] focus-visible:ring-2 focus-visible:ring-[#114744] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
+                        className="bg-connect-action text-connect-surface hover:bg-connect-action-hover focus-visible:ring-connect-action inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
                       >
                         <UserCheck className="h-4 w-4" aria-hidden="true" />
                         {acceptFriendRequest.isPending
@@ -242,7 +242,7 @@ export function UserProfileDialog({
                           })
                         }
                         disabled={cancelFriendRequest.isPending}
-                        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#9f4122]/25 bg-[#fff1e8] px-4 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] focus-visible:ring-2 focus-visible:ring-[#9f4122] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
+                        className="border-connect-danger/25 bg-connect-danger-soft text-connect-danger hover:bg-connect-danger-hover focus-visible:ring-connect-danger inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-wait disabled:opacity-50"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
                         {cancelFriendRequest.isPending
@@ -258,7 +258,7 @@ export function UserProfileDialog({
                         removeFriend.mutate({ userId });
                       }}
                       disabled={removeFriend.isPending}
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#9f4122]/25 bg-[#fff1e8] px-4 text-sm font-semibold text-[#9f4122] transition hover:bg-[#ffd8c6] disabled:cursor-wait disabled:opacity-50"
+                      className="border-connect-danger/25 bg-connect-danger-soft text-connect-danger hover:bg-connect-danger-hover inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-50"
                     >
                       <UserMinus className="h-4 w-4" aria-hidden="true" />
                       {removeFriend.isPending ? "解除中..." : "フレンド解除"}
@@ -266,7 +266,7 @@ export function UserProfileDialog({
                   )}
                   {friendActionError && (
                     <p
-                      className="mt-3 rounded-md border border-[#cc5f2f]/25 bg-[#fff1e8] px-3 py-2 text-sm text-[#9f4122]"
+                      className="border-connect-signal/25 bg-connect-danger-soft text-connect-danger mt-3 rounded-md border px-3 py-2 text-sm"
                       role="alert"
                     >
                       {friendActionError}

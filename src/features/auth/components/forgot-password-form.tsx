@@ -20,14 +20,14 @@ export function ForgotPasswordForm() {
       <form action={formAction} className="flex flex-col gap-4">
         {state.message && (
           <p
-            className="rounded-md border border-[#114744]/20 bg-[#e4f2dc] px-4 py-3 text-sm text-[#114744]"
+            className="border-connect-action/20 bg-connect-highlight text-connect-action rounded-md border px-4 py-3 text-sm"
             role="status"
           >
             {state.message}
           </p>
         )}
         <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-sm text-[#5d665f]">
+          <label htmlFor="email" className="text-connect-label text-sm">
             メールアドレス
           </label>
           <input
@@ -37,13 +37,13 @@ export function ForgotPasswordForm() {
             required
             maxLength={320}
             autoComplete="email"
-            className="rounded-md border border-[#18221f]/20 bg-white px-4 py-3 focus:border-[#114744] focus:ring-2 focus:ring-[#d8efee] focus:outline-none"
+            className="border-connect-ink/20 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
           />
         </div>
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-[#18221f] px-4 py-3 font-semibold text-[#f6f0e4] disabled:opacity-50"
+          className="bg-connect-ink text-connect-paper inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 font-semibold disabled:opacity-50"
         >
           {isPending ? "送信中..." : "再設定リンクを送る"}
           {!isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
       </form>
       <Link
         href="/auth/login"
-        className="text-center text-sm font-semibold text-[#114744] underline-offset-4 hover:underline"
+        className="text-connect-action text-center text-sm font-semibold underline-offset-4 hover:underline"
       >
         ログインへ戻る
       </Link>

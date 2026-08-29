@@ -105,6 +105,9 @@ export async function consumePasswordResetToken(
     }
 
     await transaction.session.deleteMany({ where: { userId: user.id } });
+    await transaction.pushSubscription.deleteMany({
+      where: { userId: user.id },
+    });
     return true;
   });
 

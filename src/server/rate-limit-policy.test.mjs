@@ -7,21 +7,29 @@ import {
   getRateLimitMessage,
   getRetryAfterSeconds,
   RateLimitExceededError,
+  shouldTrustProxyHeaders,
 } from "./rate-limit-policy.ts";
 
-test("proxy addresses use the closest forwarded hop", () => {
+test("proxy addresses are ignored unless the proxy is trusted", () => {
+  assert.equal(
+    getRateLimitSubjectFromHeaders("spoofed-by-client", "198.51.100.20", false),
+    "unknown",
+  );
   assert.equal(
     getRateLimitSubjectFromHeaders(
       "spoofed-by-client, 203.0.113.10",
       "198.51.100.20",
+      true,
     ),
     "203.0.113.10",
   );
   assert.equal(
-    getRateLimitSubjectFromHeaders(null, "198.51.100.20"),
+    getRateLimitSubjectFromHeaders(null, "198.51.100.20", true),
     "198.51.100.20",
   );
-  assert.equal(getRateLimitSubjectFromHeaders(null, null), "unknown");
+  assert.equal(getRateLimitSubjectFromHeaders(null, null, true), "unknown");
+  assert.equal(shouldTrustProxyHeaders(false, "1"), true);
+  assert.equal(shouldTrustProxyHeaders(false, undefined), false);
 });
 
 test("rate limit keys are deterministic without storing their subject", () => {

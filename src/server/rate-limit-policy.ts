@@ -25,7 +25,10 @@ export function createRateLimitKey(scope: string, subject: string) {
 export function getRateLimitSubjectFromHeaders(
   forwardedFor: string | null,
   realAddress: string | null,
+  trustProxyHeaders: boolean,
 ) {
+  if (!trustProxyHeaders) return "unknown";
+
   const forwardedAddress = forwardedFor
     ?.split(",")
     .map((address) => address.trim())
@@ -36,6 +39,13 @@ export function getRateLimitSubjectFromHeaders(
   const address = forwardedAddress ?? normalizedRealAddress ?? "unknown";
 
   return address.slice(0, 128);
+}
+
+export function shouldTrustProxyHeaders(
+  configured: boolean,
+  vercelEnvironment: string | undefined,
+) {
+  return configured || vercelEnvironment === "1";
 }
 
 export function getRetryAfterSeconds(resetAt: Date, now = Date.now()) {
