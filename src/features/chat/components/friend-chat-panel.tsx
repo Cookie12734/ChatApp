@@ -9,6 +9,7 @@ import {
   Ellipsis,
   FileText,
   Flag,
+  Hash,
   Inbox,
   LogOut,
   Menu,
@@ -1639,7 +1640,7 @@ export function FriendChatPanel({
   };
 
   const selectServer = (membership: ChatServerMembership) => {
-    setIsNavigationOpen(false);
+    setIsNavigationOpen(true);
     setSelectedServerId(membership.server.id);
     setSelectedServerChannelId(membership.server.channels[0]?.id ?? null);
     setIsFriendsOpen(false);
@@ -2381,7 +2382,7 @@ export function FriendChatPanel({
   };
 
   return (
-    <main className="bg-connect-paper text-connect-ink grid h-dvh min-h-dvh grid-cols-1 grid-rows-[4rem_minmax(0,1fr)] overflow-hidden md:grid-cols-[300px_minmax(0,1fr)]">
+    <main className="bg-connect-paper text-connect-ink flex h-dvh min-h-dvh overflow-hidden">
       <ServerRail
         memberships={serverOverview.data?.memberships}
         onSelectHome={selectHome}
@@ -2413,7 +2414,7 @@ export function FriendChatPanel({
       <aside
         className={`${
           isNavigationOpen ? "flex" : "hidden"
-        } border-connect-ink/15 bg-connect-navigation col-start-1 row-start-2 min-h-0 w-full min-w-0 flex-col border-r md:flex`}
+        } border-connect-ink/15 bg-connect-navigation w-[calc(100vw-4rem)] shrink-0 flex-col border-r md:flex md:w-[300px] md:max-w-[300px]`}
         aria-label={
           selectedServer ? "スペース内ナビゲーション" : "会話ナビゲーション"
         }
@@ -2491,7 +2492,7 @@ export function FriendChatPanel({
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
                 <p className="text-connect-muted text-xs font-semibold tracking-wide uppercase">
-                  チャンネル
+                  テキストチャンネル
                 </p>
                 {canManageSelectedChannels && (
                   <button
@@ -2563,7 +2564,7 @@ export function FriendChatPanel({
                         }
                         className="bg-connect-surface flex min-h-10 items-center gap-1 rounded-md px-2"
                       >
-                        <MessageCircle
+                        <Hash
                           className="text-connect-muted h-4 w-4 shrink-0"
                           aria-hidden="true"
                         />
@@ -2626,10 +2627,7 @@ export function FriendChatPanel({
                         }}
                         className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       >
-                        <MessageCircle
-                          className="h-5 w-5 shrink-0"
-                          aria-hidden="true"
-                        />
+                        <Hash className="h-5 w-5 shrink-0" aria-hidden="true" />
                         <span className="truncate text-sm font-medium">
                           {channel.name}
                         </span>
@@ -2755,22 +2753,33 @@ export function FriendChatPanel({
               </button>
             </div>
 
-            <div className="text-connect-muted flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide">
-              <span>会話</span>
-              <GroupDmDialog
-                initialGroupId={selectedGroupId}
-                open={isGroupDmOpen}
-                onOpenChange={setIsGroupDmOpen}
-              >
+            <div className="text-connect-muted flex items-center justify-between px-4 pt-3 pb-2 text-xs font-semibold tracking-wide uppercase">
+              <span>DM</span>
+              <div className="flex items-center">
                 <button
                   type="button"
+                  onClick={openFriends}
                   className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
-                  aria-label="グループDMを開く"
-                  title="グループDMを開く"
+                  aria-label="フレンドを追加・管理"
+                  title="フレンドを追加・管理"
                 >
-                  <Users className="h-4 w-4" aria-hidden="true" />
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                 </button>
-              </GroupDmDialog>
+                <GroupDmDialog
+                  initialGroupId={selectedGroupId}
+                  open={isGroupDmOpen}
+                  onOpenChange={setIsGroupDmOpen}
+                >
+                  <button
+                    type="button"
+                    className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
+                    aria-label="グループDMを開く"
+                    title="グループDMを開く"
+                  >
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </GroupDmDialog>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
@@ -2857,7 +2866,7 @@ export function FriendChatPanel({
       <section
         className={`${
           isNavigationOpen ? "hidden md:flex" : "flex"
-        } bg-connect-surface col-start-1 row-start-2 min-h-0 min-w-0 flex-col md:col-start-2`}
+        } bg-connect-surface min-w-0 flex-1 flex-col`}
       >
         <header className="border-connect-ink/15 bg-connect-highlight flex h-14 shrink-0 items-center justify-between border-b px-4 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
@@ -2871,7 +2880,7 @@ export function FriendChatPanel({
               <Menu className="h-5 w-5" aria-hidden="true" />
             </button>
             {selectedServer ? (
-              <MessageCircle
+              <Hash
                 className="text-connect-neutral h-5 w-5 shrink-0"
                 aria-hidden="true"
               />
@@ -2941,14 +2950,11 @@ export function FriendChatPanel({
                 <button
                   type="button"
                   onClick={() => setIsMemberListOpen(true)}
-                  className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 items-center justify-center gap-2 rounded-md px-3 transition-colors"
+                  className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition lg:hidden"
                   aria-label="メンバー一覧"
                   title="メンバー一覧"
                 >
                   <Users className="h-5 w-5" aria-hidden="true" />
-                  <span className="hidden whitespace-nowrap xl:inline">
-                    メンバー
-                  </span>
                 </button>
               </>
             )}

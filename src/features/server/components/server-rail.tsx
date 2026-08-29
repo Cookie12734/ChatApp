@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  Ellipsis,
   LogOut,
   Plus,
   RefreshCw,
@@ -14,8 +13,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 
-import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { NotificationSettingsDialog } from "~/features/notification/components/notification-settings-dialog";
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { type RouterOutputs, api } from "~/trpc/react";
 
 type ServerMembership =
@@ -69,45 +68,38 @@ export function ServerRail({
       await signOut({ redirectTo: "/auth/login" });
     }
   };
+  const homeIndicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
+    selectedServerId ? "h-0 w-0 group-hover:h-5 group-hover:w-1" : "h-10 w-1"
+  }`;
+
   return (
-    <header
-      className="border-connect-paper/15 bg-connect-ink text-connect-paper col-span-full row-start-1 flex h-16 min-w-0 items-center gap-2 border-b px-2 [--connect-focus:var(--color-focus-on-dark)] sm:px-3"
-      aria-label="メインナビゲーション"
-    >
-      <div className="flex shrink-0 items-center">
+    <aside className="flex w-16 shrink-0 flex-col items-center gap-3 bg-[#18221f] py-4 sm:w-[72px]">
+      <div className="group relative flex h-12 w-full justify-center">
+        <span className={homeIndicatorClass} aria-hidden="true" />
         <Link
           href="/"
           onClick={onSelectHome}
-          className={`hover:bg-connect-ink-2 flex h-11 items-center gap-2 rounded-md px-2 transition-colors ${
-            selectedServerId ? "" : "bg-connect-surface text-connect-ink"
-          }`}
-          aria-current={selectedServerId ? undefined : "page"}
-          aria-label="connect ホーム"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff8ed] transition hover:rounded-xl"
+          aria-label="connect"
         >
           <Image
             src="/connect-icon.png"
             alt=""
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-md object-cover"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl object-cover"
             priority
           />
-          <span className="hidden text-sm font-bold tracking-tight sm:block">
-            connect
-          </span>
         </Link>
       </div>
-      <div className="bg-connect-paper/20 h-7 w-px shrink-0" />
-      <nav
-        className="scrollbar-hidden flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
-        aria-label="スペース"
-      >
+      <div className="h-px w-8 bg-[#f6f0e4]/25" />
+      <div className="scrollbar-hidden flex min-h-0 w-full flex-1 flex-col items-center gap-3 overflow-y-auto">
         {memberships === undefined && overview.isError && (
           <button
             type="button"
             onClick={() => void overview.refetch()}
             disabled={overview.isFetching}
-            className="border-connect-focus-soft/30 bg-connect-ink-2 text-connect-focus-soft hover:bg-connect-focus-soft hover:text-connect-action flex h-11 shrink-0 items-center gap-2 rounded-md border px-3 transition-colors disabled:opacity-50"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744] disabled:opacity-50"
             aria-label="サーバー一覧を再読み込み"
             title="サーバー一覧を再読み込み"
           >
@@ -115,9 +107,6 @@ export function ServerRail({
               className={`h-5 w-5 ${overview.isFetching ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            <span className="hidden whitespace-nowrap lg:inline">
-              再読み込み
-            </span>
           </button>
         )}
         {items.map((membership) => {
@@ -129,177 +118,142 @@ export function ServerRail({
           const isSelected = membership.server.id === selectedServerId;
           const unreadLabel =
             unreadCount > 0 ? `${label}、未読${unreadCount}件` : label;
-          const className = `flex h-11 max-w-44 shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-sm font-semibold transition-colors ${
+          const indicatorClass = `absolute top-1/2 left-0 z-10 -translate-y-1/2 rounded-r-full bg-white transition-all ${
             isSelected
-              ? "bg-connect-highlight text-connect-action"
-              : "bg-connect-ink-2 text-connect-focus-soft hover:bg-connect-highlight hover:text-connect-action"
+              ? "h-10 w-1"
+              : unreadCount > 0
+                ? "h-3 w-3 ring-2 ring-[#18221f] group-hover:h-5 group-hover:w-1"
+                : "h-0 w-0 group-hover:h-5 group-hover:w-1"
           }`;
-          const content = (
-            <>
-              <span className="bg-connect-navigation text-connect-ink flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md text-xs font-bold">
+          const className = `flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-2xl text-sm font-semibold transition ${
+            isSelected
+              ? "bg-[#d8efee] text-[#114744]"
+              : "bg-[#2f3c37] text-[#d8efee] hover:bg-[#d8efee] hover:text-[#114744]"
+          }`;
+
+          if (onSelectServer) {
+            return (
+              <div
+                key={membership.id}
+                className="group relative flex h-12 w-full justify-center"
+              >
+                <span className={indicatorClass} aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => onSelectServer(membership)}
+                  className={className}
+                  aria-label={unreadLabel}
+                  title={unreadLabel}
+                >
+                  {membership.server.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={membership.server.image}
+                      alt=""
+                      className="h-full w-full rounded-2xl object-cover"
+                    />
+                  ) : (
+                    label.slice(0, 2).toUpperCase()
+                  )}
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={membership.id}
+              className="group relative flex h-12 w-full justify-center"
+            >
+              <span className={indicatorClass} aria-hidden="true" />
+              <Link
+                href={`/?serverId=${encodeURIComponent(membership.server.id)}`}
+                className={className}
+                aria-label={unreadLabel}
+                title={unreadLabel}
+              >
                 {membership.server.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={membership.server.image}
                     alt=""
-                    className="h-full w-full object-cover"
+                    className="h-full w-full rounded-2xl object-cover"
                   />
                 ) : (
                   label.slice(0, 2).toUpperCase()
                 )}
-              </span>
-              <span className="max-w-24 truncate whitespace-nowrap">
-                {label}
-              </span>
-              {unreadCount > 0 && (
-                <span className="bg-connect-danger text-connect-surface flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 text-[11px] font-bold">
-                  {unreadCount}
-                </span>
-              )}
-            </>
-          );
-
-          if (onSelectServer) {
-            return (
-              <button
-                key={membership.id}
-                type="button"
-                onClick={() => onSelectServer(membership)}
-                className={className}
-                aria-current={isSelected ? "page" : undefined}
-                aria-label={unreadLabel}
-                title={unreadLabel}
-              >
-                {content}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={membership.id}
-              href={`/?serverId=${encodeURIComponent(membership.server.id)}`}
-              className={className}
-              aria-current={isSelected ? "page" : undefined}
-              aria-label={unreadLabel}
-              title={unreadLabel}
-            >
-              {content}
-            </Link>
+              </Link>
+            </div>
           );
         })}
         <Link
           href="/servers/new"
-          className="border-connect-focus-soft/30 text-connect-focus-soft hover:bg-connect-focus-soft hover:text-connect-action flex h-11 shrink-0 items-center gap-2 rounded-md border px-3 transition-colors"
-          aria-label="スペースを作成"
-          title="スペースを作成"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#d8efee]/30 bg-[#2f3c37] text-[#d8efee] transition hover:rounded-xl hover:bg-[#d8efee] hover:text-[#114744]"
+          aria-label="サーバーを作成"
+          title="サーバーを作成"
         >
           <Plus className="h-5 w-5" aria-hidden="true" />
-          <span className="hidden whitespace-nowrap xl:inline">新規</span>
         </Link>
-      </nav>
-      <div className="border-connect-paper/20 flex shrink-0 items-center gap-1 border-l pl-2">
+      </div>
+      <div className="mt-auto flex flex-col gap-3">
         {onSearch ? (
           <button
             type="button"
             onClick={onSearch}
-            className="text-connect-paper hover:bg-connect-ink-2 flex h-11 items-center justify-center gap-2 rounded-md px-3 transition-colors"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
             aria-label="横断検索"
             title="横断検索（Ctrl / ⌘ + K）"
           >
             <Search className="h-5 w-5" aria-hidden="true" />
-            <span className="hidden text-sm font-semibold lg:inline">検索</span>
           </button>
         ) : (
           <Link
             href="/?search=1"
-            className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 items-center justify-center rounded-md transition-colors"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
             aria-label="横断検索"
+            title="横断検索"
           >
             <Search className="h-5 w-5" aria-hidden="true" />
           </Link>
         )}
-        <div className="hidden items-center gap-1 sm:flex">
-          <NotificationSettingsDialog>
-            <button
-              type="button"
-              className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 items-center justify-center rounded-md transition-colors"
-              aria-label="通知設定"
-              title="通知設定"
-            >
-              <Bell className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </NotificationSettingsDialog>
-          <Link
-            href="/safety"
-            className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 items-center justify-center rounded-md transition-colors"
-            aria-label="安全に利用するための案内"
-            title="安全に利用するための案内"
-          >
-            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-          </Link>
-          <ProfileSettingsDialog>
-            <button
-              type="button"
-              className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 items-center justify-center rounded-md transition-colors"
-              aria-label="プロフィール設定"
-              title="プロフィール設定"
-            >
-              <UserRound className="h-5 w-5" aria-hidden="true" />
-            </button>
-          </ProfileSettingsDialog>
+        <NotificationSettingsDialog>
           <button
             type="button"
-            onClick={() => void handleSignOut()}
-            className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 items-center justify-center rounded-md transition-colors"
-            aria-label="ログアウト"
-            title="ログアウト"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="通知設定"
+            title="通知設定"
           >
-            <LogOut className="h-5 w-5" aria-hidden="true" />
+            <Bell className="h-5 w-5" aria-hidden="true" />
           </button>
-        </div>
-        <details className="group relative sm:hidden">
-          <summary className="text-connect-paper hover:bg-connect-ink-2 flex h-11 w-11 list-none items-center justify-center rounded-md transition-colors [&::-webkit-details-marker]:hidden">
-            <Ellipsis className="h-5 w-5" aria-hidden="true" />
-            <span className="sr-only">その他の操作</span>
-          </summary>
-          <div className="border-connect-ink/15 bg-connect-surface text-connect-ink absolute top-12 right-0 z-50 w-56 rounded-md border p-1 shadow-xl">
-            <NotificationSettingsDialog>
-              <button
-                type="button"
-                className="hover:bg-connect-highlight flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold"
-              >
-                <Bell className="h-5 w-5" aria-hidden="true" />
-                通知設定
-              </button>
-            </NotificationSettingsDialog>
-            <Link
-              href="/safety"
-              className="hover:bg-connect-highlight flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-semibold"
-            >
-              <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-              安全案内
-            </Link>
-            <ProfileSettingsDialog>
-              <button
-                type="button"
-                className="hover:bg-connect-highlight flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold"
-              >
-                <UserRound className="h-5 w-5" aria-hidden="true" />
-                プロフィール設定
-              </button>
-            </ProfileSettingsDialog>
-            <button
-              type="button"
-              onClick={() => void handleSignOut()}
-              className="text-connect-danger hover:bg-connect-danger-soft flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold"
-            >
-              <LogOut className="h-5 w-5" aria-hidden="true" />
-              ログアウト
-            </button>
-          </div>
-        </details>
+        </NotificationSettingsDialog>
+        <Link
+          href="/safety"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+          aria-label="安全に利用するための案内"
+          title="安全に利用するための案内"
+        >
+          <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+        </Link>
+        <ProfileSettingsDialog>
+          <button
+            type="button"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+            aria-label="プロフィール設定"
+            title="プロフィール設定"
+          >
+            <UserRound className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </ProfileSettingsDialog>
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
+          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
+          aria-label="ログアウト"
+          title="ログアウト"
+        >
+          <LogOut className="h-5 w-5" aria-hidden="true" />
+        </button>
       </div>
-    </header>
+    </aside>
   );
 }

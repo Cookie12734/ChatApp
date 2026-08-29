@@ -7,5 +7,14 @@
     "enrichment": "none",
     "nav": "N1b app workspace bar",
     "brief": "Replace Discord-like rails with a function-first workspace shell"
+  },
+  {
+    "date": "2026-08-28",
+    "scope": "app",
+    "macrostructure": "Layered chat rail",
+    "theme": "existing connect palette",
+    "enrichment": "none",
+    "nav": "persistent vertical server rail",
+    "brief": "Restore the original UI shell while retaining all added features"
   }
 ]

@@ -14,9 +14,9 @@ export default async function FriendsPage() {
   }
 
   return (
-    <main className="bg-connect-paper text-connect-ink grid h-dvh min-h-dvh grid-cols-1 grid-rows-[4rem_minmax(0,1fr)] overflow-hidden">
+    <main className="bg-connect-paper text-connect-ink flex min-h-screen overflow-hidden">
       <ServerRail />
-      <div className="row-start-2 min-h-0 overflow-y-auto px-4 py-5 sm:px-8 sm:py-6 lg:px-10">
+      <div className="min-h-screen flex-1 overflow-y-auto px-5 py-6 sm:px-8 lg:px-10">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
           <header className="border-connect-ink/15 flex flex-wrap items-center justify-between gap-4 border-b pb-5">
             <div className="flex items-center gap-3">

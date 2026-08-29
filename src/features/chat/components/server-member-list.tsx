@@ -55,23 +55,21 @@ export function ServerMemberList({
         <button
           type="button"
           onClick={onClose}
-          className="bg-connect-ink/35 fixed inset-x-0 top-16 bottom-0 z-30"
+          className="bg-connect-ink/35 fixed inset-0 z-30 lg:hidden"
           aria-label="メンバー一覧を閉じる"
         />
       )}
       <aside
         className={`${
-          isOpen
-            ? "fixed top-16 right-0 bottom-0 z-40 block shadow-xl"
-            : "hidden"
-        } border-connect-ink/15 bg-connect-navigation w-[min(22rem,100%)] shrink-0 overflow-y-auto border-l px-4 py-4`}
+          isOpen ? "fixed inset-y-0 right-0 z-40 block shadow-xl" : "hidden"
+        } border-connect-ink/15 bg-connect-navigation w-64 shrink-0 overflow-y-auto border-l px-4 py-4 lg:static lg:z-auto lg:block lg:shadow-none`}
         aria-label="メンバー一覧"
       >
         <div className="mb-3 flex items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition-colors"
+            className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-8 w-8 items-center justify-center rounded-md transition-colors lg:hidden"
             aria-label="メンバー一覧を閉じる"
             title="メンバー一覧を閉じる"
           >
@@ -103,7 +101,7 @@ export function ServerMemberList({
             return (
               <div
                 key={member.id}
-                className="group text-connect-ink hover:bg-connect-ink/5 flex items-center gap-2 rounded-md px-3 py-2 transition-colors"
+                className="group text-connect-ink hover:bg-connect-ink/5 rounded-md px-3 py-2 transition-colors"
               >
                 <UserProfileDialog
                   userId={member.user.userId}
@@ -117,7 +115,7 @@ export function ServerMemberList({
                         name: displayName,
                       })
                     }
-                    className="focus-visible:ring-connect-focus-soft flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left focus-visible:ring-2 focus-visible:outline-none"
+                    className="focus-visible:ring-connect-focus-soft flex min-h-11 w-full min-w-0 items-center gap-3 text-left focus-visible:ring-2 focus-visible:outline-none"
                     aria-label={`${displayName}のプロフィールを開く`}
                   >
                     <span className="relative shrink-0">
@@ -145,7 +143,7 @@ export function ServerMemberList({
                 {!isCurrentUser &&
                   (assignableRoles.length > 1 ||
                     canRemoveServerMember(currentRole, member.role)) && (
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="ml-12 flex min-w-0 items-center gap-1">
                       <label
                         className="sr-only"
                         htmlFor={`member-role-${member.id}`}
@@ -162,7 +160,7 @@ export function ServerMemberList({
                           )
                         }
                         disabled={isUpdatingRole}
-                        className="border-connect-ink/15 bg-connect-surface min-h-10 max-w-32 rounded-md border px-2 text-xs font-semibold disabled:opacity-45"
+                        className="border-connect-ink/15 bg-connect-surface min-h-10 min-w-0 flex-1 rounded-md border px-2 text-xs font-semibold disabled:opacity-45"
                       >
                         {assignableRoles.map((role) => (
                           <option key={role} value={role}>
