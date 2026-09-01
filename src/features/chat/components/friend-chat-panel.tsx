@@ -47,7 +47,9 @@ import {
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { GlobalSearchDialog } from "~/features/chat/components/global-search-dialog";
 import {
+  EmojiPickerButton,
   MessageAttachmentPicker,
+  PendingAttachmentList,
   type PendingAttachment,
 } from "~/features/chat/components/message-attachment-picker";
 import {
@@ -467,6 +469,8 @@ export function FriendChatPanel({
   );
   const lastTypingSentAtRef = useRef(0);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const directTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const serverTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const friends = api.chat.getFriends.useQuery(undefined, {
     refetchInterval: (query) =>
@@ -3562,60 +3566,79 @@ export function FriendChatPanel({
                         </button>
                       </div>
                     )}
-                  {canSendSelectedServerMessages && (
-                    <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
+                  <form
+                    onSubmit={handleServerSubmit}
+                    className={`border-connect-ink/15 bg-connect-paper flex flex-col border ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
+                  >
+                    <PendingAttachmentList
+                      attachments={serverAttachments}
+                      disabled={sendServerMessage.isPending}
+                      onChange={setServerAttachments}
+                    />
+                    <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
                       <MessageAttachmentPicker
                         attachments={serverAttachments}
-                        disabled={sendServerMessage.isPending}
+                        disabled={
+                          sendServerMessage.isPending ||
+                          !selectedServerChannel?.id ||
+                          !canSendSelectedServerMessages
+                        }
                         onChange={setServerAttachments}
                         onError={setServerMessage}
                       />
-                    </div>
-                  )}
-                  <form
-                    onSubmit={handleServerSubmit}
-                    className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-action flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
-                  >
-                    <textarea
-                      data-chat-input
-                      value={serverDraft}
-                      onChange={(event) =>
-                        handleServerDraftChange(event.target.value)
-                      }
-                      onKeyDown={(event) => {
-                        if (
-                          event.key === "Enter" &&
-                          !event.shiftKey &&
-                          !event.nativeEvent.isComposing
-                        ) {
-                          event.preventDefault();
-                          event.currentTarget.form?.requestSubmit();
+                      <textarea
+                        ref={serverTextareaRef}
+                        data-chat-input
+                        value={serverDraft}
+                        onChange={(event) =>
+                          handleServerDraftChange(event.target.value)
                         }
-                      }}
-                      className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-                      placeholder={
-                        canSendSelectedServerMessages
-                          ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
-                          : "閲覧のみのためメッセージを送信できません"
-                      }
-                      disabled={
-                        !selectedServerChannel?.id ||
-                        !canSendSelectedServerMessages
-                      }
-                      maxLength={1000}
-                    />
-                    <button
-                      type="submit"
-                      disabled={
-                        !selectedServerChannel?.id ||
-                        !canSendSelectedServerMessages ||
-                        (!serverDraft.trim() && serverAttachments.length === 0)
-                      }
-                      className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="送信"
-                    >
-                      <Send className="h-5 w-5" aria-hidden="true" />
-                    </button>
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === "Enter" &&
+                            !event.shiftKey &&
+                            !event.nativeEvent.isComposing
+                          ) {
+                            event.preventDefault();
+                            event.currentTarget.form?.requestSubmit();
+                          }
+                        }}
+                        className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
+                        placeholder={
+                          canSendSelectedServerMessages
+                            ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
+                            : "閲覧のみのためメッセージを送信できません"
+                        }
+                        disabled={
+                          !selectedServerChannel?.id ||
+                          !canSendSelectedServerMessages
+                        }
+                        maxLength={1000}
+                      />
+                      <EmojiPickerButton
+                        disabled={
+                          sendServerMessage.isPending ||
+                          !selectedServerChannel?.id ||
+                          !canSendSelectedServerMessages
+                        }
+                        onChange={handleServerDraftChange}
+                        textareaRef={serverTextareaRef}
+                        value={serverDraft}
+                      />
+                      <button
+                        type="submit"
+                        disabled={
+                          !selectedServerChannel?.id ||
+                          !canSendSelectedServerMessages ||
+                          (!serverDraft.trim() &&
+                            serverAttachments.length === 0)
+                        }
+                        className="bg-connect-ink text-connect-paper focus-visible:outline-connect-action enabled:hover:bg-connect-ink-2 flex size-11 shrink-0 items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 enabled:active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label="送信"
+                      >
+                        <Send className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                    </div>
                   </form>
                 </>
               ) : isFriendsOpen ? null : (
@@ -3816,16 +3839,6 @@ export function FriendChatPanel({
                           </button>
                         </div>
                       )}
-                      {canSendDirectMessage && (
-                        <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
-                          <MessageAttachmentPicker
-                            attachments={directAttachments}
-                            disabled={sendMessage.isPending}
-                            onChange={setDirectAttachments}
-                            onError={setMessage}
-                          />
-                        </div>
-                      )}
                       <div className="text-connect-neutral mb-2 min-h-5 px-1 text-sm">
                         {typingUserName
                           ? `${typingUserName} が入力中...`
@@ -3835,47 +3848,77 @@ export function FriendChatPanel({
                       </div>
                       <form
                         onSubmit={handleSubmit}
-                        className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-action flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
+                        className={`border-connect-ink/15 bg-connect-paper flex flex-col border ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
                       >
-                        <textarea
-                          data-chat-input
-                          value={draft}
-                          onChange={(event) =>
-                            handleDraftChange(event.target.value)
-                          }
-                          onKeyDown={(event) => {
-                            if (
-                              event.key === "Enter" &&
-                              !event.shiftKey &&
-                              !event.nativeEvent.isComposing
-                            ) {
-                              event.preventDefault();
-                              event.currentTarget.form?.requestSubmit();
-                            }
-                          }}
-                          className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-                          placeholder={
-                            !canSendDirectMessage
-                              ? "この会話には送信できません"
-                              : selectedFriend
-                                ? `${getDisplayName(selectedFriend)} へメッセージを送信`
-                                : "フレンドを選択してください"
-                          }
-                          disabled={!selectedFriendId || !canSendDirectMessage}
-                          maxLength={1000}
+                        <PendingAttachmentList
+                          attachments={directAttachments}
+                          disabled={sendMessage.isPending}
+                          onChange={setDirectAttachments}
                         />
-                        <button
-                          type="submit"
-                          disabled={
-                            !selectedFriendId ||
-                            !canSendDirectMessage ||
-                            (!draft.trim() && directAttachments.length === 0)
-                          }
-                          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          aria-label="送信"
-                        >
-                          <Send className="h-5 w-5" aria-hidden="true" />
-                        </button>
+                        <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
+                          <MessageAttachmentPicker
+                            attachments={directAttachments}
+                            disabled={
+                              sendMessage.isPending ||
+                              !selectedFriendId ||
+                              !canSendDirectMessage
+                            }
+                            onChange={setDirectAttachments}
+                            onError={setMessage}
+                          />
+                          <textarea
+                            ref={directTextareaRef}
+                            data-chat-input
+                            value={draft}
+                            onChange={(event) =>
+                              handleDraftChange(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              if (
+                                event.key === "Enter" &&
+                                !event.shiftKey &&
+                                !event.nativeEvent.isComposing
+                              ) {
+                                event.preventDefault();
+                                event.currentTarget.form?.requestSubmit();
+                              }
+                            }}
+                            className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
+                            placeholder={
+                              !canSendDirectMessage
+                                ? "この会話には送信できません"
+                                : selectedFriend
+                                  ? `${getDisplayName(selectedFriend)} へメッセージを送信`
+                                  : "フレンドを選択してください"
+                            }
+                            disabled={
+                              !selectedFriendId || !canSendDirectMessage
+                            }
+                            maxLength={1000}
+                          />
+                          <EmojiPickerButton
+                            disabled={
+                              sendMessage.isPending ||
+                              !selectedFriendId ||
+                              !canSendDirectMessage
+                            }
+                            onChange={handleDraftChange}
+                            textareaRef={directTextareaRef}
+                            value={draft}
+                          />
+                          <button
+                            type="submit"
+                            disabled={
+                              !selectedFriendId ||
+                              !canSendDirectMessage ||
+                              (!draft.trim() && directAttachments.length === 0)
+                            }
+                            className="bg-connect-ink text-connect-paper focus-visible:outline-connect-action enabled:hover:bg-connect-ink-2 flex size-11 shrink-0 items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 enabled:active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label="送信"
+                          >
+                            <Send className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                        </div>
                       </form>
                     </>
                   ) : null}

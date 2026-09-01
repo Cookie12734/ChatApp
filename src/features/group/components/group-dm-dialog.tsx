@@ -5,10 +5,7 @@ import {
   ArrowLeft,
   Bookmark,
   FileText,
-  ImageIcon,
   Link as LinkIcon,
-  LoaderCircle,
-  Paperclip,
   Plus,
   Quote,
   Reply,
@@ -21,6 +18,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -37,6 +35,12 @@ import {
   ProfileAvatar,
   getDisplayName,
 } from "~/features/chat/components/chat-message";
+import {
+  EmojiPickerButton,
+  MessageAttachmentPicker,
+  PendingAttachmentList,
+  type PendingAttachment,
+} from "~/features/chat/components/message-attachment-picker";
 import { api } from "~/trpc/react";
 import { groupReactions } from "~/features/chat/reaction-groups";
 
@@ -48,15 +52,6 @@ const REACTIONS = [
   "\u{1F62E}",
   "\u{1F64F}",
 ] as const;
-
-type PendingAttachment = {
-  fileName: string;
-  id: string;
-  kind: "IMAGE" | "LINK" | "PDF";
-  mimeType: string;
-  size: number;
-  url: string;
-};
 
 function groupLabel(group: {
   members: Array<{ user: { name: string | null; userId: string } }>;
@@ -96,11 +91,9 @@ export function GroupDmDialog({
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<{ content: string; id: string }>();
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
-  const [urlDraft, setUrlDraft] = useState("");
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [message, setMessage] = useState<string>();
   const [reportingMessageId, setReportingMessageId] = useState<string>();
-  const [isUploading, setIsUploading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const utils = api.useUtils();
   const groups = api.group.list.useQuery(undefined, { enabled: open });
   const friends = api.chat.getFriends.useQuery(undefined, {
@@ -184,60 +177,6 @@ export function GroupDmDialog({
     const key = `connect:draft:group:${selectedGroupId}`;
     if (value) localStorage.setItem(key, value);
     else localStorage.removeItem(key);
-  };
-
-  const uploadFile = async (file: File) => {
-    setMessage(undefined);
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.set("file", file);
-      const response = await fetch("/api/attachments", {
-        body: formData,
-        method: "POST",
-      });
-      const result = (await response.json()) as {
-        attachment?: PendingAttachment;
-        message?: string;
-      };
-      if (!response.ok || !result.attachment) {
-        throw new Error(result.message ?? "添付できませんでした");
-      }
-      setAttachments((current) => [...current, result.attachment!].slice(0, 4));
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "添付できませんでした",
-      );
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const addUrl = async () => {
-    if (!urlDraft.trim()) return;
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.set("url", urlDraft.trim());
-      const response = await fetch("/api/attachments", {
-        body: formData,
-        method: "POST",
-      });
-      const result = (await response.json()) as {
-        attachment?: PendingAttachment;
-        message?: string;
-      };
-      if (!response.ok || !result.attachment) throw new Error(result.message);
-      setAttachments((current) => [...current, result.attachment!].slice(0, 4));
-      setUrlDraft("");
-      setShowUrlInput(false);
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : "URLを追加できませんでした",
-      );
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const submit = (event: FormEvent) => {
@@ -616,103 +555,49 @@ export function GroupDmDialog({
                     </button>
                   </div>
                 )}
-                {attachments.length > 0 && (
-                  <div className="bg-connect-surface border-connect-ink/15 flex flex-wrap gap-2 border-x border-t px-3 py-2">
-                    {attachments.map((attachment) => (
-                      <span
-                        key={attachment.id}
-                        className="bg-connect-paper border-connect-ink/15 inline-flex min-h-9 items-center gap-2 rounded-md border px-2 text-xs"
-                      >
-                        {attachment.kind === "IMAGE" ? (
-                          <ImageIcon className="h-4 w-4" />
-                        ) : (
-                          <FileText className="h-4 w-4" />
-                        )}
-                        {attachment.fileName}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setAttachments((current) =>
-                              current.filter(({ id }) => id !== attachment.id),
-                            )
-                          }
-                          aria-label="添付を外す"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {showUrlInput && (
-                  <div className="border-connect-ink/15 bg-connect-surface flex gap-2 border-x border-t p-2">
-                    <input
-                      type="url"
-                      value={urlDraft}
-                      onChange={(event) => setUrlDraft(event.target.value)}
-                      placeholder="https://…"
-                      className="border-connect-ink/15 bg-connect-paper min-h-10 min-w-0 flex-1 rounded-md border px-3"
+                <div
+                  className={`border-connect-ink/15 bg-connect-surface flex flex-col border ${replyTo ? "rounded-b-md" : "rounded-md"}`}
+                >
+                  <PendingAttachmentList
+                    attachments={attachments}
+                    disabled={sendMessage.isPending}
+                    onChange={setAttachments}
+                  />
+                  <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
+                    <MessageAttachmentPicker
+                      attachments={attachments}
+                      disabled={sendMessage.isPending}
+                      onChange={setAttachments}
+                      onError={setMessage}
+                    />
+                    <textarea
+                      ref={textareaRef}
+                      data-chat-input
+                      value={draft}
+                      onChange={(event) => updateDraft(event.target.value)}
+                      maxLength={1000}
+                      rows={1}
+                      placeholder="グループへメッセージ"
+                      className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 outline-none"
+                    />
+                    <EmojiPickerButton
+                      disabled={sendMessage.isPending}
+                      onChange={updateDraft}
+                      textareaRef={textareaRef}
+                      value={draft}
                     />
                     <button
-                      type="button"
-                      onClick={() => void addUrl()}
-                      className="bg-connect-action text-connect-surface min-h-10 rounded-md px-3 text-sm font-bold"
+                      type="submit"
+                      disabled={
+                        sendMessage.isPending ||
+                        (!draft.trim() && attachments.length === 0)
+                      }
+                      className="bg-connect-action text-connect-surface focus-visible:outline-connect-action enabled:hover:bg-connect-action-hover flex size-11 shrink-0 items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 enabled:active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="送信"
                     >
-                      追加
+                      <Send className="h-5 w-5" />
                     </button>
                   </div>
-                )}
-                <div
-                  className={`border-connect-ink/15 bg-connect-surface focus-within:ring-connect-action flex items-end gap-2 border p-2 focus-within:ring-2 ${replyTo || attachments.length > 0 || showUrlInput ? "rounded-b-md" : "rounded-md"}`}
-                >
-                  <label
-                    className="hover:bg-connect-highlight flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md"
-                    aria-label="ファイルを添付"
-                  >
-                    {isUploading ? (
-                      <LoaderCircle className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Paperclip className="h-5 w-5" />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/gif,image/webp,application/pdf"
-                      className="sr-only"
-                      disabled={isUploading || attachments.length >= 4}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) void uploadFile(file);
-                        event.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowUrlInput((value) => !value)}
-                    className="hover:bg-connect-highlight flex h-10 w-10 shrink-0 items-center justify-center rounded-md"
-                    aria-label="URLカード"
-                  >
-                    <LinkIcon className="h-5 w-5" />
-                  </button>
-                  <textarea
-                    value={draft}
-                    onChange={(event) => updateDraft(event.target.value)}
-                    maxLength={1000}
-                    rows={1}
-                    placeholder="グループへメッセージ"
-                    className="max-h-32 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={
-                      sendMessage.isPending ||
-                      (!draft.trim() && attachments.length === 0)
-                    }
-                    className="bg-connect-action text-connect-surface hover:bg-connect-action-hover flex h-10 w-10 shrink-0 items-center justify-center rounded-md disabled:opacity-50"
-                    aria-label="送信"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
                 </div>
               </form>
             )}
