@@ -15,6 +15,11 @@ type PendingMessage = {
   status: "confirmed" | "pending";
 };
 
+const messageTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 export function getDisplayName(user: Pick<ChatUser, "name" | "userId">) {
   const name = user.name?.trim();
 
@@ -33,10 +38,7 @@ export function getServerDisplayName(member: {
 }
 
 export function formatMessageTime(value: Date) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
+  return messageTimeFormatter.format(value);
 }
 
 export function Avatar({

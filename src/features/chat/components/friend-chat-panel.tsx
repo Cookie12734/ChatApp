@@ -22,7 +22,6 @@ import {
   RefreshCw,
   Reply,
   Search,
-  Send,
   Settings,
   Shuffle,
   Trash2,
@@ -44,6 +43,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  ChatComposer,
+  type ChatComposerHandle,
+} from "~/features/chat/components/chat-composer";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { GlobalSearchDialog } from "~/features/chat/components/global-search-dialog";
 import {
@@ -397,8 +400,6 @@ export function FriendChatPanel({
   );
   const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
   const [matchingSafetyAccepted, setMatchingSafetyAccepted] = useState(false);
-  const [draft, setDraft] = useState("");
-  const [serverDraft, setServerDraft] = useState("");
   const [directAttachments, setDirectAttachments] = useState<
     PendingAttachment[]
   >([]);
@@ -465,8 +466,15 @@ export function FriendChatPanel({
   const localTypingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const directComposerRef = useRef<ChatComposerHandle | null>(null);
+  const serverComposerRef = useRef<ChatComposerHandle | null>(null);
+  const selectedFriendIdRef = useRef(selectedFriendId);
+  const selectedServerChannelIdRef = useRef(selectedServerChannelId);
   const lastTypingSentAtRef = useRef(0);
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
+
+  selectedFriendIdRef.current = selectedFriendId;
+  selectedServerChannelIdRef.current = selectedServerChannelId;
 
   const friends = api.chat.getFriends.useQuery(undefined, {
     refetchInterval: (query) =>
@@ -1176,72 +1184,41 @@ export function FriendChatPanel({
   }, []);
 
   useEffect(() => {
-    setDraft(
-      selectedFriendId
-        ? (localStorage.getItem(`connect:draft:direct:${selectedFriendId}`) ??
-            "")
-        : "",
-    );
-  }, [selectedFriendId]);
-
-  useEffect(() => {
     setDirectAttachments([]);
   }, [selectedFriendId]);
-
-  useEffect(() => {
-    setServerDraft(
-      selectedServerChannel?.id
-        ? (localStorage.getItem(
-            `connect:draft:server:${selectedServerChannel.id}`,
-          ) ?? "")
-        : "",
-    );
-  }, [selectedServerChannel?.id]);
 
   useEffect(() => {
     setServerAttachments([]);
   }, [selectedServerChannel?.id]);
 
-  const handleDraftChange = (value: string) => {
-    setDraft(value);
-    if (selectedFriendId) {
-      const key = `connect:draft:direct:${selectedFriendId}`;
-      if (value) localStorage.setItem(key, value);
-      else localStorage.removeItem(key);
-    }
+  const handleDirectDraftChange = useCallback(
+    (value: string) => {
+      if (!value.trim()) {
+        if (localTypingStopTimerRef.current) {
+          clearTimeout(localTypingStopTimerRef.current);
+        }
+        lastTypingSentAtRef.current = 0;
+        broadcastTyping(false);
+        return;
+      }
 
-    if (!value.trim()) {
+      const now = Date.now();
+      if (now - lastTypingSentAtRef.current >= 10_000) {
+        lastTypingSentAtRef.current = now;
+        broadcastTyping(true);
+      }
+
       if (localTypingStopTimerRef.current) {
         clearTimeout(localTypingStopTimerRef.current);
       }
-      lastTypingSentAtRef.current = 0;
-      broadcastTyping(false);
-      return;
-    }
 
-    const now = Date.now();
-    if (now - lastTypingSentAtRef.current >= 10_000) {
-      lastTypingSentAtRef.current = now;
-      broadcastTyping(true);
-    }
-
-    if (localTypingStopTimerRef.current) {
-      clearTimeout(localTypingStopTimerRef.current);
-    }
-
-    localTypingStopTimerRef.current = setTimeout(() => {
-      lastTypingSentAtRef.current = 0;
-      broadcastTyping(false);
-    }, 1600);
-  };
-
-  const handleServerDraftChange = (value: string) => {
-    setServerDraft(value);
-    if (!selectedServerChannel?.id) return;
-    const key = `connect:draft:server:${selectedServerChannel.id}`;
-    if (value) localStorage.setItem(key, value);
-    else localStorage.removeItem(key);
-  };
+      localTypingStopTimerRef.current = setTimeout(() => {
+        lastTypingSentAtRef.current = 0;
+        broadcastTyping(false);
+      }, 1600);
+    },
+    [broadcastTyping],
+  );
 
   const cancelMatching = api.chat.cancelMatching.useMutation({
     onSuccess: async () => {
@@ -1849,8 +1826,7 @@ export function FriendChatPanel({
     deleteServer.mutate({ serverId: selectedServer.server.id });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = (draft: string) => {
     if (
       !selectedFriendId ||
       !canSendDirectMessage ||
@@ -1863,9 +1839,8 @@ export function FriendChatPanel({
     const activeAttachments = directAttachments;
 
     broadcastTyping(false);
-    setDraft("");
+    directComposerRef.current?.clear();
     setDirectAttachments([]);
-    localStorage.removeItem(`connect:draft:direct:${friendId}`);
     setMessage(null);
     setPendingDirectMessages((messages) => [
       ...messages,
@@ -1900,9 +1875,15 @@ export function FriendChatPanel({
               (pendingMessage) => pendingMessage.clientId !== clientId,
             ),
           );
-          setDraft((current) => current || content);
+          if (
+            selectedFriendIdRef.current === friendId &&
+            !directComposerRef.current?.getValue()
+          ) {
+            directComposerRef.current?.setValue(content);
+          } else if (selectedFriendIdRef.current !== friendId) {
+            localStorage.setItem(`connect:draft:direct:${friendId}`, content);
+          }
           setDirectAttachments(activeAttachments);
-          localStorage.setItem(`connect:draft:direct:${friendId}`, content);
           setMessage(getErrorMessage(error));
           setReplyTarget(activeReply);
         },
@@ -1927,8 +1908,7 @@ export function FriendChatPanel({
     );
   };
 
-  const handleServerSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleServerSubmit = (serverDraft: string) => {
     if (
       !selectedServerId ||
       !selectedServerChannel?.id ||
@@ -1943,9 +1923,8 @@ export function FriendChatPanel({
     const serverId = selectedServerId;
     const activeAttachments = serverAttachments;
 
-    setServerDraft("");
+    serverComposerRef.current?.clear();
     setServerAttachments([]);
-    localStorage.removeItem(`connect:draft:server:${channelId}`);
     setServerMessage(null);
     setPendingServerMessages((messages) => [
       ...messages,
@@ -1977,9 +1956,15 @@ export function FriendChatPanel({
               (pendingMessage) => pendingMessage.clientId !== clientId,
             ),
           );
-          setServerDraft((current) => current || content);
+          if (
+            selectedServerChannelIdRef.current === channelId &&
+            !serverComposerRef.current?.getValue()
+          ) {
+            serverComposerRef.current?.setValue(content);
+          } else if (selectedServerChannelIdRef.current !== channelId) {
+            localStorage.setItem(`connect:draft:server:${channelId}`, content);
+          }
           setServerAttachments(activeAttachments);
-          localStorage.setItem(`connect:draft:server:${channelId}`, content);
           setServerMessage(getErrorMessage(error));
           setReplyTarget(activeReply);
         },
@@ -2194,18 +2179,14 @@ export function FriendChatPanel({
       .split("\n")
       .map((line) => `> ${line}`)
       .join("\n");
-    if (messageContextMenu.kind === "server") {
-      handleServerDraftChange(
-        `${serverDraft.trimEnd()}${serverDraft ? "\n" : ""}${quoted}\n`.slice(
-          0,
-          1000,
-        ),
-      );
-    } else {
-      handleDraftChange(
-        `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(0, 1000),
-      );
-    }
+    const composer =
+      messageContextMenu.kind === "server"
+        ? serverComposerRef.current
+        : directComposerRef.current;
+    const draft = composer?.getValue() ?? "";
+    composer?.setValue(
+      `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(0, 1000),
+    );
     setMessageContextMenu(null);
   };
 
@@ -3572,51 +3553,29 @@ export function FriendChatPanel({
                       />
                     </div>
                   )}
-                  <form
+                  <ChatComposer
+                    ref={serverComposerRef}
+                    disabled={
+                      !selectedServerChannel?.id ||
+                      !canSendSelectedServerMessages
+                    }
+                    hasAttachments={serverAttachments.length > 0}
+                    hasReply={
+                      replyTarget?.kind === "server" &&
+                      canSendSelectedServerMessages
+                    }
                     onSubmit={handleServerSubmit}
-                    className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
-                  >
-                    <textarea
-                      data-chat-input
-                      value={serverDraft}
-                      onChange={(event) =>
-                        handleServerDraftChange(event.target.value)
-                      }
-                      onKeyDown={(event) => {
-                        if (
-                          event.key === "Enter" &&
-                          !event.shiftKey &&
-                          !event.nativeEvent.isComposing
-                        ) {
-                          event.preventDefault();
-                          event.currentTarget.form?.requestSubmit();
-                        }
-                      }}
-                      className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-                      placeholder={
-                        canSendSelectedServerMessages
-                          ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
-                          : "閲覧のみのためメッセージを送信できません"
-                      }
-                      disabled={
-                        !selectedServerChannel?.id ||
-                        !canSendSelectedServerMessages
-                      }
-                      maxLength={1000}
-                    />
-                    <button
-                      type="submit"
-                      disabled={
-                        !selectedServerChannel?.id ||
-                        !canSendSelectedServerMessages ||
-                        (!serverDraft.trim() && serverAttachments.length === 0)
-                      }
-                      className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="送信"
-                    >
-                      <Send className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                  </form>
+                    placeholder={
+                      canSendSelectedServerMessages
+                        ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
+                        : "閲覧のみのためメッセージを送信できません"
+                    }
+                    storageKey={
+                      selectedServerChannel?.id
+                        ? `connect:draft:server:${selectedServerChannel.id}`
+                        : undefined
+                    }
+                  />
                 </>
               ) : isFriendsOpen ? null : (
                 <>
@@ -3833,50 +3792,26 @@ export function FriendChatPanel({
                             ? null
                             : "フレンドではないため、新しいメッセージは送信できません"}
                       </div>
-                      <form
+                      <ChatComposer
+                        ref={directComposerRef}
+                        disabled={!selectedFriendId || !canSendDirectMessage}
+                        hasAttachments={directAttachments.length > 0}
+                        hasReply={replyTarget?.kind === "direct"}
                         onSubmit={handleSubmit}
-                        className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
-                      >
-                        <textarea
-                          data-chat-input
-                          value={draft}
-                          onChange={(event) =>
-                            handleDraftChange(event.target.value)
-                          }
-                          onKeyDown={(event) => {
-                            if (
-                              event.key === "Enter" &&
-                              !event.shiftKey &&
-                              !event.nativeEvent.isComposing
-                            ) {
-                              event.preventDefault();
-                              event.currentTarget.form?.requestSubmit();
-                            }
-                          }}
-                          className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-                          placeholder={
-                            !canSendDirectMessage
-                              ? "この会話には送信できません"
-                              : selectedFriend
-                                ? `${getDisplayName(selectedFriend)} へメッセージを送信`
-                                : "フレンドを選択してください"
-                          }
-                          disabled={!selectedFriendId || !canSendDirectMessage}
-                          maxLength={1000}
-                        />
-                        <button
-                          type="submit"
-                          disabled={
-                            !selectedFriendId ||
-                            !canSendDirectMessage ||
-                            (!draft.trim() && directAttachments.length === 0)
-                          }
-                          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          aria-label="送信"
-                        >
-                          <Send className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </form>
+                        onValueChange={handleDirectDraftChange}
+                        placeholder={
+                          !canSendDirectMessage
+                            ? "この会話には送信できません"
+                            : selectedFriend
+                              ? `${getDisplayName(selectedFriend)} へメッセージを送信`
+                              : "フレンドを選択してください"
+                        }
+                        storageKey={
+                          selectedFriendId
+                            ? `connect:draft:direct:${selectedFriendId}`
+                            : undefined
+                        }
+                      />
                     </>
                   ) : null}
                 </>
