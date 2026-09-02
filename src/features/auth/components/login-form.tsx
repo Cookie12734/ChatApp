@@ -61,7 +61,7 @@ export function LoginForm({
               }))
             }
             placeholder="you@example.com"
-            className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
+            className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder rounded-md border px-4 py-3"
           />
         </div>
 
@@ -87,7 +87,7 @@ export function LoginForm({
               }))
             }
             placeholder="8文字以上"
-            className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
+            className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder rounded-md border px-4 py-3"
           />
           <Link
             href="/auth/forgot-password"

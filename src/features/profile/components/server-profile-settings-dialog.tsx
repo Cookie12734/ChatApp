@@ -77,7 +77,7 @@ export function ServerProfileSettingsDialog({
             <input
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-11 w-full rounded-md border px-4 py-2"
               placeholder="未設定の場合は全体の表示名を使用"
               maxLength={32}
             />
@@ -93,7 +93,7 @@ export function ServerProfileSettingsDialog({
             <textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-28 w-full resize-y rounded-md border px-4 py-3 leading-7 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-28 w-full resize-y rounded-md border px-4 py-3 leading-7"
               placeholder="このサーバーでの自己紹介"
               maxLength={160}
             />

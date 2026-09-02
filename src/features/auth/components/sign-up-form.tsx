@@ -20,7 +20,7 @@ export function SignUpForm() {
   });
 
   const inputClass =
-    "rounded-md border border-connect-ink/20 bg-connect-surface px-4 py-3 text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-2 focus:ring-connect-ink/10 focus:outline-none";
+    "rounded-md border border-connect-ink/20 bg-connect-surface px-4 py-3 text-connect-ink placeholder:text-connect-placeholder";
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">

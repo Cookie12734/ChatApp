@@ -2520,7 +2520,7 @@ export function FriendChatPanel({
                   <input
                     value={newChannelName}
                     onChange={(event) => setNewChannelName(event.target.value)}
-                    className="border-connect-ink/15 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-9 min-w-0 flex-1 rounded-md border px-2 text-sm focus:ring-2 focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-9 min-w-0 flex-1 rounded-md border px-2 text-sm"
                     placeholder="new-channel"
                     maxLength={32}
                     aria-label="チャンネル名"
@@ -3130,7 +3130,7 @@ export function FriendChatPanel({
                                         content: event.target.value,
                                       })
                                     }
-                                    className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6 focus:ring-2 focus:outline-none"
+                                    className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6"
                                     maxLength={1000}
                                     autoFocus
                                   />
@@ -3424,7 +3424,7 @@ export function FriendChatPanel({
                                           content: event.target.value,
                                         })
                                       }
-                                      className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6 focus:ring-2 focus:outline-none"
+                                      className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6"
                                       maxLength={1000}
                                       autoFocus
                                     />
@@ -3574,7 +3574,7 @@ export function FriendChatPanel({
                   )}
                   <form
                     onSubmit={handleServerSubmit}
-                    className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-ink/20 flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
+                    className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${replyTarget?.kind === "server" && canSendSelectedServerMessages ? "rounded-b-md" : "rounded-md"}`}
                   >
                     <textarea
                       data-chat-input
@@ -3674,7 +3674,7 @@ export function FriendChatPanel({
                             )
                           }
                           disabled={matchingState === "waiting"}
-                          className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 flex-1 rounded-md border px-3 focus:ring-2 focus:outline-none disabled:opacity-50"
+                          className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-11 flex-1 rounded-md border px-3 disabled:opacity-50"
                           aria-label="話したいこと"
                         >
                           {MATCHING_TOPICS.map((topic) => (
@@ -3835,7 +3835,7 @@ export function FriendChatPanel({
                       </div>
                       <form
                         onSubmit={handleSubmit}
-                        className={`border-connect-ink/15 bg-connect-paper focus-within:ring-connect-ink/20 flex items-end gap-2 border px-3 py-1.5 focus-within:ring-2 focus-within:ring-offset-2 ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
+                        className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${replyTarget?.kind === "direct" ? "rounded-b-md" : "rounded-md"}`}
                       >
                         <textarea
                           data-chat-input
@@ -3963,7 +3963,7 @@ export function FriendChatPanel({
               <input
                 value={serverNameDraft}
                 onChange={(event) => setServerNameDraft(event.target.value)}
-                className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-11 w-full rounded-md border px-3"
                 maxLength={50}
                 required
               />
@@ -4034,7 +4034,7 @@ export function FriendChatPanel({
                     value={`/servers/invite/${selectedServer.server.inviteCode}`}
                     readOnly
                     onFocus={(event) => event.currentTarget.select()}
-                    className="border-connect-ink/15 bg-connect-surface text-connect-muted focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 min-w-0 flex-1 rounded-md border px-3 text-sm focus:ring-2 focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-muted min-h-11 min-w-0 flex-1 rounded-md border px-3 text-sm"
                     aria-label="招待リンク"
                   />
                   <button
@@ -4130,7 +4130,7 @@ export function FriendChatPanel({
                 onChange={(event) =>
                   setReportReason(event.target.value as ReportReason)
                 }
-                className="border-connect-ink/15 bg-connect-surface focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface min-h-11 w-full rounded-md border px-3"
               >
                 {reportReasons.map((reason) => (
                   <option key={reason.value} value={reason.value}>
@@ -4146,7 +4146,7 @@ export function FriendChatPanel({
               <textarea
                 value={reportDetails}
                 onChange={(event) => setReportDetails(event.target.value)}
-                className="border-connect-ink/15 bg-connect-surface focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-28 w-full resize-y rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface min-h-28 w-full resize-y rounded-md border px-3 py-2"
                 maxLength={500}
               />
             </label>

@@ -37,7 +37,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className="border-connect-ink/20 bg-connect-surface focus:border-connect-ink/35 focus:ring-connect-ink/10 rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
+          className="border-connect-ink/20 bg-connect-surface rounded-md border px-4 py-3"
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -52,7 +52,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           minLength={8}
           maxLength={72}
           autoComplete="new-password"
-          className="border-connect-ink/20 bg-connect-surface focus:border-connect-ink/35 focus:ring-connect-ink/10 rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
+          className="border-connect-ink/20 bg-connect-surface rounded-md border px-4 py-3"
         />
       </div>
       <button

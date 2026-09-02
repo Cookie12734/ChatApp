@@ -90,7 +90,7 @@ export function ServerCreate() {
                 id="server-name"
                 value={serverName}
                 onChange={(event) => setServerName(event.target.value)}
-                className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-12 min-w-0 flex-1 rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-12 min-w-0 flex-1 rounded-md border px-3 py-2"
                 placeholder="例: 作業部屋"
                 required
                 maxLength={50}

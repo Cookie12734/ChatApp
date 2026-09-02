@@ -184,7 +184,7 @@ export function ProfileForm() {
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-11 w-full rounded-md border px-4 py-2"
               placeholder="表示名"
               required
               maxLength={50}
@@ -201,7 +201,7 @@ export function ProfileForm() {
             <input
               value={statusMessage}
               onChange={(event) => setStatusMessage(event.target.value)}
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-11 w-full rounded-md border px-4 py-2"
               placeholder="いまの気分や作業状況"
               maxLength={80}
             />
@@ -216,7 +216,7 @@ export function ProfileForm() {
               onChange={(event) =>
                 setPresenceStatus(event.target.value as PresenceStatus)
               }
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink min-h-11 w-full rounded-md border px-4 py-2"
             >
               {presenceOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -236,7 +236,7 @@ export function ProfileForm() {
             <textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
-              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-ink/35 focus:ring-connect-ink/10 min-h-32 w-full resize-y rounded-md border px-4 py-3 leading-7 focus:ring-2 focus:outline-none"
+              className="border-connect-ink/20 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-32 w-full resize-y rounded-md border px-4 py-3 leading-7"
               placeholder="好きなことや今話したいことを書いてください"
               maxLength={160}
             />
@@ -351,7 +351,7 @@ export function ProfileForm() {
             onChange={(event) => setDeleteConfirmation(event.target.value)}
             autoComplete="off"
             required
-            className="border-connect-signal/35 bg-connect-surface text-connect-ink focus:border-connect-danger focus:ring-connect-danger-hover min-h-11 w-full rounded-md border px-4 py-2 focus:ring-2 focus:outline-none"
+            className="border-connect-signal/35 bg-connect-surface text-connect-ink min-h-11 w-full rounded-md border px-4 py-2"
           />
         </label>
         {deleteState.error && (

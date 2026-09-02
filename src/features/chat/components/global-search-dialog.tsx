@@ -271,7 +271,7 @@ export function GlobalSearchDialog({
         </div>
         <div className="border-connect-ink/15 space-y-2 border-b p-3">
           {scope !== "saved" && scope !== "matching" && (
-            <label className="border-connect-ink/15 bg-connect-surface focus-within:ring-connect-ink/20 flex min-h-11 items-center gap-2 rounded-md border px-3 focus-within:ring-2">
+            <label className="border-connect-ink/15 bg-connect-surface flex min-h-11 items-center gap-2 rounded-md border px-3">
               <Search
                 className="text-connect-muted h-4 w-4"
                 aria-hidden="true"

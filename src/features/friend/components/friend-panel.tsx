@@ -146,7 +146,7 @@ export function FriendPanel() {
             <input
               value={targetUserId}
               onChange={(event) => setTargetUserId(event.target.value)}
-              className="min-h-11 flex-1 rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e] focus:border-[#18221f]/35 focus:ring-2 focus:ring-[#18221f]/10 focus:outline-none"
+              className="min-h-11 flex-1 rounded-md border border-[#18221f]/20 bg-white px-4 py-2 text-[#18221f] placeholder:text-[#9aa49e]"
               placeholder="申請するユーザーID"
               required
               minLength={3}
