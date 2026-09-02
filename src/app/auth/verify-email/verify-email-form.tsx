@@ -34,7 +34,7 @@ export function VerifyEmailForm({ token }: { token: string }) {
           minLength={8}
           maxLength={72}
           autoComplete="current-password"
-          className="border-connect-ink/20 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
+          className="border-connect-ink/20 bg-connect-surface text-connect-ink focus:border-connect-ink/35 focus:ring-connect-ink/10 rounded-md border px-4 py-3 focus:ring-2 focus:outline-none"
         />
       </div>
       <button

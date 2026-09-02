@@ -293,7 +293,7 @@ export function GroupDmDialog({
                     value={groupName}
                     onChange={(event) => setGroupName(event.target.value)}
                     maxLength={50}
-                    className="border-connect-ink/15 bg-connect-surface focus:ring-connect-action mt-2 min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface focus:ring-connect-ink/20 mt-2 min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
                   />
                 </label>
                 <p className="mt-4 text-sm font-semibold">2人以上を選択</p>
@@ -663,7 +663,7 @@ export function GroupDmDialog({
                   </div>
                 )}
                 <div
-                  className={`border-connect-ink/15 bg-connect-surface focus-within:ring-connect-action flex items-end gap-2 border p-2 focus-within:ring-2 ${replyTo || attachments.length > 0 || showUrlInput ? "rounded-b-md" : "rounded-md"}`}
+                  className={`border-connect-ink/15 bg-connect-surface focus-within:ring-connect-ink/20 flex items-end gap-2 border p-2 focus-within:ring-2 ${replyTo || attachments.length > 0 || showUrlInput ? "rounded-b-md" : "rounded-md"}`}
                 >
                   <label
                     className="hover:bg-connect-highlight flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-md"

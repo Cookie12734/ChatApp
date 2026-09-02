@@ -243,7 +243,7 @@ export function MessageAttachmentPicker({
           aria-disabled={controlsDisabled}
           aria-describedby={helperId}
           className={cn(
-            "border-connect-ink/50 bg-connect-paper has-[:focus-visible]:outline-connect-action flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold whitespace-nowrap has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2",
+            "border-connect-ink/50 bg-connect-paper has-[:focus-visible]:outline-connect-ink/35 flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border px-3 text-sm font-semibold whitespace-nowrap has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2",
             controlsDisabled
               ? "cursor-not-allowed opacity-50"
               : "hover:bg-connect-highlight active:bg-connect-navigation",
@@ -280,7 +280,7 @@ export function MessageAttachmentPicker({
               aria-describedby={helperId}
               aria-invalid={isUrlInvalid}
               className={cn(
-                "border-connect-ink/50 bg-connect-paper placeholder:text-connect-muted focus-visible:outline-connect-action enabled:hover:bg-connect-highlight min-h-11 min-w-0 flex-1 rounded-md border px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                "border-connect-ink/50 bg-connect-paper placeholder:text-connect-muted focus-visible:outline-connect-ink/35 enabled:hover:bg-connect-highlight min-h-11 min-w-0 flex-1 rounded-md border px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                 isUrlInvalid && "border-connect-danger",
               )}
               disabled={controlsDisabled}
