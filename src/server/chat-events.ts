@@ -1,12 +1,18 @@
 import type { PrismaClient } from "@prisma/client";
 
 export type ChatEvent =
-  | { kind: "direct"; userIds: string[] }
+  | {
+      change: "created" | "deleted" | "updated";
+      kind: "direct";
+      messageId: string;
+      userIds: string[];
+    }
   | { groupId: string; kind: "group"; userIds: string[] }
   | {
       change: "created" | "deleted" | "updated";
       channelId: string | null;
       kind: "server";
+      messageId: string;
       senderId: string;
       serverId: string;
     }

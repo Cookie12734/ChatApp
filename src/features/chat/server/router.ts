@@ -1407,6 +1407,55 @@ export const chatRouter = createTRPCRouter({
       };
     }),
 
+  getMessage: protectedProcedure
+    .input(messageIdInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const message = await ctx.db.directMessage.findFirst({
+        where: {
+          id: input.messageId,
+          OR: [{ receiverId: currentUserId }, { senderId: currentUserId }],
+        },
+        select: {
+          attachments: {
+            select: {
+              fileName: true,
+              id: true,
+              kind: true,
+              mimeType: true,
+              size: true,
+            },
+          },
+          id: true,
+          content: true,
+          createdAt: true,
+          readAt: true,
+          receiverId: true,
+          reactions: { select: { emoji: true, userId: true } },
+          replyTo: {
+            select: {
+              content: true,
+              id: true,
+              sender: { select: { id: true, name: true, userId: true } },
+            },
+          },
+          savedBy: {
+            where: { userId: currentUserId },
+            select: { userId: true },
+          },
+          senderId: true,
+        },
+      });
+      if (!message) return null;
+
+      const peerId =
+        message.senderId === currentUserId
+          ? message.receiverId
+          : message.senderId;
+      await assertNotBlocked(ctx.db, currentUserId, peerId);
+      return message;
+    }),
+
   markConversationRead: protectedProcedure
     .input(markConversationReadInput)
     .mutation(async ({ ctx, input }) => {
@@ -1625,7 +1674,9 @@ export const chatRouter = createTRPCRouter({
       });
 
       void publishChatEvent(ctx.db, {
+        change: "created",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, input.friendId],
       });
       await sendPushNotification(ctx.db, {
@@ -1673,7 +1724,9 @@ export const chatRouter = createTRPCRouter({
       });
 
       void publishChatEvent(ctx.db, {
+        change: "updated",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, message.receiverId],
       });
       return updatedMessage;
@@ -1709,7 +1762,9 @@ export const chatRouter = createTRPCRouter({
 
       await ctx.db.directMessage.delete({ where: { id: message.id } });
       void publishChatEvent(ctx.db, {
+        change: "deleted",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, message.receiverId],
       });
       return { id: message.id };
@@ -1768,7 +1823,9 @@ export const chatRouter = createTRPCRouter({
       });
 
       void publishChatEvent(ctx.db, {
+        change: "updated",
         kind: "direct",
+        messageId: input.messageId,
         userIds: [currentUserId, peerId],
       });
       return { ...result, emoji: input.emoji, messageId: input.messageId };

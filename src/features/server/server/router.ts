@@ -138,6 +138,51 @@ const serverCategory = z.enum([
   "OTHER",
 ]);
 
+function getServerMessageInclude(
+  currentUserId: string,
+  serverId: string,
+  blockedPeerIds: string[],
+) {
+  return {
+    attachments: {
+      select: {
+        fileName: true,
+        id: true,
+        kind: true,
+        mimeType: true,
+        size: true,
+      },
+    },
+    reactions: { select: { emoji: true, userId: true } },
+    replyTo: {
+      where:
+        blockedPeerIds.length > 0
+          ? { senderId: { notIn: blockedPeerIds } }
+          : undefined,
+      select: {
+        content: true,
+        id: true,
+        sender: { select: { id: true, name: true, userId: true } },
+      },
+    },
+    savedBy: {
+      where: { userId: currentUserId },
+      select: { userId: true },
+    },
+    sender: {
+      select: {
+        id: true,
+        userId: true,
+        name: true,
+        serverMemberships: {
+          where: { serverId },
+          select: { nickname: true },
+        },
+      },
+    },
+  };
+}
+
 const discoveryTags = z
   .array(
     z
@@ -710,44 +755,11 @@ export const serverRouter = createTRPCRouter({
           ? { senderId: { notIn: blockedPeerIds } }
           : {}),
       };
-      const messageInclude = {
-        attachments: {
-          select: {
-            fileName: true,
-            id: true,
-            kind: true,
-            mimeType: true,
-            size: true,
-          },
-        },
-        reactions: { select: { emoji: true, userId: true } },
-        replyTo: {
-          where:
-            blockedPeerIds.length > 0
-              ? { senderId: { notIn: blockedPeerIds } }
-              : undefined,
-          select: {
-            content: true,
-            id: true,
-            sender: { select: { id: true, name: true, userId: true } },
-          },
-        },
-        savedBy: {
-          where: { userId: currentUserId },
-          select: { userId: true },
-        },
-        sender: {
-          select: {
-            id: true,
-            userId: true,
-            name: true,
-            serverMemberships: {
-              where: { serverId: input.serverId },
-              select: { nickname: true },
-            },
-          },
-        },
-      };
+      const messageInclude = getServerMessageInclude(
+        currentUserId,
+        input.serverId,
+        blockedPeerIds,
+      );
       const stableCursor = decodeMessageCursor(input.cursor);
       const legacyCursor =
         input.cursor && !stableCursor
@@ -757,57 +769,46 @@ export const serverRouter = createTRPCRouter({
             })
           : null;
 
-      const [currentUser, server, messages, pinnedMessages, channelRead] =
-        await Promise.all([
-          ctx.db.user.findUniqueOrThrow({
-            where: { id: currentUserId },
-            select: { id: true, userId: true, name: true },
-          }),
-          ctx.db.chatServer.findUniqueOrThrow({
-            where: { id: input.serverId },
-            select: {
-              id: true,
-              name: true,
-              description: true,
+      const [currentUser, server, messages, channelRead] = await Promise.all([
+        ctx.db.user.findUniqueOrThrow({
+          where: { id: currentUserId },
+          select: { id: true, userId: true, name: true },
+        }),
+        ctx.db.chatServer.findUniqueOrThrow({
+          where: { id: input.serverId },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        }),
+        ctx.db.serverMessage.findMany({
+          cursor: legacyCursor ? { id: legacyCursor.id } : undefined,
+          where: {
+            ...messageWhere,
+            ...(stableCursor
+              ? { AND: [getMessageCursorWhere(stableCursor)] }
+              : {}),
+          },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: MESSAGE_PAGE_SIZE + 1,
+          include: messageInclude,
+        }),
+        ctx.db.serverChannelRead.findUnique({
+          where: {
+            channelId_userId: {
+              channelId: channel.id,
+              userId: currentUserId,
             },
-          }),
-          ctx.db.serverMessage.findMany({
-            cursor: legacyCursor ? { id: legacyCursor.id } : undefined,
-            where: {
-              ...messageWhere,
-              ...(stableCursor
-                ? { AND: [getMessageCursorWhere(stableCursor)] }
-                : {}),
-            },
-            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            take: MESSAGE_PAGE_SIZE + 1,
-            include: messageInclude,
-          }),
-          ctx.db.serverMessage.findMany({
-            where: { ...messageWhere, pinnedAt: { not: null } },
-            orderBy: { pinnedAt: "desc" },
-            take: 50,
-            include: messageInclude,
-          }),
-          ctx.db.serverChannelRead.findUnique({
-            where: {
-              channelId_userId: {
-                channelId: channel.id,
-                userId: currentUserId,
-              },
-            },
-            select: { readAt: true },
-          }),
-        ]);
+          },
+          select: { readAt: true },
+        }),
+      ]);
       return {
         channel,
         currentUser: addProfileImageUrl(currentUser),
         readAt: channelRead?.readAt ?? null,
         server,
-        pinnedMessages: pinnedMessages.map((message) => ({
-          ...message,
-          sender: addProfileImageUrl(message.sender),
-        })),
         ...prepareMessagePage(
           messages.map((message) => ({
             ...message,
@@ -815,6 +816,119 @@ export const serverRouter = createTRPCRouter({
           })),
         ),
       };
+    }),
+
+  getPinnedMessages: protectedProcedure
+    .input(channelIdInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const [membership, channel, blocks] = await Promise.all([
+        ctx.db.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
+          },
+          select: { id: true },
+        }),
+        ctx.db.serverChannel.findFirst({
+          where: { id: input.channelId, serverId: input.serverId },
+          select: { id: true, name: true },
+        }),
+        ctx.db.userBlock.findMany({
+          where: {
+            OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+          },
+          select: { blockedId: true, blockerId: true },
+        }),
+      ]);
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "参加しているサーバーだけ開けます",
+        });
+      }
+      if (!channel) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "チャンネルが見つかりません",
+        });
+      }
+
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const messages = await ctx.db.serverMessage.findMany({
+        where: {
+          ...getServerMessageWhere({
+            channelId: channel.id,
+            channelName: channel.name,
+            serverId: input.serverId,
+          }),
+          pinnedAt: { not: null },
+          ...(blockedPeerIds.length > 0
+            ? { senderId: { notIn: blockedPeerIds } }
+            : {}),
+        },
+        orderBy: { pinnedAt: "desc" },
+        take: 50,
+        include: getServerMessageInclude(
+          currentUserId,
+          input.serverId,
+          blockedPeerIds,
+        ),
+      });
+      return messages.map((message) => ({
+        ...message,
+        sender: addProfileImageUrl(message.sender),
+      }));
+    }),
+
+  getMessage: protectedProcedure
+    .input(messageIdInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const [membership, blocks] = await Promise.all([
+        ctx.db.serverMember.findUnique({
+          where: {
+            serverId_userId: {
+              serverId: input.serverId,
+              userId: currentUserId,
+            },
+          },
+          select: { id: true },
+        }),
+        ctx.db.userBlock.findMany({
+          where: {
+            OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+          },
+          select: { blockedId: true, blockerId: true },
+        }),
+      ]);
+      if (!membership) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "参加しているサーバーだけ開けます",
+        });
+      }
+
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const message = await ctx.db.serverMessage.findFirst({
+        where: {
+          id: input.messageId,
+          serverId: input.serverId,
+          ...(blockedPeerIds.length > 0
+            ? { senderId: { notIn: blockedPeerIds } }
+            : {}),
+        },
+        include: getServerMessageInclude(
+          currentUserId,
+          input.serverId,
+          blockedPeerIds,
+        ),
+      });
+      return message
+        ? { ...message, sender: addProfileImageUrl(message.sender) }
+        : null;
     }),
 
   markChannelRead: protectedProcedure
@@ -1053,6 +1167,7 @@ export const serverRouter = createTRPCRouter({
         change: "created",
         channelId: channel.id,
         kind: "server",
+        messageId: message.id,
         senderId: currentUserId,
         serverId: input.serverId,
       });
@@ -1148,6 +1263,7 @@ export const serverRouter = createTRPCRouter({
         change: "updated",
         channelId: message.channelId,
         kind: "server",
+        messageId: message.id,
         senderId: message.senderId,
         serverId: input.serverId,
       });
@@ -1206,6 +1322,7 @@ export const serverRouter = createTRPCRouter({
         change: "updated",
         channelId: message.channelId,
         kind: "server",
+        messageId: message.id,
         senderId: message.senderId,
         serverId: input.serverId,
       });
@@ -1256,6 +1373,7 @@ export const serverRouter = createTRPCRouter({
         change: "updated",
         channelId: message.channelId,
         kind: "server",
+        messageId: message.id,
         senderId: message.senderId,
         serverId: input.serverId,
       });
@@ -1313,6 +1431,7 @@ export const serverRouter = createTRPCRouter({
         change: "deleted",
         channelId: message.channelId,
         kind: "server",
+        messageId: message.id,
         senderId: message.senderId,
         serverId: input.serverId,
       });

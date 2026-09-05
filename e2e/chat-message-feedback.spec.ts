@@ -172,7 +172,7 @@ test("スクロール中の新着件数と未読線を表示する", async ({ pa
   await page.waitForTimeout(700);
 
   const content = `new-message-${runId}`;
-  await prisma.serverMessage.create({
+  const newMessage = await prisma.serverMessage.create({
     data: { channelId, content, senderId: memberId, serverId },
   });
   const event = await prisma.chatEvent.create({
@@ -184,6 +184,7 @@ test("スクロール中の新着件数と未読線を表示する", async ({ pa
         change: "created",
         channelId,
         kind: "server",
+        messageId: newMessage.id,
         senderId: memberId,
         serverId,
       },
