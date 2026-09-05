@@ -73,7 +73,7 @@ export function GroupDmDialog({
   onOpenChange,
   open: controlledOpen,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   initialGroupId?: string;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
@@ -193,7 +193,7 @@ export function GroupDmDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="bg-connect-paper text-connect-ink h-[min(92dvh,760px)] max-h-[92dvh] overflow-hidden p-0 sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>グループDM</DialogTitle>

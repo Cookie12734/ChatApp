@@ -1,7 +1,13 @@
+import dynamic from "next/dynamic";
 import type { MouseEvent, RefObject } from "react";
 
 import { splitMessageLinks } from "~/features/chat/message-links";
-import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
+
+const UserProfileDialog = dynamic(() =>
+  import("~/features/profile/components/user-profile-dialog").then(
+    ({ UserProfileDialog }) => UserProfileDialog,
+  ),
+);
 
 type ChatUser = {
   image?: string | null;
@@ -14,6 +20,11 @@ type PendingMessage = {
   createdAt: Date;
   status: "confirmed" | "pending";
 };
+
+const messageTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export function getDisplayName(user: Pick<ChatUser, "name" | "userId">) {
   const name = user.name?.trim();
@@ -33,10 +44,7 @@ export function getServerDisplayName(member: {
 }
 
 export function formatMessageTime(value: Date) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(value);
+  return messageTimeFormatter.format(value);
 }
 
 export function Avatar({
@@ -64,25 +72,40 @@ export function Avatar({
 
 export function ProfileAvatar({
   className,
+  onClick,
   onContextMenu,
   serverId,
   user,
 }: {
   className: string;
+  onClick?: () => void;
   onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   serverId?: string;
   user: ChatUser;
 }) {
+  const avatarButton = (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${className} border-connect-ink/10 focus-visible:ring-connect-action inline-flex shrink-0 overflow-hidden rounded-full border focus-visible:ring-2 focus-visible:outline-none`}
+      aria-label={`${getDisplayName(user)}のプロフィールを開く`}
+    >
+      <Avatar user={user} className="h-full w-full rounded-full" />
+    </button>
+  );
+
+  if (onClick) {
+    return (
+      <span className="contents" onContextMenu={onContextMenu}>
+        {avatarButton}
+      </span>
+    );
+  }
+
   return (
     <span className="contents" onContextMenu={onContextMenu}>
       <UserProfileDialog serverId={serverId} userId={user.userId}>
-        <button
-          type="button"
-          className={`${className} border-connect-ink/10 focus-visible:ring-connect-action inline-flex shrink-0 overflow-hidden rounded-full border focus-visible:ring-2 focus-visible:outline-none`}
-          aria-label={`${getDisplayName(user)}のプロフィールを開く`}
-        >
-          <Avatar user={user} className="h-full w-full rounded-full" />
-        </button>
+        {avatarButton}
       </UserProfileDialog>
     </span>
   );
@@ -116,12 +139,14 @@ export function PendingMessageRow({
   isFollowup = false,
   message,
   onOpenLink,
+  onOpenProfile,
   serverId,
 }: {
   author: ChatUser;
   isFollowup?: boolean;
   message: PendingMessage;
   onOpenLink: (url: string) => void;
+  onOpenProfile?: () => void;
   serverId?: string;
 }) {
   const isPending = message.status === "pending";
@@ -138,6 +163,7 @@ export function PendingMessageRow({
           user={author}
           serverId={serverId}
           className="mt-1 h-10 w-10"
+          onClick={onOpenProfile}
         />
       )}
       <div className="min-w-0 flex-1 text-left">

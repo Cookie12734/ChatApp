@@ -5,7 +5,6 @@ import {
   Avatar,
   getServerDisplayName,
 } from "~/features/chat/components/chat-message";
-import { UserProfileDialog } from "~/features/profile/components/user-profile-dialog";
 import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
@@ -27,13 +26,13 @@ type ServerMemberListProps = {
   isUpdatingRole: boolean;
   members: ServerMember[];
   onClose: () => void;
+  onOpenProfile: (userId: string) => void;
   onProfileContextMenu: (
     event: MouseEvent<HTMLElement>,
     user: { name?: string | null; userId: string },
   ) => void;
   onRemove: (memberId: string, displayName: string) => void;
   onUpdateRole: (memberId: string, role: ServerMemberRole) => void;
-  serverId: string;
 };
 
 export function ServerMemberList({
@@ -44,10 +43,10 @@ export function ServerMemberList({
   isUpdatingRole,
   members,
   onClose,
+  onOpenProfile,
   onProfileContextMenu,
   onRemove,
   onUpdateRole,
-  serverId,
 }: ServerMemberListProps) {
   return (
     <>
@@ -103,43 +102,39 @@ export function ServerMemberList({
                 key={member.id}
                 className="group text-connect-ink hover:bg-connect-ink/5 rounded-md px-3 py-2 transition-colors"
               >
-                <UserProfileDialog
-                  userId={member.user.userId}
-                  serverId={serverId}
+                <button
+                  type="button"
+                  onClick={() => onOpenProfile(member.user.userId)}
+                  onContextMenu={(event) =>
+                    onProfileContextMenu(event, {
+                      ...member.user,
+                      name: displayName,
+                    })
+                  }
+                  className="focus-visible:ring-connect-focus-soft flex min-h-11 w-full min-w-0 items-center gap-3 text-left focus-visible:ring-2 focus-visible:outline-none"
+                  aria-label={`${displayName}のプロフィールを開く`}
                 >
-                  <button
-                    type="button"
-                    onContextMenu={(event) =>
-                      onProfileContextMenu(event, {
-                        ...member.user,
-                        name: displayName,
-                      })
-                    }
-                    className="focus-visible:ring-connect-focus-soft flex min-h-11 w-full min-w-0 items-center gap-3 text-left focus-visible:ring-2 focus-visible:outline-none"
-                    aria-label={`${displayName}のプロフィールを開く`}
-                  >
-                    <span className="relative shrink-0">
-                      <Avatar
-                        user={member.user}
-                        className="border-connect-ink/10 h-9 w-9 rounded-full border"
-                      />
-                      <span
-                        className={`border-connect-navigation group-hover:border-connect-warm-rule absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 transition-colors ${getPresenceDotClassName(
-                          member.user.presenceStatus,
-                        )}`}
-                      />
+                  <span className="relative shrink-0">
+                    <Avatar
+                      user={member.user}
+                      className="border-connect-ink/10 h-9 w-9 rounded-full border"
+                    />
+                    <span
+                      className={`border-connect-navigation group-hover:border-connect-warm-rule absolute -right-0.5 -bottom-0.5 h-3.5 w-3.5 rounded-full border-2 transition-colors ${getPresenceDotClassName(
+                        member.user.presenceStatus,
+                      )}`}
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {displayName}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">
-                        {displayName}
-                      </span>
-                      <span className="text-connect-neutral block truncate text-xs">
-                        {getPresenceDisplayLabel(member.user.presenceStatus)} ・
-                        {roleLabels[member.role]}
-                      </span>
+                    <span className="text-connect-neutral block truncate text-xs">
+                      {getPresenceDisplayLabel(member.user.presenceStatus)} ・
+                      {roleLabels[member.role]}
                     </span>
-                  </button>
-                </UserProfileDialog>
+                  </span>
+                </button>
                 {!isCurrentUser &&
                   (assignableRoles.length > 1 ||
                     canRemoveServerMember(currentRole, member.role)) && (
