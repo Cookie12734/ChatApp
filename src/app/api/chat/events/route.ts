@@ -1,4 +1,4 @@
-import { auth } from "~/features/auth";
+import { auth, uncachedAuth } from "~/features/auth";
 import {
   canOpenChatEventConnection,
   canReceiveChatEvent,
@@ -11,7 +11,6 @@ import { RateLimitExceededError } from "~/server/rate-limit-policy";
 export const runtime = "nodejs";
 
 const maxConnectionsPerUser = 3;
-const streamLifetimeMs = 60_000;
 const globalForChatStreams = globalThis as unknown as {
   chatEventConnectionCounts?: Map<string, number>;
   presenceUpdatedAt?: Map<string, number>;
@@ -115,7 +114,7 @@ export async function GET(request: Request) {
         try {
           controller.close();
         } catch {
-          // The request abort and lifetime timer can finish at the same time.
+          // Request cancellation and session expiration can coincide.
         }
       };
       const unsubscribe = subscribeToChatEvents(db, {
@@ -126,7 +125,32 @@ export async function GET(request: Request) {
         serverIds,
         userId,
       });
-      const heartbeatTimer = setInterval(() => void updateLastSeen(), 20_000);
+      // Keep healthy streams open, but recheck session revocation and expiry.
+      let isCheckingSession = false;
+      const heartbeatTimer = setInterval(() => {
+        if (closed || isCheckingSession) return;
+        isCheckingSession = true;
+        void (async () => {
+          const currentSession = await uncachedAuth();
+          if (
+            currentSession?.user?.id !== userId ||
+            Date.now() >= Date.parse(session.expires)
+          ) {
+            cleanup?.();
+            closeController();
+            return;
+          }
+          if (!closed) await updateLastSeen();
+        })()
+          .catch((error) => {
+            console.error("Failed to validate chat session", error);
+            cleanup?.();
+            closeController();
+          })
+          .finally(() => {
+            isCheckingSession = false;
+          });
+      }, 20_000);
       const membershipTimer = setInterval(() => {
         void db.serverMember
           .findMany({
@@ -144,10 +168,10 @@ export async function GET(request: Request) {
           });
       }, 15_000);
       const keepAlive = setInterval(() => enqueue(": keep-alive\n\n"), 25_000);
-      const lifetimeTimer = setTimeout(() => {
+      const handleAbort = () => {
         cleanup?.();
         closeController();
-      }, streamLifetimeMs);
+      };
 
       cleanup = () => {
         if (closed) return;
@@ -157,16 +181,10 @@ export async function GET(request: Request) {
         clearInterval(heartbeatTimer);
         clearInterval(membershipTimer);
         clearInterval(keepAlive);
-        clearTimeout(lifetimeTimer);
+        request.signal.removeEventListener("abort", handleAbort);
       };
-      request.signal.addEventListener(
-        "abort",
-        () => {
-          cleanup?.();
-          closeController();
-        },
-        { once: true },
-      );
+      request.signal.addEventListener("abort", handleAbort, { once: true });
+      if (request.signal.aborted) handleAbort();
       enqueue("retry: 3000\n\n");
     },
     cancel() {
