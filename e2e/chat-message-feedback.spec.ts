@@ -15,6 +15,7 @@ let ownerId = "";
 let memberId = "";
 let serverId = "";
 let channelId = "";
+let groupId = "";
 const chatEventIds: bigint[] = [];
 
 async function login(page: Page) {
@@ -91,6 +92,22 @@ test.beforeAll(async () => {
   await prisma.serverChannelRead.create({
     data: { channelId, readAt: new Date(), userId: ownerId },
   });
+  const group = await prisma.groupConversation.create({
+    data: {
+      createdById: ownerId,
+      name: `audit-group-${runId}`,
+      members: { create: [{ userId: ownerId }, { userId: memberId }] },
+    },
+  });
+  groupId = group.id;
+  await prisma.groupMessage.createMany({
+    data: Array.from({ length: 105 }, (_, index) => ({
+      groupId,
+      senderId: memberId,
+      content: `group-history-${index + 1}`,
+      createdAt: new Date(Date.now() - (105 - index) * 1000),
+    })),
+  });
 });
 
 test.afterAll(async () => {
@@ -100,6 +117,8 @@ test.afterAll(async () => {
   if (serverId) {
     await prisma.chatServer.deleteMany({ where: { id: serverId } });
   }
+  if (groupId)
+    await prisma.groupConversation.deleteMany({ where: { id: groupId } });
   await prisma.user.deleteMany({ where: { id: { in: [ownerId, memberId] } } });
   await prisma.$disconnect();
 });
@@ -249,6 +268,78 @@ test("既読更新に失敗しても同じメッセージを再試行する", as
     .toBe(true);
 });
 
+test("グループDMの過去ログと相手の新着が時系列で表示される", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "グループDMを開く", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "グループDM", exact: true });
+  await expect(
+    dialog.locator("article").getByText("group-history-105", { exact: true }),
+  ).toHaveCount(1);
+  await dialog.getByRole("button", { name: /過去のメッセージ/ }).click();
+  await expect(dialog.locator("article").first()).toContainText(
+    "group-history-1",
+  );
+  await expect(dialog.locator("article").last()).toContainText(
+    "group-history-105",
+  );
+  const content = `group-incoming-${runId}`;
+  await prisma.groupMessage.create({
+    data: { groupId, senderId: memberId, content },
+  });
+  const event = await prisma.chatEvent.create({
+    data: {
+      kind: "group",
+      audienceIds: [ownerId, memberId],
+      payload: { kind: "group", groupId, userIds: [ownerId, memberId] },
+    },
+  });
+  chatEventIds.push(event.id);
+  await expect(
+    dialog.locator("article").getByText(content, { exact: true }),
+  ).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(dialog.locator("article").last()).toContainText(content);
+});
+
+test("SSE接続を60秒以上維持し、会話の定期再取得なしでチャンネル変更を取得する", async ({
+  page,
+}) => {
+  test.setTimeout(100000);
+  let connections = 0;
+  let conversations = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === "/api/chat/events") connections += 1;
+    if (url.pathname.includes("server.getConversation")) conversations += 1;
+  });
+  await login(page);
+  await expect.poll(() => connections).toBe(1);
+  await expect(
+    page.getByText("履歴メッセージ 36", { exact: true }),
+  ).toBeVisible();
+  await page.waitForTimeout(1000);
+  const initialConversations = conversations;
+  const channel = await prisma.serverChannel.create({
+    data: { serverId, name: `audit-${runId}` },
+  });
+  try {
+    await expect(
+      page.getByRole("button", { name: channel.name, exact: true }),
+    ).toBeVisible({ timeout: 20000 });
+    await page.waitForTimeout(65000);
+    expect(connections).toBe(1);
+    expect(conversations).toBe(initialConversations);
+  } finally {
+    await prisma.serverChannel.deleteMany({ where: { id: channel.id } });
+  }
+});
+
 test("プロフィールアイコンからブロックしてメッセージとマッチングを除外する", async ({
   page,
 }) => {
@@ -260,15 +351,7 @@ test("プロフィールアイコンからブロックしてメッセージと�
   const memberAvatar = page
     .getByRole("button", { name: "E2E Memberのプロフィールを開く" })
     .first();
-  await memberAvatar.scrollIntoViewIfNeeded();
-  const avatarBounds = await memberAvatar.boundingBox();
-  if (!avatarBounds)
-    throw new Error("プロフィールアイコンが表示されていません");
-  await page.mouse.click(
-    avatarBounds.x + avatarBounds.width / 2,
-    avatarBounds.y + avatarBounds.height / 2,
-    { button: "right" },
-  );
+  await memberAvatar.click({ button: "right" });
   const blockButton = page.getByRole("menuitem", {
     name: "ブロック",
     exact: true,
@@ -282,11 +365,7 @@ test("プロフィールアイコンからブロックしてメッセージと�
   await blockButton.press("Escape");
   await expect(blockButton).toHaveCount(0);
 
-  await page.mouse.click(
-    avatarBounds.x + avatarBounds.width / 2,
-    avatarBounds.y + avatarBounds.height / 2,
-    { button: "right" },
-  );
+  await memberAvatar.click({ button: "right" });
   await expect(blockButton).toBeFocused();
   page.once("dialog", (dialog) => void dialog.accept());
   await blockButton.click();
