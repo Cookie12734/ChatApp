@@ -264,7 +264,7 @@ function handleContextMenuKeyDown(
           : currentIndex < 0
             ? items.length - 1
             : (currentIndex - 1 + items.length) % items.length;
-  items[nextIndex]?.focus();
+  items[nextIndex]?.focus({ preventScroll: true });
 }
 
 const FriendListItem = memo(
@@ -920,7 +920,7 @@ export function FriendChatPanel({
     const frame = requestAnimationFrame(() => {
       contextMenuRef.current
         ?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')
-        ?.focus();
+        ?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
   }, [channelContextMenu, messageContextMenu, profileContextMenu]);
