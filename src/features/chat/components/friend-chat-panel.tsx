@@ -65,6 +65,10 @@ import {
 } from "~/features/chat/matching-prompts";
 import { shouldGroupMessage } from "~/features/chat/message-grouping";
 import {
+  createMessageEventQueue,
+  updateMessagePages,
+} from "~/features/chat/realtime-messages";
+import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
 } from "~/features/profile/presence";
@@ -427,7 +431,7 @@ export function FriendChatPanel({
         ? false
         : matchingState === "waiting" || !isRealtimeConnected
           ? 5000
-          : false,
+          : 15000,
   });
   const groupConversations = api.group.list.useQuery();
   const filteredFriends = useMemo(
@@ -448,11 +452,7 @@ export function FriendChatPanel({
   const pendingMatchFeedback = api.chat.getPendingMatchFeedback.useQuery();
   const serverOverview = api.server.getOverview.useQuery(undefined, {
     refetchInterval: (query) =>
-      query.state.status === "error"
-        ? false
-        : isRealtimeConnected
-          ? false
-          : 15000,
+      query.state.status === "error" ? false : 15000,
   });
   const selectedServer = useMemo(() => {
     return (
@@ -478,11 +478,7 @@ export function FriendChatPanel({
     {
       enabled: Boolean(selectedServerId),
       refetchInterval: (query) =>
-        !isMemberListOpen || query.state.status === "error"
-          ? false
-          : isRealtimeConnected
-            ? false
-            : 15000,
+        !isMemberListOpen || query.state.status === "error" ? false : 15000,
     },
   );
   const selectedServerMembers = useMemo(() => {
@@ -967,10 +963,14 @@ export function FriendChatPanel({
 
   useEffect(() => {
     const events = new EventSource("/api/chat/events");
+    const enqueueMessage = createMessageEventQueue();
+    let disposed = false;
     events.onopen = () => {
       setIsRealtimeConnected(true);
       void utils.chat.getFriends.invalidate();
       void utils.server.getOverview.invalidate();
+      void utils.group.list.invalidate();
+      void utils.group.getConversation.invalidate();
       const selection = selectedChatRef.current;
       if (selection.friendId) {
         void utils.chat.getConversation.invalidate({
@@ -990,15 +990,8 @@ export function FriendChatPanel({
       }
     };
     events.onerror = () => setIsRealtimeConnected(false);
-    const handleChatEvent = async (event: MessageEvent<string>) => {
-      let payload: ChatEventPayload;
-
-      try {
-        payload = JSON.parse(event.data) as ChatEventPayload;
-      } catch {
-        return;
-      }
-
+    const handleChatEvent = async (payload: ChatEventPayload) => {
+      if (disposed) return;
       if (payload.kind === "direct") {
         void utils.chat.getFriends.invalidate();
         const friendId = selectedChatRef.current.friendId;
@@ -1029,25 +1022,11 @@ export function FriendChatPanel({
             void utils.chat.getConversation.invalidate({ friendId });
             return null;
           });
-        if (!latestMessage) return;
+        if (!latestMessage || disposed) return;
+        const change = payload.change;
         utils.chat.getConversation.setInfiniteData({ friendId }, (data) => {
           if (!data) return data;
-          let found = false;
-          const pages = data.pages.map((page) => ({
-            ...page,
-            messages: page.messages.map((message) => {
-              if (message.id !== latestMessage.id) return message;
-              found = true;
-              return latestMessage;
-            }),
-          }));
-          const firstPage = pages[0];
-          if (!found && firstPage) {
-            pages[0] = {
-              ...firstPage,
-              messages: [...firstPage.messages, latestMessage],
-            };
-          }
+          const pages = updateMessagePages(data.pages, latestMessage, change);
           return { ...data, pages };
         });
         return;
@@ -1095,25 +1074,15 @@ export function FriendChatPanel({
                 void utils.server.getConversation.invalidate(input);
                 return null;
               });
-            if (latestMessage) {
+            if (latestMessage && !disposed) {
+              const change = payload.change;
               utils.server.getConversation.setInfiniteData(input, (data) => {
                 if (!data) return data;
-                let found = false;
-                const pages = data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.map((message) => {
-                    if (message.id !== latestMessage.id) return message;
-                    found = true;
-                    return latestMessage;
-                  }),
-                }));
-                const firstPage = pages[0];
-                if (!found && firstPage) {
-                  pages[0] = {
-                    ...firstPage,
-                    messages: [...firstPage.messages, latestMessage],
-                  };
-                }
+                const pages = updateMessagePages(
+                  data.pages,
+                  latestMessage,
+                  change,
+                );
                 return { ...data, pages };
               });
               utils.server.getPinnedMessages.setData(input, (messages) => {
@@ -1174,6 +1143,9 @@ export function FriendChatPanel({
 
       if (payload.kind === "group") {
         void utils.group.list.invalidate();
+        void utils.group.getConversation.invalidate({
+          groupId: payload.groupId,
+        });
         return;
       }
 
@@ -1192,11 +1164,31 @@ export function FriendChatPanel({
       }
     };
     const chatEventListener: EventListener = (event) => {
-      void handleChatEvent(event as MessageEvent<string>);
+      let payload: ChatEventPayload;
+      try {
+        payload = JSON.parse(
+          (event as MessageEvent<string>).data,
+        ) as ChatEventPayload;
+      } catch {
+        return;
+      }
+      const task =
+        payload.kind === "direct" || payload.kind === "server"
+          ? enqueueMessage(`${payload.kind}:${payload.messageId}`, () =>
+              handleChatEvent(payload),
+            )
+          : handleChatEvent(payload);
+      void task.catch(() => {
+        if (disposed) return;
+        void utils.chat.getConversation.invalidate();
+        void utils.server.getConversation.invalidate();
+        void utils.group.getConversation.invalidate();
+      });
     };
     events.addEventListener("chat", chatEventListener);
 
     return () => {
+      disposed = true;
       events.close();
       setIsRealtimeConnected(false);
       if (typingResetTimerRef.current) {
@@ -1209,6 +1201,7 @@ export function FriendChatPanel({
     utils.chat.getFriends,
     utils.chat.getMessage,
     utils.group.list,
+    utils.group.getConversation,
     utils.server.getConversation,
     utils.server.getMembers,
     utils.server.getMessage,
@@ -4159,6 +4152,7 @@ export function FriendChatPanel({
 
       {isGroupDmOpen && (
         <GroupDmDialog
+          isRealtimeConnected={isRealtimeConnected}
           initialGroupId={selectedGroupId}
           open
           onOpenChange={setIsGroupDmOpen}

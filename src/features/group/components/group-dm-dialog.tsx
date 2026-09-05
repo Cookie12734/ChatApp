@@ -43,6 +43,7 @@ import {
 } from "~/features/chat/components/message-attachment-picker";
 import { api } from "~/trpc/react";
 import { groupReactions } from "~/features/chat/reaction-groups";
+import { flattenMessagePages } from "~/features/chat/message-page";
 
 const REACTIONS = [
   "\u{1F44D}",
@@ -70,11 +71,13 @@ function groupLabel(group: {
 export function GroupDmDialog({
   children,
   initialGroupId,
+  isRealtimeConnected = false,
   onOpenChange,
   open: controlledOpen,
 }: {
   children?: ReactNode;
   initialGroupId?: string;
+  isRealtimeConnected?: boolean;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
 }) {
@@ -104,6 +107,7 @@ export function GroupDmDialog({
     {
       enabled: open && Boolean(selectedGroupId),
       getNextPageParam: (page) => page.nextCursor,
+      refetchInterval: open && !isRealtimeConnected ? 5000 : false,
     },
   );
   const createGroup = api.group.create.useMutation({
@@ -148,8 +152,9 @@ export function GroupDmDialog({
     ({ id }) => id === selectedGroupId,
   );
   const messages = useMemo(
-    () => conversation.data?.pages.flatMap((page) => page.messages) ?? [],
-    [conversation.data?.pages],
+    () =>
+      conversation.data ? flattenMessagePages(conversation.data.pages) : [],
+    [conversation.data],
   );
 
   useEffect(() => {
