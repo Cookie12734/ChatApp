@@ -19,7 +19,10 @@ import {
   hasSettledMatch,
 } from "~/features/chat/server/matching-permissions";
 import { pickMatchingCandidate } from "~/features/chat/server/matching-ranking";
-import { isSameDirectMessage } from "~/features/chat/server/message-idempotency";
+import {
+  isSameAttachmentSet,
+  isSameDirectMessage,
+} from "~/features/chat/server/message-idempotency";
 import {
   isSearchResultBeforeCursor,
   SEARCH_MESSAGE_KINDS,
@@ -41,7 +44,7 @@ import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { addProfileImageUrl } from "~/lib/static-image";
-import { sendPushNotification } from "~/features/notification/server/push";
+import { schedulePushNotification } from "~/features/notification/server/push";
 
 const friendIdInput = z.object({
   friendId: z.string().min(1),
@@ -829,7 +832,7 @@ export const chatRouter = createTRPCRouter({
         };
       });
       if (matchedPeerId) {
-        await sendPushNotification(ctx.db, {
+        schedulePushNotification(ctx.db, {
           kind: "MATCHING",
           recipientId: matchedPeerId,
           title: "再マッチしました",
@@ -1260,7 +1263,7 @@ export const chatRouter = createTRPCRouter({
         };
       });
       if (newlyMatchedPeerId) {
-        await sendPushNotification(ctx.db, {
+        schedulePushNotification(ctx.db, {
           kind: "MATCHING",
           recipientId: newlyMatchedPeerId,
           title: "マッチングしました",
@@ -1460,6 +1463,15 @@ export const chatRouter = createTRPCRouter({
     .input(markConversationReadInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 120,
+          scope: "chat:read:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
       const message = await ctx.db.directMessage.findFirst({
         where: {
           id: input.messageId,
@@ -1558,7 +1570,7 @@ export const chatRouter = createTRPCRouter({
         currentUserId,
         input.friendId,
       );
-      const message = await ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`
           SELECT "id"
           FROM "User"
@@ -1604,6 +1616,7 @@ export const chatRouter = createTRPCRouter({
           }
         }
 
+        const newMessageId = crypto.randomUUID();
         const storedMessage = await tx.directMessage.upsert({
           where: {
             senderId_clientId: {
@@ -1612,6 +1625,7 @@ export const chatRouter = createTRPCRouter({
             },
           },
           create: {
+            id: newMessageId,
             clientId: input.clientId,
             content,
             receiverId: input.friendId,
@@ -1632,6 +1646,19 @@ export const chatRouter = createTRPCRouter({
             code: "CONFLICT",
             message: "同じ送信IDを別のメッセージには使用できません",
           });
+        }
+
+        if (storedMessage.id !== newMessageId) {
+          const attachments = await tx.messageAttachment.findMany({
+            where: { directMessageId: storedMessage.id },
+            select: { id: true },
+          });
+          if (!isSameAttachmentSet(attachments, input.attachmentIds)) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "同じ送信IDで添付ファイルを変更できません",
+            });
+          }
         }
 
         if (input.attachmentIds.length > 0) {
@@ -1664,22 +1691,42 @@ export const chatRouter = createTRPCRouter({
               message: "添付ファイルが無効か期限切れです",
             });
           }
-          await tx.messageAttachment.updateMany({
-            where: { directMessageId: null, id: { in: attachmentIds } },
+          const attached = await tx.messageAttachment.updateMany({
+            where: {
+              id: { in: attachmentIds },
+              directMessageId: null,
+              serverMessageId: null,
+              groupMessageId: null,
+              expiresAt: { gt: new Date() },
+            },
             data: { directMessageId: storedMessage.id, expiresAt: null },
           });
+          if (
+            storedMessage.id === newMessageId &&
+            attached.count !== attachmentIds.length
+          ) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "添付ファイルは使用済みか期限切れです",
+            });
+          }
         }
 
-        return storedMessage;
+        return {
+          message: storedMessage,
+          created: storedMessage.id === newMessageId,
+        };
       });
 
-      void publishChatEvent(ctx.db, {
+      const { message } = result;
+      if (!result.created) return message;
+      await publishChatEvent(ctx.db, {
         change: "created",
         kind: "direct",
         messageId: message.id,
         userIds: [currentUserId, input.friendId],
       });
-      await sendPushNotification(ctx.db, {
+      schedulePushNotification(ctx.db, {
         body: content,
         kind: "DIRECT_MESSAGE",
         recipientId: input.friendId,

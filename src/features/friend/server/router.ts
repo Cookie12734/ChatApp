@@ -17,7 +17,7 @@ import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { addProfileImageUrl } from "~/lib/static-image";
 import { userIdSchema } from "~/lib/input";
-import { sendPushNotification } from "~/features/notification/server/push";
+import { schedulePushNotification } from "~/features/notification/server/push";
 
 const discoveryLimit = z.number().int().min(1).max(20);
 
@@ -420,7 +420,7 @@ export const friendRouter = createTRPCRouter({
 
         return request;
       });
-      await sendPushNotification(ctx.db, {
+      schedulePushNotification(ctx.db, {
         kind: "FRIEND_REQUEST",
         recipientId: receiver.id,
         title: "フレンド申請",

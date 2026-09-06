@@ -6,7 +6,10 @@ import { z } from "zod";
 import { getBlockedPeerIds } from "~/features/friend/server/blocking";
 import { assertNotBlocked } from "~/features/friend/server/blocking";
 import { getEffectivePresenceStatus } from "~/features/profile/presence";
-import { isSameServerMessage } from "~/features/chat/server/message-idempotency";
+import {
+  isSameAttachmentSet,
+  isSameServerMessage,
+} from "~/features/chat/server/message-idempotency";
 import {
   decodeMessageCursor,
   encodeMessageCursor,
@@ -36,7 +39,7 @@ import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { normalizeOptionalText } from "~/lib/input";
 import { addProfileImageUrl, getServerImageUrl } from "~/lib/static-image";
-import { sendPushNotification } from "~/features/notification/server/push";
+import { schedulePushNotification } from "~/features/notification/server/push";
 
 const MAX_CREATED_SERVERS = 10;
 const MAX_JOINED_SERVERS = 100;
@@ -935,6 +938,14 @@ export const serverRouter = createTRPCRouter({
     .input(markChannelReadInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 120,
+          scope: "chat:read:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
       const channel = await ctx.db.serverChannel.findFirst({
         where: {
           id: input.channelId,
@@ -1098,7 +1109,8 @@ export const serverRouter = createTRPCRouter({
       }
 
       const content = input.content.trim();
-      const message = await ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
+        const newMessageId = randomUUID();
         const storedMessage = await tx.serverMessage.upsert({
           where: {
             senderId_clientId: {
@@ -1107,6 +1119,7 @@ export const serverRouter = createTRPCRouter({
             },
           },
           create: {
+            id: newMessageId,
             channelId: channel.id,
             clientId: input.clientId,
             content,
@@ -1129,6 +1142,19 @@ export const serverRouter = createTRPCRouter({
             code: "CONFLICT",
             message: "同じ送信IDを別のメッセージには使用できません",
           });
+        }
+
+        if (storedMessage.id !== newMessageId) {
+          const attachments = await tx.messageAttachment.findMany({
+            where: { serverMessageId: storedMessage.id },
+            select: { id: true },
+          });
+          if (!isSameAttachmentSet(attachments, input.attachmentIds)) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "同じ送信IDで添付ファイルを変更できません",
+            });
+          }
         }
 
         if (input.attachmentIds.length > 0) {
@@ -1155,15 +1181,35 @@ export const serverRouter = createTRPCRouter({
               message: "添付ファイルが無効か期限切れです",
             });
           }
-          await tx.messageAttachment.updateMany({
-            where: { id: { in: attachmentIds }, serverMessageId: null },
+          const attached = await tx.messageAttachment.updateMany({
+            where: {
+              id: { in: attachmentIds },
+              directMessageId: null,
+              serverMessageId: null,
+              groupMessageId: null,
+              expiresAt: { gt: new Date() },
+            },
             data: { expiresAt: null, serverMessageId: storedMessage.id },
           });
+          if (
+            storedMessage.id === newMessageId &&
+            attached.count !== attachmentIds.length
+          ) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "添付ファイルは使用済みか期限切れです",
+            });
+          }
         }
-        return storedMessage;
+        return {
+          message: storedMessage,
+          created: storedMessage.id === newMessageId,
+        };
       });
 
-      void publishChatEvent(ctx.db, {
+      const { message } = result;
+      if (!result.created) return message;
+      await publishChatEvent(ctx.db, {
         change: "created",
         channelId: channel.id,
         kind: "server",
@@ -1192,7 +1238,7 @@ export const serverRouter = createTRPCRouter({
           select: { userId: true },
         });
         for (const mentionedMember of mentionedMembers) {
-          await sendPushNotification(ctx.db, {
+          schedulePushNotification(ctx.db, {
             body: content,
             kind: "MENTION",
             recipientId: mentionedMember.userId,

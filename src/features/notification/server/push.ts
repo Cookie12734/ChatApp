@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import webPush from "web-push";
+import { after } from "next/server";
 
 import { env } from "~/env";
 import {
@@ -29,6 +30,18 @@ function getPushStatusCode(error: unknown) {
     return error.statusCode;
   }
   return undefined;
+}
+
+export function schedulePushNotification(
+  ...args: Parameters<typeof sendPushNotification>
+) {
+  after(async () => {
+    try {
+      await sendPushNotification(...args);
+    } catch (error) {
+      console.error("Failed to deliver scheduled push notification", error);
+    }
+  });
 }
 
 export async function sendPushNotification(
