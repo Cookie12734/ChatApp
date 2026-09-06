@@ -4,6 +4,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Bookmark,
+  Ellipsis,
   FileText,
   Link as LinkIcon,
   Plus,
@@ -13,10 +14,14 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
 import {
+  Fragment,
   type FormEvent,
   type ReactNode,
   useEffect,
+  useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -34,7 +39,9 @@ import {
   MessageText,
   ProfileAvatar,
   getDisplayName,
+  formatMessageTime,
 } from "~/features/chat/components/chat-message";
+import { ChatConnectionStatus } from "~/features/chat/components/chat-connection-status";
 import {
   EmojiPickerButton,
   MessageAttachmentPicker,
@@ -44,6 +51,10 @@ import {
 import { api } from "~/trpc/react";
 import { groupReactions } from "~/features/chat/reaction-groups";
 import { flattenMessagePages } from "~/features/chat/message-page";
+import {
+  getMessageSendAttempt,
+  type MessageSendAttempt,
+} from "~/features/chat/message-send-attempt";
 
 const REACTIONS = [
   "\u{1F44D}",
@@ -53,6 +64,16 @@ const REACTIONS = [
   "\u{1F62E}",
   "\u{1F64F}",
 ] as const;
+
+const messageDateFormatter = new Intl.DateTimeFormat("ja-JP", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+});
+
+const menuItemClassName =
+  "data-[highlighted]:bg-connect-highlight flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-3 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
 
 function groupLabel(group: {
   members: Array<{ user: { name: string | null; userId: string } }>;
@@ -72,12 +93,14 @@ export function GroupDmDialog({
   children,
   initialGroupId,
   isRealtimeConnected = false,
+  isReconnecting = false,
   onOpenChange,
   open: controlledOpen,
 }: {
   children?: ReactNode;
   initialGroupId?: string;
   isRealtimeConnected?: boolean;
+  isReconnecting?: boolean;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
 }) {
@@ -87,7 +110,9 @@ export function GroupDmDialog({
     setInternalOpen(nextOpen);
     onOpenChange?.(nextOpen);
   };
-  const [selectedGroupId, setSelectedGroupId] = useState<string>();
+  const [selectedGroupId, setSelectedGroupId] = useState<
+    string | null | undefined
+  >(initialGroupId);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
@@ -97,15 +122,32 @@ export function GroupDmDialog({
   const [message, setMessage] = useState<string>();
   const [reportingMessageId, setReportingMessageId] = useState<string>();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [messageScrollElement, setMessageScrollElement] =
+    useState<HTMLDivElement | null>(null);
+  const initialScrollGroupId = useRef<string | undefined>(undefined);
+  const draftRevisions = useRef(new Map<string, number>());
+  const focusComposerAfterMenuClose = useRef(false);
+  const inputHintId = useId();
+  const sendAttempts = useRef(new Map<string, MessageSendAttempt>());
   const utils = api.useUtils();
-  const groups = api.group.list.useQuery(undefined, { enabled: open });
+  const groups = api.group.list.useQuery(undefined, {
+    enabled: open,
+    refetchInterval: open && !isRealtimeConnected ? 5000 : false,
+  });
+  const currentUserId = groups.data?.currentUserId;
+  const draftKey =
+    currentUserId && selectedGroupId
+      ? `connect:draft:${currentUserId}:group:${selectedGroupId}`
+      : null;
   const friends = api.chat.getFriends.useQuery(undefined, {
     enabled: open && isCreating,
   });
   const conversation = api.group.getConversation.useInfiniteQuery(
     { groupId: selectedGroupId ?? "" },
     {
-      enabled: open && Boolean(selectedGroupId),
+      enabled:
+        open &&
+        Boolean(groups.data?.groups.some(({ id }) => id === selectedGroupId)),
       getNextPageParam: (page) => page.nextCursor,
       refetchInterval: open && !isRealtimeConnected ? 5000 : false,
     },
@@ -121,12 +163,28 @@ export function GroupDmDialog({
     onError: (error) => setMessage(error.message),
   });
   const sendMessage = api.group.sendMessage.useMutation({
-    onSuccess: async () => {
-      setDraft("");
-      setReplyTo(undefined);
-      setAttachments([]);
-      if (selectedGroupId)
-        localStorage.removeItem(`connect:draft:group:${selectedGroupId}`);
+    onMutate: () => ({
+      draftKey,
+      revision: draftKey ? (draftRevisions.current.get(draftKey) ?? 0) : 0,
+    }),
+    onSuccess: async (_message, variables, submittedDraft) => {
+      sendAttempts.current.delete(variables.groupId);
+      if (
+        submittedDraft?.draftKey &&
+        (draftRevisions.current.get(submittedDraft.draftKey) ?? 0) ===
+          submittedDraft.revision
+      ) {
+        localStorage.removeItem(submittedDraft.draftKey);
+        if (submittedDraft.draftKey === draftKey) setDraft("");
+      }
+      if (variables.groupId === selectedGroupId) {
+        setReplyTo((current) =>
+          current?.id === variables.replyToId ? undefined : current,
+        );
+        setAttachments((current) =>
+          current.filter(({ id }) => !variables.attachmentIds?.includes(id)),
+        );
+      }
       await Promise.all([
         utils.group.getConversation.invalidate(),
         utils.group.list.invalidate(),
@@ -136,9 +194,11 @@ export function GroupDmDialog({
   });
   const toggleReaction = api.group.toggleReaction.useMutation({
     onSuccess: async () => utils.group.getConversation.invalidate(),
+    onError: (error) => setMessage(error.message),
   });
   const toggleSaved = api.group.toggleSaved.useMutation({
     onSuccess: async () => utils.group.getConversation.invalidate(),
+    onError: (error) => setMessage(error.message),
   });
   const reportMessage = api.moderation.reportMessage.useMutation({
     onSuccess: () => {
@@ -153,8 +213,10 @@ export function GroupDmDialog({
   );
   const messages = useMemo(
     () =>
-      conversation.data ? flattenMessagePages(conversation.data.pages) : [],
-    [conversation.data],
+      selectedGroup && conversation.data
+        ? flattenMessagePages(conversation.data.pages)
+        : [],
+    [conversation.data, selectedGroup],
   );
 
   useEffect(() => {
@@ -162,38 +224,79 @@ export function GroupDmDialog({
   }, [initialGroupId]);
 
   useEffect(() => {
-    if (!selectedGroupId && groups.data?.groups[0]) {
-      setSelectedGroupId(groups.data.groups[0].id);
+    if (
+      groups.data &&
+      selectedGroupId !== null &&
+      !groups.data.groups.some(({ id }) => id === selectedGroupId)
+    ) {
+      setSelectedGroupId(groups.data.groups[0]?.id);
     }
-  }, [groups.data?.groups, selectedGroupId]);
+  }, [groups.data, selectedGroupId]);
+
+  useLayoutEffect(() => {
+    initialScrollGroupId.current = undefined;
+  }, [open, isCreating, selectedGroupId]);
+
+  useLayoutEffect(() => {
+    if (
+      open &&
+      !isCreating &&
+      selectedGroup &&
+      conversation.data &&
+      initialScrollGroupId.current !== selectedGroup.id &&
+      messageScrollElement
+    ) {
+      messageScrollElement.scrollTop = messageScrollElement.scrollHeight;
+      initialScrollGroupId.current = selectedGroup.id;
+    }
+  }, [
+    open,
+    isCreating,
+    selectedGroup,
+    conversation.data,
+    messageScrollElement,
+  ]);
 
   useEffect(() => {
-    if (!selectedGroupId) return;
-    setDraft(
-      localStorage.getItem(`connect:draft:group:${selectedGroupId}`) ?? "",
-    );
+    setDraft(draftKey ? (localStorage.getItem(draftKey) ?? "") : "");
     setReplyTo(undefined);
     setAttachments([]);
-  }, [selectedGroupId]);
+  }, [draftKey]);
 
   const updateDraft = (value: string) => {
     setDraft(value);
-    if (!selectedGroupId) return;
-    const key = `connect:draft:group:${selectedGroupId}`;
-    if (value) localStorage.setItem(key, value);
-    else localStorage.removeItem(key);
+    if (!draftKey) return;
+    draftRevisions.current.set(
+      draftKey,
+      (draftRevisions.current.get(draftKey) ?? 0) + 1,
+    );
+    if (value) localStorage.setItem(draftKey, value);
+    else localStorage.removeItem(draftKey);
   };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedGroupId || (!draft.trim() && attachments.length === 0)) return;
-    sendMessage.mutate({
+    if (
+      !selectedGroupId ||
+      !currentUserId ||
+      sendMessage.isPending ||
+      (!draft.trim() && attachments.length === 0)
+    )
+      return;
+    const input = {
       attachmentIds: attachments.map(({ id }) => id),
-      clientId: crypto.randomUUID(),
       content: draft.trim() || "添付ファイル",
       groupId: selectedGroupId,
       replyToId: replyTo?.id,
+    };
+    const previousAttempt = sendAttempts.current.get(selectedGroupId);
+    const attempt = getMessageSendAttempt(previousAttempt, {
+      ...input,
+      conversationId: draftKey ?? selectedGroupId,
     });
+    sendAttempts.current.set(selectedGroupId, attempt);
+    setMessage(undefined);
+    sendMessage.mutate({ ...input, clientId: attempt.clientId });
   };
 
   return (
@@ -326,7 +429,7 @@ export function GroupDmDialog({
             <header className="border-connect-ink/15 bg-connect-highlight flex h-14 shrink-0 items-center gap-3 border-b py-0 pr-14 pl-3">
               <button
                 type="button"
-                onClick={() => setSelectedGroupId(undefined)}
+                onClick={() => setSelectedGroupId(null)}
                 className="hover:bg-connect-surface flex h-11 w-11 items-center justify-center rounded-md sm:hidden"
                 aria-label="グループ一覧"
               >
@@ -343,7 +446,11 @@ export function GroupDmDialog({
                 )}
               </div>
             </header>
-            <div className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <ChatConnectionStatus isReconnecting={isReconnecting} />
+            <div
+              ref={setMessageScrollElement}
+              className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4"
+            >
               {conversation.hasNextPage && (
                 <button
                   type="button"
@@ -354,193 +461,252 @@ export function GroupDmDialog({
                 </button>
               )}
               <div className="space-y-2">
-                {messages.map((chatMessage) => {
+                {messages.map((chatMessage, index) => {
                   const reactionGroups = groupReactions(chatMessage.reactions);
+                  const startsNewDay =
+                    messages[index - 1]?.createdAt.toDateString() !==
+                    chatMessage.createdAt.toDateString();
                   return (
-                    <article
-                      key={chatMessage.id}
-                      className="hover:bg-connect-surface group rounded-md p-2"
-                    >
-                      {chatMessage.replyTo && (
-                        <div className="border-connect-action/30 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
-                          {getDisplayName(chatMessage.replyTo.sender)}:{" "}
-                          {chatMessage.replyTo.content}
+                    <Fragment key={chatMessage.id}>
+                      {startsNewDay && (
+                        <div className="text-connect-muted flex items-center gap-3 py-3 text-xs">
+                          <span className="bg-connect-ink/15 h-px flex-1" />
+                          <time dateTime={chatMessage.createdAt.toISOString()}>
+                            {messageDateFormatter.format(chatMessage.createdAt)}
+                          </time>
+                          <span className="bg-connect-ink/15 h-px flex-1" />
                         </div>
                       )}
-                      <div className="flex items-start gap-3">
-                        <ProfileAvatar
-                          user={chatMessage.sender}
-                          className="mt-1 h-9 w-9"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold">
-                            {getDisplayName(chatMessage.sender)}
-                          </p>
-                          <p className="leading-7 break-words whitespace-pre-wrap">
-                            <MessageText
-                              content={chatMessage.content}
-                              onOpenLink={(url) =>
-                                window.open(
-                                  url,
-                                  "_blank",
-                                  "noopener,noreferrer",
-                                )
-                              }
-                            />
-                          </p>
-                          {chatMessage.attachments.length > 0 && (
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                              {chatMessage.attachments.map((attachment) =>
-                                attachment.kind === "IMAGE" ? (
-                                  <a
-                                    key={attachment.id}
-                                    href={`/api/attachments/${attachment.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={`/api/attachments/${attachment.id}`}
-                                      alt={attachment.fileName}
-                                      className="max-h-64 w-full object-contain"
-                                    />
-                                  </a>
-                                ) : (
-                                  <a
-                                    key={attachment.id}
-                                    href={`/api/attachments/${attachment.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
-                                  >
-                                    {attachment.kind === "PDF" ? (
-                                      <FileText className="h-4 w-4" />
-                                    ) : (
-                                      <LinkIcon className="h-4 w-4" />
-                                    )}
-                                    <span className="truncate">
-                                      {attachment.fileName}
-                                    </span>
-                                  </a>
-                                ),
-                              )}
+                      <article className="hover:bg-connect-surface group rounded-md p-2">
+                        {chatMessage.replyTo && (
+                          <div className="border-connect-action/30 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                            {getDisplayName(chatMessage.replyTo.sender)}:{" "}
+                            {chatMessage.replyTo.content}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-x-3">
+                          <ProfileAvatar
+                            user={chatMessage.sender}
+                            className="mt-1 h-9 w-9"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-baseline gap-x-2">
+                              <p className="min-w-0 text-sm font-bold break-words">
+                                {getDisplayName(chatMessage.sender)}
+                              </p>
+                              <time
+                                dateTime={chatMessage.createdAt.toISOString()}
+                                className="text-connect-muted shrink-0 text-xs"
+                              >
+                                {formatMessageTime(chatMessage.createdAt)}
+                              </time>
                             </div>
-                          )}
-                          {reactionGroups.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {reactionGroups.map(([emoji, reactions]) => (
-                                <button
-                                  key={emoji}
-                                  type="button"
-                                  onClick={() =>
-                                    selectedGroupId &&
-                                    toggleReaction.mutate({
-                                      emoji:
-                                        emoji as (typeof REACTIONS)[number],
-                                      groupId: selectedGroupId,
-                                      messageId: chatMessage.id,
-                                    })
-                                  }
-                                  className="border-connect-ink/15 bg-connect-paper hover:bg-connect-highlight min-h-8 rounded-full border px-2 text-xs"
-                                >
-                                  {emoji} {reactions.length}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 gap-1">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setReplyTo({
-                                content: chatMessage.content,
-                                id: chatMessage.id,
-                              })
-                            }
-                            className="hover:bg-connect-highlight flex h-9 w-9 items-center justify-center rounded-md"
-                            aria-label="返信"
-                          >
-                            <Reply className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          {chatMessage.senderId !==
-                            conversation.data?.pages[0]?.currentUser.id && (
+                            <p className="leading-7 break-words whitespace-pre-wrap">
+                              <MessageText
+                                content={chatMessage.content}
+                                onOpenLink={(url) =>
+                                  window.open(
+                                    url,
+                                    "_blank",
+                                    "noopener,noreferrer",
+                                  )
+                                }
+                              />
+                            </p>
+                            {chatMessage.attachments.length > 0 && (
+                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                {chatMessage.attachments.map((attachment) =>
+                                  attachment.kind === "IMAGE" ? (
+                                    <a
+                                      key={attachment.id}
+                                      href={`/api/attachments/${attachment.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={`/api/attachments/${attachment.id}`}
+                                        alt={attachment.fileName}
+                                        className="max-h-64 w-full object-contain"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      key={attachment.id}
+                                      href={`/api/attachments/${attachment.id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
+                                    >
+                                      {attachment.kind === "PDF" ? (
+                                        <FileText className="h-4 w-4" />
+                                      ) : (
+                                        <LinkIcon className="h-4 w-4" />
+                                      )}
+                                      <span className="truncate">
+                                        {attachment.fileName}
+                                      </span>
+                                    </a>
+                                  ),
+                                )}
+                              </div>
+                            )}
+                            {reactionGroups.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {reactionGroups.map(([emoji, reactions]) => (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() =>
+                                      selectedGroupId &&
+                                      toggleReaction.mutate({
+                                        emoji:
+                                          emoji as (typeof REACTIONS)[number],
+                                        groupId: selectedGroupId,
+                                        messageId: chatMessage.id,
+                                      })
+                                    }
+                                    className="border-connect-ink/15 bg-connect-paper hover:bg-connect-highlight min-h-8 rounded-full border px-2 text-xs"
+                                  >
+                                    {emoji} {reactions.length}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="col-start-2 flex gap-1">
                             <button
                               type="button"
-                              onClick={() =>
-                                setReportingMessageId(chatMessage.id)
-                              }
-                              className="hover:bg-connect-danger-soft text-connect-danger flex h-9 w-9 items-center justify-center rounded-md"
-                              aria-label="通報"
+                              onClick={() => {
+                                setReplyTo({
+                                  content: chatMessage.content,
+                                  id: chatMessage.id,
+                                });
+                                textareaRef.current?.focus();
+                              }}
+                              className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
+                              aria-label="返信"
                             >
-                              <AlertCircle
-                                className="h-4 w-4"
-                                aria-hidden="true"
-                              />
+                              <Reply className="h-4 w-4" aria-hidden="true" />
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const quoted = chatMessage.content
-                                .split("\n")
-                                .map((line) => `> ${line}`)
-                                .join("\n");
-                              updateDraft(
-                                `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(
-                                  0,
-                                  1000,
-                                ),
-                              );
-                            }}
-                            className="hover:bg-connect-highlight flex h-9 w-9 items-center justify-center rounded-md"
-                            aria-label="引用"
-                          >
-                            <Quote className="h-4 w-4" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              selectedGroupId &&
-                              toggleSaved.mutate({
-                                groupId: selectedGroupId,
-                                messageId: chatMessage.id,
-                              })
-                            }
-                            className="hover:bg-connect-highlight flex h-9 w-9 items-center justify-center rounded-md"
-                            aria-label={
-                              chatMessage.isSaved ? "保存解除" : "保存"
-                            }
-                          >
-                            <Bookmark
-                              className={`h-4 w-4 ${chatMessage.isSaved ? "fill-current" : ""}`}
-                              aria-hidden="true"
-                            />
-                          </button>
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger asChild>
+                                <button
+                                  type="button"
+                                  className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
+                                  aria-label="その他の操作"
+                                >
+                                  <Ellipsis
+                                    className="h-4 w-4"
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              </DropdownMenu.Trigger>
+                              <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                  align="end"
+                                  sideOffset={4}
+                                  collisionPadding={12}
+                                  onCloseAutoFocus={(event) => {
+                                    if (focusComposerAfterMenuClose.current) {
+                                      event.preventDefault();
+                                      focusComposerAfterMenuClose.current = false;
+                                      textareaRef.current?.focus();
+                                    } else if (reportingMessageId) {
+                                      event.preventDefault();
+                                    }
+                                  }}
+                                  className="border-connect-ink/15 bg-connect-paper text-connect-ink z-[var(--z-dropdown)] max-h-[var(--radix-dropdown-menu-content-available-height)] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border p-1 shadow-md"
+                                >
+                                  <DropdownMenu.Item
+                                    disabled={sendMessage.isPending}
+                                    onSelect={() => {
+                                      const quoted = chatMessage.content
+                                        .split("\n")
+                                        .map((line) => `> ${line}`)
+                                        .join("\n");
+                                      updateDraft(
+                                        `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(
+                                          0,
+                                          1000,
+                                        ),
+                                      );
+                                      focusComposerAfterMenuClose.current = true;
+                                    }}
+                                    className={menuItemClassName}
+                                  >
+                                    <Quote
+                                      className="h-4 w-4"
+                                      aria-hidden="true"
+                                    />
+                                    引用
+                                  </DropdownMenu.Item>
+                                  <DropdownMenu.Item
+                                    disabled={toggleSaved.isPending}
+                                    onSelect={() =>
+                                      selectedGroupId &&
+                                      toggleSaved.mutate({
+                                        groupId: selectedGroupId,
+                                        messageId: chatMessage.id,
+                                      })
+                                    }
+                                    className={menuItemClassName}
+                                  >
+                                    <Bookmark
+                                      className={`h-4 w-4 ${chatMessage.isSaved ? "fill-current" : ""}`}
+                                      aria-hidden="true"
+                                    />
+                                    {chatMessage.isSaved ? "保存解除" : "保存"}
+                                  </DropdownMenu.Item>
+                                  <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
+                                  <DropdownMenu.Label className="text-connect-muted px-3 py-2 text-xs">
+                                    リアクション
+                                  </DropdownMenu.Label>
+                                  <div className="grid grid-cols-3 gap-1">
+                                    {REACTIONS.map((emoji) => (
+                                      <DropdownMenu.Item
+                                        key={emoji}
+                                        disabled={toggleReaction.isPending}
+                                        onSelect={() =>
+                                          selectedGroupId &&
+                                          toggleReaction.mutate({
+                                            emoji,
+                                            groupId: selectedGroupId,
+                                            messageId: chatMessage.id,
+                                          })
+                                        }
+                                        className={`${menuItemClassName} justify-center`}
+                                        aria-label={`${emoji}でリアクション`}
+                                      >
+                                        {emoji}
+                                      </DropdownMenu.Item>
+                                    ))}
+                                  </div>
+                                  {chatMessage.senderId !== currentUserId && (
+                                    <>
+                                      <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
+                                      <DropdownMenu.Item
+                                        onSelect={() =>
+                                          setReportingMessageId(chatMessage.id)
+                                        }
+                                        className={`${menuItemClassName} text-connect-danger`}
+                                      >
+                                        <AlertCircle
+                                          className="h-4 w-4"
+                                          aria-hidden="true"
+                                        />
+                                        通報
+                                      </DropdownMenu.Item>
+                                    </>
+                                  )}
+                                </DropdownMenu.Content>
+                              </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
+                          </div>
                         </div>
-                      </div>
-                      <div className="mt-1 ml-12 flex flex-wrap gap-1">
-                        {REACTIONS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() =>
-                              selectedGroupId &&
-                              toggleReaction.mutate({
-                                emoji,
-                                groupId: selectedGroupId,
-                                messageId: chatMessage.id,
-                              })
-                            }
-                            className="hover:bg-connect-highlight min-h-8 rounded-md px-1.5 text-sm"
-                            aria-label={`${emoji}でリアクション`}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    </article>
+                      </article>
+                    </Fragment>
                   );
                 })}
               </div>
@@ -561,6 +727,7 @@ export function GroupDmDialog({
                   </div>
                 )}
                 <div
+                  data-chat-composer
                   className={`border-connect-ink/15 bg-connect-surface flex flex-col border ${replyTo ? "rounded-b-md" : "rounded-md"}`}
                 >
                   <PendingAttachmentList
@@ -578,8 +745,20 @@ export function GroupDmDialog({
                     <textarea
                       ref={textareaRef}
                       data-chat-input
+                      aria-describedby={inputHintId}
                       value={draft}
                       onChange={(event) => updateDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" &&
+                          !event.shiftKey &&
+                          !event.nativeEvent.isComposing &&
+                          event.nativeEvent.keyCode !== 229
+                        ) {
+                          event.preventDefault();
+                          event.currentTarget.form?.requestSubmit();
+                        }
+                      }}
                       maxLength={1000}
                       rows={1}
                       placeholder="グループへメッセージ"
@@ -603,12 +782,19 @@ export function GroupDmDialog({
                       <Send className="h-5 w-5" />
                     </button>
                   </div>
+                  <p
+                    id={inputHintId}
+                    className="text-connect-muted px-3 pb-2 text-xs"
+                  >
+                    Enterで送信 · Shift+Enterで改行
+                  </p>
                 </div>
               </form>
             )}
             {message && (
               <p
                 role="status"
+                aria-label="操作結果"
                 className="text-connect-danger px-4 pb-3 text-sm"
               >
                 {message}

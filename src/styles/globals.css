@@ -225,6 +225,11 @@ textarea[data-chat-input]:focus-visible {
   outline: none;
 }
 
+[data-chat-composer]:focus-within {
+  outline: 2px solid var(--connect-focus);
+  outline-offset: 2px;
+}
+
 .scrollbar-hidden {
   scrollbar-width: none;
 }

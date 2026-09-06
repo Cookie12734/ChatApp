@@ -42,6 +42,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
+import { ChatConnectionStatus } from "~/features/chat/components/chat-connection-status";
 import {
   ChatComposer,
   type ChatComposerHandle,
@@ -411,7 +412,10 @@ export function FriendChatPanel({
     PendingServerMessage[]
   >([]);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
-  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<
+    "connecting" | "connected" | "reconnecting"
+  >("connecting");
+  const isRealtimeConnected = realtimeStatus === "connected";
   const typingResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -433,7 +437,9 @@ export function FriendChatPanel({
           ? 5000
           : 15000,
   });
-  const groupConversations = api.group.list.useQuery();
+  const groupConversations = api.group.list.useQuery(undefined, {
+    refetchInterval: !isRealtimeConnected ? 5000 : false,
+  });
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -966,7 +972,7 @@ export function FriendChatPanel({
     const enqueueMessage = createMessageEventQueue();
     let disposed = false;
     events.onopen = () => {
-      setIsRealtimeConnected(true);
+      setRealtimeStatus("connected");
       void utils.chat.getFriends.invalidate();
       void utils.server.getOverview.invalidate();
       void utils.group.list.invalidate();
@@ -989,7 +995,7 @@ export function FriendChatPanel({
         });
       }
     };
-    events.onerror = () => setIsRealtimeConnected(false);
+    events.onerror = () => setRealtimeStatus("reconnecting");
     const handleChatEvent = async (payload: ChatEventPayload) => {
       if (disposed) return;
       if (payload.kind === "direct") {
@@ -1190,7 +1196,7 @@ export function FriendChatPanel({
     return () => {
       disposed = true;
       events.close();
-      setIsRealtimeConnected(false);
+      setRealtimeStatus("connecting");
       if (typingResetTimerRef.current) {
         clearTimeout(typingResetTimerRef.current);
       }
@@ -1302,6 +1308,8 @@ export function FriendChatPanel({
         utils.chat.getConversation.invalidate(),
         utils.chat.getFriends.invalidate(),
         utils.chat.getMatchingStatus.invalidate(),
+        utils.group.list.invalidate(),
+        utils.group.getConversation.invalidate(),
         utils.friend.getOverview.invalidate(),
         utils.profile.getByUserId.invalidate(),
         utils.server.getConversation.invalidate(),
@@ -3097,6 +3105,11 @@ export function FriendChatPanel({
         </header>
 
         {hasChatQueryError && <ChatQueryError onRetry={retryChatQueries} />}
+        <ChatConnectionStatus
+          isReconnecting={
+            !hasChatQueryError && realtimeStatus === "reconnecting"
+          }
+        />
 
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
@@ -3526,14 +3539,19 @@ export function FriendChatPanel({
                     }
                     onError={setServerMessage}
                     onSubmit={handleServerSubmit}
+                    replyToId={
+                      replyTarget?.kind === "server"
+                        ? replyTarget.id
+                        : undefined
+                    }
                     placeholder={
                       canSendSelectedServerMessages
                         ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
                         : "閲覧のみのためメッセージを送信できません"
                     }
                     storageKey={
-                      selectedServerChannel?.id
-                        ? `connect:draft:server:${selectedServerChannel.id}`
+                      selectedServerChannel?.id && currentServerUser?.id
+                        ? `connect:draft:${currentServerUser.id}:server:${selectedServerChannel.id}`
                         : null
                     }
                   />
@@ -3750,6 +3768,11 @@ export function FriendChatPanel({
                         joinedToReply={replyTarget?.kind === "direct"}
                         onError={setMessage}
                         onSubmit={handleDirectSubmit}
+                        replyToId={
+                          replyTarget?.kind === "direct"
+                            ? replyTarget.id
+                            : undefined
+                        }
                         onTypingChange={broadcastTyping}
                         placeholder={
                           !canSendDirectMessage
@@ -3759,8 +3782,8 @@ export function FriendChatPanel({
                               : "フレンドを選択してください"
                         }
                         storageKey={
-                          selectedFriendId
-                            ? `connect:draft:direct:${selectedFriendId}`
+                          selectedFriendId && directConversation?.currentUserId
+                            ? `connect:draft:${directConversation.currentUserId}:direct:${selectedFriendId}`
                             : null
                         }
                       />
@@ -4153,6 +4176,7 @@ export function FriendChatPanel({
       {isGroupDmOpen && (
         <GroupDmDialog
           isRealtimeConnected={isRealtimeConnected}
+          isReconnecting={realtimeStatus === "reconnecting"}
           initialGroupId={selectedGroupId}
           open
           onOpenChange={setIsGroupDmOpen}

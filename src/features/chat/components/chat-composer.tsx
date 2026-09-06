@@ -2,9 +2,14 @@
 
 import { Send } from "lucide-react";
 import {
+  getMessageSendAttempt,
+  type MessageSendAttempt,
+} from "~/features/chat/message-send-attempt";
+import {
   forwardRef,
   useCallback,
   useEffect,
+  useId,
   useImperativeHandle,
   useRef,
   useState,
@@ -34,6 +39,7 @@ type ChatComposerProps = {
   onSubmit: (submission: ChatComposerSubmission) => Promise<void>;
   onTypingChange?: (isTyping: boolean) => void;
   placeholder: string;
+  replyToId?: string;
   storageKey: string | null;
 };
 
@@ -52,6 +58,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
       onSubmit,
       onTypingChange,
       placeholder,
+      replyToId,
       storageKey,
     },
     ref,
@@ -60,11 +67,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     const [draft, setDraft] = useState("");
     const [isSending, setIsSending] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+    const inputHintId = useId();
     const draftRef = useRef({ key: storageKey, value: draft });
     const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
     const lastTypingSentAtRef = useRef(0);
+    const sendAttempt = useRef<MessageSendAttempt | undefined>(undefined);
 
     const updateDraft = useCallback(
       (value: string) => {
@@ -150,6 +159,14 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
       const previousDraft = draft;
       const previousAttachments = attachments;
       const content = draft.trim() || "添付ファイル";
+      const attachmentIds = previousAttachments.map(({ id }) => id);
+      const attempt = getMessageSendAttempt(sendAttempt.current, {
+        attachmentIds,
+        content,
+        conversationId: storageKey ?? "",
+        replyToId,
+      });
+      sendAttempt.current = attempt;
       updateDraft("");
       setAttachments([]);
       persistDraft(storageKey, "");
@@ -157,10 +174,11 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
 
       try {
         await onSubmit({
-          attachmentIds: previousAttachments.map(({ id }) => id),
-          clientId: crypto.randomUUID(),
+          attachmentIds,
+          clientId: attempt.clientId,
           content,
         });
+        sendAttempt.current = undefined;
       } catch (error) {
         setDraft((current) => {
           if (current) return current;
@@ -179,6 +197,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
 
     return (
       <form
+        data-chat-composer
         onSubmit={(event) => void submit(event)}
         className={`border-connect-ink/15 bg-connect-paper flex flex-col border ${joinedToReply ? "rounded-b-md" : "rounded-md"}`}
       >
@@ -197,13 +216,15 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
           <textarea
             ref={textareaRef}
             data-chat-input
+            aria-describedby={inputHintId}
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
             onKeyDown={(event) => {
               if (
                 event.key === "Enter" &&
                 !event.shiftKey &&
-                !event.nativeEvent.isComposing
+                !event.nativeEvent.isComposing &&
+                event.nativeEvent.keyCode !== 229
               ) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
@@ -233,6 +254,9 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
             <Send className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
+        <p id={inputHintId} className="text-connect-muted px-3 pb-2 text-xs">
+          Enterで送信 · Shift+Enterで改行
+        </p>
       </form>
     );
   },
