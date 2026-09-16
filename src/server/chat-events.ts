@@ -24,7 +24,7 @@ export type ChatEvent =
       userName: string;
     };
 
-type ChatEventDatabase = Pick<PrismaClient, "chatEvent">;
+type ChatEventDatabase = Pick<PrismaClient, "chatEvent" | "$transaction">;
 type ChatEventListener = (event: ChatEvent) => void;
 type ChatEventSubscription = {
   listener: ChatEventListener;
@@ -255,14 +255,21 @@ export async function publishChatEvent(
   try {
     const record = getChatEventRecord(event);
 
-    const createdEvent = await db.chatEvent.create({
-      data: {
-        audienceIds: record.audienceIds,
-        kind: record.kind,
-        payload: record.payload,
-        serverId: record.serverId,
-      },
-      select: { id: true },
+    // Serialize allocation and commit so the polling cursor cannot skip a late
+    // commit with a smaller ID. Keep this transaction limited to the event row.
+    // ponytail: one global writer lock; use a dedicated ordered broker if event
+    // throughput exceeds what this short transaction can sustain.
+    const createdEvent = await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(1163281236, 1)::text`;
+      return tx.chatEvent.create({
+        data: {
+          audienceIds: record.audienceIds,
+          kind: record.kind,
+          payload: record.payload,
+          serverId: record.serverId,
+        },
+        select: { id: true },
+      });
     });
     if (hadLocalSubscribers) {
       streamState.localEventVersions.set(

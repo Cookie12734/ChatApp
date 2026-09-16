@@ -5,6 +5,7 @@ import { isSameAttachmentSet } from "~/features/chat/server/message-idempotency"
 
 import {
   decodeMessageCursor,
+  encodeMessageCursor,
   getMessageCursorWhere,
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
@@ -194,7 +195,10 @@ function addMemberImages<T extends { user: { userId: string } }>(member: T) {
 }
 
 async function publishGroupChange(
-  database: Pick<PrismaClient, "groupConversationMember" | "chatEvent">,
+  database: Pick<
+    PrismaClient,
+    "groupConversationMember" | "chatEvent" | "$transaction"
+  >,
   groupId: string,
   removedUserIds: string[] = [],
 ) {
@@ -212,61 +216,83 @@ async function publishGroupChange(
 }
 
 export const groupRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const currentUserId = ctx.session.user.id;
-    await enforceGroupRateLimit(currentUserId, "list", 120);
+  list: protectedProcedure
+    .input(z.object({ cursor: z.string().nullish() }).optional())
+    .query(async ({ ctx, input }) => {
+      const cursor = decodeMessageCursor(input?.cursor);
+      if (input?.cursor && !cursor)
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      const currentUserId = ctx.session.user.id;
+      await enforceGroupRateLimit(currentUserId, "list", 120);
 
-    const blocks = await ctx.db.userBlock.findMany({
-      where: {
-        OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
-      },
-      select: { blockedId: true, blockerId: true },
-    });
-    const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
-
-    const groups = await ctx.db.groupConversation.findMany({
-      where: { members: { some: { userId: currentUserId } } },
-      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-      take: 100,
-      select: {
-        createdAt: true,
-        createdById: true,
-        id: true,
-        name: true,
-        updatedAt: true,
-        members: {
-          orderBy: { createdAt: "asc" },
-          select: memberSelect,
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
         },
-        messages: {
-          where: { senderId: { notIn: blockedPeerIds } },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            content: true,
-            createdAt: true,
-            id: true,
-            senderId: true,
+        select: { blockedId: true, blockerId: true },
+      });
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+
+      const groups = await ctx.db.groupConversation.findMany({
+        where: {
+          members: { some: { userId: currentUserId } },
+          ...(cursor
+            ? {
+                OR: [
+                  { updatedAt: { lt: cursor.createdAt } },
+                  { updatedAt: cursor.createdAt, id: { lt: cursor.id } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        take: 101,
+        select: {
+          createdAt: true,
+          createdById: true,
+          id: true,
+          name: true,
+          updatedAt: true,
+          members: {
+            orderBy: { createdAt: "asc" },
+            select: memberSelect,
+          },
+          messages: {
+            where: { senderId: { notIn: blockedPeerIds } },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              content: true,
+              createdAt: true,
+              id: true,
+              senderId: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return {
-      currentUserId,
-      groups: groups.map(({ members, messages, ...group }) => {
-        const membersWithImages = members.map(addMemberImages);
-        return {
-          ...group,
-          lastMessage: messages[0] ?? null,
-          members: membersWithImages,
-          myMembership: membersWithImages.find(
-            (member) => member.user.id === currentUserId,
-          ),
-        };
-      }),
-    };
-  }),
+      const boundary = groups.length > 100 ? groups[99] : undefined;
+      return {
+        currentUserId,
+        nextCursor: boundary
+          ? encodeMessageCursor({
+              createdAt: boundary.updatedAt,
+              id: boundary.id,
+            })
+          : undefined,
+        groups: groups.slice(0, 100).map(({ members, messages, ...group }) => {
+          const membersWithImages = members.map(addMemberImages);
+          return {
+            ...group,
+            lastMessage: messages[0] ?? null,
+            members: membersWithImages,
+            myMembership: membersWithImages.find(
+              (member) => member.user.id === currentUserId,
+            ),
+          };
+        }),
+      };
+    }),
 
   create: protectedProcedure
     .input(createInput)

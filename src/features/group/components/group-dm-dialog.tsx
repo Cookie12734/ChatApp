@@ -130,11 +130,25 @@ export function GroupDmDialog({
   const inputHintId = useId();
   const sendAttempts = useRef(new Map<string, MessageSendAttempt>());
   const utils = api.useUtils();
-  const groups = api.group.list.useQuery(undefined, {
-    enabled: open,
-    refetchInterval: open && !isRealtimeConnected ? 5000 : false,
-  });
-  const currentUserId = groups.data?.currentUserId;
+  const groups = api.group.list.useInfiniteQuery(
+    {},
+    {
+      getNextPageParam: (page) => page.nextCursor,
+      enabled: open,
+      refetchInterval: open && !isRealtimeConnected ? 5000 : false,
+    },
+  );
+  const listedGroups = useMemo(
+    () => [
+      ...new Map(
+        groups.data?.pages
+          .flatMap((page) => page.groups)
+          .map((group) => [group.id, group]),
+      ).values(),
+    ],
+    [groups.data],
+  );
+  const currentUserId = groups.data?.pages[0]?.currentUserId;
   const draftKey =
     currentUserId && selectedGroupId
       ? `connect:draft:${currentUserId}:group:${selectedGroupId}`
@@ -145,9 +159,7 @@ export function GroupDmDialog({
   const conversation = api.group.getConversation.useInfiniteQuery(
     { groupId: selectedGroupId ?? "" },
     {
-      enabled:
-        open &&
-        Boolean(groups.data?.groups.some(({ id }) => id === selectedGroupId)),
+      enabled: open && listedGroups.some(({ id }) => id === selectedGroupId),
       getNextPageParam: (page) => page.nextCursor,
       refetchInterval: open && !isRealtimeConnected ? 5000 : false,
     },
@@ -208,9 +220,7 @@ export function GroupDmDialog({
     onError: (error) => setMessage(error.message),
   });
 
-  const selectedGroup = groups.data?.groups.find(
-    ({ id }) => id === selectedGroupId,
-  );
+  const selectedGroup = listedGroups.find(({ id }) => id === selectedGroupId);
   const messages = useMemo(
     () =>
       selectedGroup && conversation.data
@@ -227,11 +237,11 @@ export function GroupDmDialog({
     if (
       groups.data &&
       selectedGroupId !== null &&
-      !groups.data.groups.some(({ id }) => id === selectedGroupId)
+      !listedGroups.some(({ id }) => id === selectedGroupId)
     ) {
-      setSelectedGroupId(groups.data.groups[0]?.id);
+      setSelectedGroupId(listedGroups[0]?.id);
     }
-  }, [groups.data, selectedGroupId]);
+  }, [groups.data, listedGroups, selectedGroupId]);
 
   useLayoutEffect(() => {
     initialScrollGroupId.current = undefined;
@@ -392,7 +402,7 @@ export function GroupDmDialog({
                 {groups.isLoading && (
                   <p className="text-connect-muted p-3 text-sm">読み込み中…</p>
                 )}
-                {groups.data?.groups.map((group) => (
+                {listedGroups.map((group) => (
                   <button
                     key={group.id}
                     type="button"
@@ -410,7 +420,24 @@ export function GroupDmDialog({
                     </span>
                   </button>
                 ))}
-                {groups.data?.groups.length === 0 && (
+                {groups.hasNextPage && (
+                  <button
+                    type="button"
+                    disabled={groups.isFetchingNextPage}
+                    onClick={() => void groups.fetchNextPage()}
+                    className="hover:bg-connect-surface min-h-11 w-full rounded-md px-3 py-2 text-sm"
+                  >
+                    {groups.isFetchingNextPage
+                      ? "読み込み中…"
+                      : "グループをさらに表示"}
+                  </button>
+                )}
+                {groups.isError && (
+                  <p role="alert" className="text-connect-danger p-3 text-sm">
+                    グループ一覧を取得できませんでした
+                  </p>
+                )}
+                {groups.data && listedGroups.length === 0 && (
                   <div className="text-connect-muted p-4 text-sm">
                     <Users
                       className="text-connect-signal mb-2 h-5 w-5"
@@ -738,6 +765,7 @@ export function GroupDmDialog({
                   <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
                     <MessageAttachmentPicker
                       attachments={attachments}
+                      conversationKey={draftKey}
                       disabled={sendMessage.isPending}
                       onChange={setAttachments}
                       onError={setMessage}
