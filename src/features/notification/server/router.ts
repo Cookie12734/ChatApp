@@ -92,6 +92,23 @@ function endpointConflict() {
 }
 
 export const notificationRouter = createTRPCRouter({
+  getPushSubscription: protectedProcedure
+    .input(unsubscribeInput)
+    .query(async ({ ctx, input }) => ({
+      subscribed: Boolean(
+        await ctx.db.pushSubscription.findFirst({
+          where: {
+            endpoint: input.endpoint,
+            userId: ctx.session.user.id,
+            OR: [
+              { expirationTime: null },
+              { expirationTime: { gt: new Date() } },
+            ],
+          },
+          select: { id: true },
+        }),
+      ),
+    })),
   getSettings: protectedProcedure.query(async ({ ctx }) => {
     const pushConfiguration = getPushConfiguration();
     const settings = await ctx.db.notificationPreference.findUnique({

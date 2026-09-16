@@ -30,6 +30,7 @@ export function NotificationSettingsDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
   const [message, setMessage] = useState<string>();
   const utils = api.useUtils();
   const settings = api.notification.getSettings.useQuery(undefined, {
@@ -48,11 +49,35 @@ export function NotificationSettingsDialog({
 
   useEffect(() => {
     if (!open || !pushSupported) return;
+    let cancelled = false;
+    setCheckingSubscription(true);
+    setSubscribed(false);
     void navigator.serviceWorker
       .getRegistration("/sw.js")
       .then((registration) => registration?.pushManager.getSubscription())
-      .then((subscription) => setSubscribed(Boolean(subscription)));
-  }, [open, pushSupported]);
+      .then(async (subscription) =>
+        subscription
+          ? (
+              await utils.notification.getPushSubscription.fetch(
+                { endpoint: subscription.endpoint },
+                { staleTime: 0 },
+              )
+            ).subscribed
+          : false,
+      )
+      .then((active) => {
+        if (!cancelled) setSubscribed(active);
+      })
+      .catch(() => {
+        if (!cancelled) setMessage("プッシュ通知の状態を確認できませんでした");
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingSubscription(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, pushSupported, utils.notification.getPushSubscription]);
 
   const save = (input: SettingsUpdate) => {
     setMessage(undefined);
@@ -175,6 +200,7 @@ export function NotificationSettingsDialog({
                 onClick={() => void (subscribed ? disablePush() : enablePush())}
                 disabled={
                   settings.isLoading ||
+                  checkingSubscription ||
                   subscribePush.isPending ||
                   unsubscribePush.isPending ||
                   !pushSupported ||
