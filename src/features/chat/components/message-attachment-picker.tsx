@@ -14,7 +14,16 @@ import {
   Smile,
   X,
 } from "lucide-react";
-import { useId, useState, type ChangeEvent, type RefObject } from "react";
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+} from "react";
 import { Popover } from "radix-ui";
 
 import { cn } from "~/lib/utils";
@@ -46,8 +55,9 @@ export type PendingAttachment = {
 
 export type MessageAttachmentPickerProps = {
   attachments: PendingAttachment[];
+  conversationKey: string | null;
   disabled?: boolean;
-  onChange: (attachments: PendingAttachment[]) => void;
+  onChange: Dispatch<SetStateAction<PendingAttachment[]>>;
   onError: (message: string) => void;
 };
 
@@ -80,6 +90,7 @@ function AttachmentIcon({ kind }: { kind: PendingAttachment["kind"] }) {
 
 export function MessageAttachmentPicker({
   attachments,
+  conversationKey,
   disabled = false,
   onChange,
   onError,
@@ -88,6 +99,15 @@ export function MessageAttachmentPicker({
   const statusId = useId();
   const [error, setError] = useState<string>();
   const [isUploading, setIsUploading] = useState(false);
+  const uploadVersion = useRef(0);
+  useLayoutEffect(() => {
+    const version = ++uploadVersion.current;
+    setIsUploading(false);
+    setError(undefined);
+    return () => {
+      uploadVersion.current = version + 1;
+    };
+  }, [conversationKey]);
   const atLimit = attachments.length >= MAX_ATTACHMENTS;
   const controlsDisabled = disabled || isUploading || atLimit;
 
@@ -106,6 +126,7 @@ export function MessageAttachmentPicker({
 
     setError(undefined);
     setIsUploading(true);
+    const version = uploadVersion.current;
     const uploaded: PendingAttachment[] = [];
     try {
       for (const file of files) {
@@ -116,13 +137,14 @@ export function MessageAttachmentPicker({
             body: formData,
             method: "POST",
           });
-          uploaded.push(
-            await getUploadedAttachment(
-              response,
-              `${file.name}を添付できませんでした。画像またはPDFを選択してください。`,
-            ),
+          const attachment = await getUploadedAttachment(
+            response,
+            `${file.name}を添付できませんでした。画像またはPDFを選択してください。`,
           );
+          if (version !== uploadVersion.current) return;
+          uploaded.push(attachment);
         } catch (uploadError) {
+          if (version !== uploadVersion.current) return;
           const message =
             uploadError instanceof Error
               ? uploadError.message
@@ -131,9 +153,11 @@ export function MessageAttachmentPicker({
           onError(message);
         }
       }
-      if (uploaded.length > 0) onChange([...attachments, ...uploaded]);
+      if (uploaded.length > 0 && version === uploadVersion.current) {
+        onChange((current) => [...current, ...uploaded]);
+      }
     } finally {
-      setIsUploading(false);
+      if (version === uploadVersion.current) setIsUploading(false);
     }
   };
 

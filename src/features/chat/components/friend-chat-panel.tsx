@@ -198,6 +198,7 @@ type PendingServerMessage = PendingMessage & {
 };
 
 type ReplyTarget = {
+  conversationKey: string;
   content: string;
   id: string;
   kind: "direct" | "server";
@@ -366,7 +367,9 @@ export function FriendChatPanel({
   } | null>(null);
   const [messageContextMenu, setMessageContextMenu] =
     useState<MessageContextMenu | null>(null);
-  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
+  const [storedReplyTarget, setReplyTarget] = useState<ReplyTarget | null>(
+    null,
+  );
   const [profileContextMenu, setProfileContextMenu] =
     useState<ProfileContextMenu | null>(null);
   const [profileDialogTarget, setProfileDialogTarget] = useState<{
@@ -437,9 +440,20 @@ export function FriendChatPanel({
           ? 5000
           : 15000,
   });
-  const groupConversations = api.group.list.useQuery(undefined, {
-    refetchInterval: !isRealtimeConnected ? 5000 : false,
-  });
+  const groupConversations = api.group.list.useInfiniteQuery(
+    {},
+    {
+      getNextPageParam: (page) => page.nextCursor,
+      refetchInterval: !isRealtimeConnected ? 5000 : false,
+    },
+  );
+  const listedGroups = [
+    ...new Map(
+      groupConversations.data?.pages
+        .flatMap((page) => page.groups)
+        .map((group) => [group.id, group]),
+    ).values(),
+  ];
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -836,7 +850,7 @@ export function FriendChatPanel({
       );
       return next.length === messages.length ? messages : next;
     });
-  }, [directMessages]);
+  }, [directMessages, pendingDirectMessages]);
 
   useEffect(() => {
     const loadedIds = new Set(serverMessages.map(({ id }) => id));
@@ -846,7 +860,7 @@ export function FriendChatPanel({
       );
       return next.length === messages.length ? messages : next;
     });
-  }, [serverMessages]);
+  }, [pendingServerMessages, serverMessages]);
 
   useEffect(() => {
     if (!selectedServer) {
@@ -934,6 +948,7 @@ export function FriendChatPanel({
   useEffect(() => {
     setMessageContextMenu(null);
     setProfileContextMenu(null);
+    setReplyTarget(null);
     setEditingMessage(null);
     setIsPinnedMessagesOpen(false);
     setIsMemberListOpen(false);
@@ -952,6 +967,25 @@ export function FriendChatPanel({
       selectedFriendContact?.isFriend && !selectedFriendContact.isBlocked,
     );
   const { mutate: publishTyping } = api.chat.setTyping.useMutation();
+  const replyConversationKey = selectedServerId
+    ? `server:${selectedServerId}:${selectedServerChannel?.id ?? ""}`
+    : `direct:${selectedFriendId ?? ""}`;
+  const replyTarget =
+    storedReplyTarget?.conversationKey === replyConversationKey
+      ? storedReplyTarget
+      : null;
+
+  const { mutate: heartbeatMatching } = api.chat.heartbeatMatching.useMutation({
+    onSuccess: (result) => {
+      if (!result.active) void utils.chat.getMatchingStatus.invalidate();
+    },
+  });
+  useEffect(() => {
+    if (matchingState !== "waiting") return;
+    heartbeatMatching();
+    const timer = setInterval(() => heartbeatMatching(), 20_000);
+    return () => clearInterval(timer);
+  }, [matchingState, heartbeatMatching]);
 
   useEffect(() => {
     selectedChatRef.current = {
@@ -2318,6 +2352,7 @@ export function FriendChatPanel({
       return;
     }
     setReplyTarget({
+      conversationKey: replyConversationKey,
       content: messageContextTarget.content,
       id: messageContextTarget.id,
       kind: messageContextMenu.kind,
@@ -2919,7 +2954,7 @@ export function FriendChatPanel({
                 <div className="bg-connect-surface mx-2 h-14 animate-pulse rounded-md" />
               )}
 
-              {groupConversations.data?.groups.map((group) => (
+              {listedGroups.map((group) => (
                 <button
                   key={group.id}
                   type="button"
@@ -2947,6 +2982,23 @@ export function FriendChatPanel({
                 </button>
               ))}
 
+              {groupConversations.hasNextPage && (
+                <button
+                  type="button"
+                  disabled={groupConversations.isFetchingNextPage}
+                  onClick={() => void groupConversations.fetchNextPage()}
+                  className="hover:bg-connect-surface min-h-11 w-full rounded-md px-3 py-2 text-sm"
+                >
+                  {groupConversations.isFetchingNextPage
+                    ? "読み込み中…"
+                    : "グループをさらに表示"}
+                </button>
+              )}
+              {groupConversations.isError && (
+                <p role="alert" className="text-connect-danger px-3 text-sm">
+                  グループ一覧を取得できませんでした
+                </p>
+              )}
               {friends.isLoading && (
                 <div className="space-y-2 px-2">
                   {[0, 1, 2].map((item) => (

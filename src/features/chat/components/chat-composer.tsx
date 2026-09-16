@@ -11,6 +11,7 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -52,7 +53,7 @@ function persistDraft(key: string | null, value: string) {
 export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
   function ChatComposer(
     {
-      disabled = false,
+      disabled: externallyDisabled = false,
       joinedToReply = false,
       onError,
       onSubmit,
@@ -63,6 +64,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
     },
     ref,
   ) {
+    const disabled = externallyDisabled || !storageKey;
     const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
     const [draft, setDraft] = useState("");
     const [isSending, setIsSending] = useState(false);
@@ -106,7 +108,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
       [onTypingChange, storageKey],
     );
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const value = storageKey ? (localStorage.getItem(storageKey) ?? "") : "";
       draftRef.current = { key: storageKey, value };
       setDraft(value);
@@ -209,6 +211,7 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
         <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
           <MessageAttachmentPicker
             attachments={attachments}
+            conversationKey={storageKey}
             disabled={disabled || isSending}
             onChange={setAttachments}
             onError={onError}
