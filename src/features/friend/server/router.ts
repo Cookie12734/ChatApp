@@ -614,13 +614,35 @@ export const friendRouter = createTRPCRouter({
         });
       }
 
-      const result = await ctx.db.friendship.deleteMany({
-        where: {
-          OR: [
-            { userId: currentUserId, friendId: friend.id },
-            { userId: friend.id, friendId: currentUserId },
-          ],
-        },
+      const result = await ctx.db.$transaction(async (tx) => {
+        const [firstUserId, secondUserId] = getFriendRequestLockIds(
+          currentUserId,
+          friend.id,
+        );
+        await tx.$queryRaw`
+          SELECT "id" FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id" FOR UPDATE
+        `;
+        const removed = await tx.friendship.deleteMany({
+          where: {
+            OR: [
+              { userId: currentUserId, friendId: friend.id },
+              { userId: friend.id, friendId: currentUserId },
+            ],
+          },
+        });
+        await tx.rematchRequest.deleteMany({
+          where: {
+            matchingResult: {
+              OR: [
+                { firstUserId: currentUserId, secondUserId: friend.id },
+                { firstUserId: friend.id, secondUserId: currentUserId },
+              ],
+            },
+          },
+        });
+        return removed;
       });
 
       if (result.count === 0) {
@@ -707,6 +729,17 @@ export const friendRouter = createTRPCRouter({
               { senderId: currentUserId, receiverId: blocked.id },
               { senderId: blocked.id, receiverId: currentUserId },
             ],
+          },
+        });
+
+        await tx.rematchRequest.deleteMany({
+          where: {
+            matchingResult: {
+              OR: [
+                { firstUserId: currentUserId, secondUserId: blocked.id },
+                { firstUserId: blocked.id, secondUserId: currentUserId },
+              ],
+            },
           },
         });
 

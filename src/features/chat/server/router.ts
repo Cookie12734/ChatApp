@@ -17,6 +17,7 @@ import {
   getMatchingConversationConsentTarget,
   getMatchingRatingTarget,
   hasSettledMatch,
+  MATCHING_QUEUE_TTL_MS,
 } from "~/features/chat/server/matching-permissions";
 import { pickMatchingCandidate } from "~/features/chat/server/matching-ranking";
 import {
@@ -179,7 +180,6 @@ async function refreshMatchingTopicProfile(
   const recentResults = await database.matchingResult.findMany({
     where: {
       createdAt: { gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
-      topic,
       OR: [{ firstUserId: userId }, { secondUserId: userId }],
     },
     orderBy: { createdAt: "desc" },
@@ -190,6 +190,7 @@ async function refreshMatchingTopicProfile(
       firstUserId: true,
       secondUserConversationConsent: true,
       secondUserId: true,
+      topic: true,
     },
   });
   // ponytail: scan at most 50 match records in memory; move this windowing to
@@ -197,6 +198,7 @@ async function refreshMatchingTopicProfile(
   const conversationWindows = getConsentedConversationWindows(
     recentResults,
     userId,
+    topic,
   );
 
   if (conversationWindows.length === 0) {
@@ -556,10 +558,19 @@ export const chatRouter = createTRPCRouter({
     const currentUserId = ctx.session.user.id;
     const queue = await ctx.db.matchingQueue.findUnique({
       where: { userId: currentUserId },
-      select: { matchedUserId: true, matchingResultId: true, topic: true },
+      select: {
+        matchedUserId: true,
+        matchingResultId: true,
+        topic: true,
+        updatedAt: true,
+      },
     });
 
-    if (!queue) {
+    if (
+      !queue ||
+      (!queue.matchedUserId &&
+        queue.updatedAt.getTime() <= Date.now() - MATCHING_QUEUE_TTL_MS)
+    ) {
       return { status: "idle" as const };
     }
 
@@ -604,6 +615,26 @@ export const chatRouter = createTRPCRouter({
           topic: queue.topic,
         }
       : { status: "idle" as const };
+  }),
+
+  heartbeatMatching: protectedProcedure.mutation(async ({ ctx }) => {
+    await enforceTRPCRateLimits([
+      {
+        limit: 10,
+        scope: "chat:matching-heartbeat:user",
+        subject: ctx.session.user.id,
+        windowMs: 60_000,
+      },
+    ]);
+    const result = await ctx.db.matchingQueue.updateMany({
+      where: {
+        userId: ctx.session.user.id,
+        matchedUserId: null,
+        updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
+      },
+      data: { updatedAt: new Date() },
+    });
+    return { active: result.count === 1 };
   }),
 
   getMatchingHistory: protectedProcedure
@@ -747,6 +778,28 @@ export const chatRouter = createTRPCRouter({
       ]);
       let matchedPeerId: string | undefined;
       const result = await ctx.db.$transaction(async (tx) => {
+        const participants = await tx.matchingResult.findUnique({
+          where: { id: input.matchId },
+          select: { firstUserId: true, secondUserId: true },
+        });
+        if (
+          !participants ||
+          ![participants.firstUserId, participants.secondUserId].includes(
+            currentUserId,
+          )
+        ) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        const [firstUserId, secondUserId] = getFriendRequestLockIds(
+          participants.firstUserId,
+          participants.secondUserId,
+        );
+        // Serialize consent with blocking and friendship removal.
+        await tx.$queryRaw`
+          SELECT "id" FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id" FOR UPDATE
+        `;
         await tx.$queryRaw`
           SELECT "id" FROM "MatchingResult"
           WHERE "id" = ${input.matchId}
@@ -784,7 +837,8 @@ export const chatRouter = createTRPCRouter({
 
         const now = new Date();
         const isExpired =
-          !match.rematchRequest || match.rematchRequest.expiresAt <= now;
+          match.rematchRequest?.status !== "PENDING" ||
+          match.rematchRequest.expiresAt <= now;
         const firstRequestedAt = isExpired
           ? isFirstUser
             ? now
@@ -1169,6 +1223,7 @@ export const chatRouter = createTRPCRouter({
         const waitingUsers = await tx.matchingQueue.findMany({
           where: {
             matchedUserId: null,
+            updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
             topic: input.topic,
             userId: { notIn: excludedUserIds },
           },
@@ -1211,7 +1266,11 @@ export const chatRouter = createTRPCRouter({
         // ponytail: weighted selection from the oldest 50 keeps this cheap;
         // move ranking to the database if the queue grows materially.
         const claimed = await tx.matchingQueue.updateMany({
-          where: { id: match.id, matchedUserId: null },
+          where: {
+            id: match.id,
+            matchedUserId: null,
+            updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
+          },
           data: { matchedUserId: currentUserId },
         });
 

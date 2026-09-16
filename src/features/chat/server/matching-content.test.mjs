@@ -72,3 +72,35 @@ test("consent covers only that match period and the participant's messages", () 
     },
   ]);
 });
+
+test("another topic ends consent even when analysis there was refused", () => {
+  const start = new Date("2026-08-01T00:00:00Z");
+  const refusedAt = new Date("2026-08-02T00:00:00Z");
+  const participants = {
+    firstUserId: "current",
+    secondUserId: "peer",
+    secondUserConversationConsent: null,
+  };
+  const history = [
+    {
+      ...participants,
+      createdAt: start,
+      topic: "GAME",
+      firstUserConversationConsent: true,
+    },
+    {
+      ...participants,
+      createdAt: refusedAt,
+      topic: "WORRIES",
+      firstUserConversationConsent: false,
+    },
+  ];
+  assert.deepEqual(
+    getConsentedConversationWindows(history, "current", "GAME"),
+    [{ createdAt: { gte: start, lt: refusedAt }, receiverId: "peer" }],
+  );
+  assert.deepEqual(
+    getConsentedConversationWindows(history, "current", "WORRIES"),
+    [],
+  );
+});
