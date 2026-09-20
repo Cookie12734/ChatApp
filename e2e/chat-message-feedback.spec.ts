@@ -77,6 +77,55 @@ async function openGroup(page: Page) {
 
 test.describe.configure({ mode: "serial" });
 
+test("横断検索は入力を間引き、日本語変換の確定後だけ検索する", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("button", { name: "横断検索", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "横断検索", exact: true });
+  const input = dialog.getByPlaceholder("キーワード", { exact: true });
+  await expect(input).toBeVisible();
+  const searches: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    const names = url.pathname.split("/").at(-1)?.split(",") ?? [];
+    const index = names.indexOf("chat.searchMessages");
+    if (index < 0) return;
+    const data = JSON.parse(url.searchParams.get("input") ?? "{}") as Record<
+      string,
+      { json?: { query?: string } }
+    >;
+    searches.push(data[String(index)]?.json?.query ?? "");
+  });
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await input.fill("debounce-a");
+  await page.clock.runFor(150);
+  await input.fill("debounce-ab");
+  await page.clock.runFor(150);
+  await input.fill("debounce-abc");
+  await page.clock.runFor(299);
+  expect(searches).toEqual([]);
+  await page.clock.runFor(100);
+  await expect.poll(() => searches).toEqual(["debounce-abc"]);
+
+  await input.dispatchEvent("compositionstart", { data: "" });
+  await input.fill("にほん");
+  await page.clock.runFor(500);
+  expect(searches).toEqual(["debounce-abc"]);
+  await input.fill("日本語");
+  await input.dispatchEvent("compositionend", { data: "日本語" });
+  await page.clock.runFor(299);
+  expect(searches).toEqual(["debounce-abc"]);
+  await page.clock.runFor(100);
+  await expect.poll(() => searches).toEqual(["debounce-abc", "日本語"]);
+
+  await input.fill("cancelled-search");
+  await page.keyboard.press("Escape");
+  await page.clock.runFor(500);
+  expect(searches).toEqual(["debounce-abc", "日本語"]);
+});
+
 for (const width of [1280, 375]) {
   test(`設定フォームの遅延読み込み後も開閉とフォーカス復帰ができる (${width}px)`, async ({
     page,
