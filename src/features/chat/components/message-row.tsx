@@ -2,7 +2,15 @@
 
 import { FileText, Link as LinkIcon, Pin, Settings } from "lucide-react";
 import Image from "next/image";
-import { memo, type FormEvent, type MouseEvent, type RefObject } from "react";
+import {
+  memo,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type FormEvent,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 
 import {
   formatMessageTime,
@@ -40,7 +48,7 @@ function MessageAttachmentList({
               className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
             >
               <Image
-                src={href}
+                src={`${href}?preview=1`}
                 alt={attachment.fileName}
                 width={640}
                 height={480}
@@ -124,7 +132,32 @@ type MessageRowProps = {
   serverId?: string;
 };
 
-export const MessageRow = memo(
+// The outer wrapper refreshes event handlers without re-rendering unchanged message content.
+export function MessageRow(props: MessageRowProps) {
+  const latest = useRef(props);
+  useLayoutEffect(() => {
+    latest.current = props;
+  });
+  const handlers = useMemo(
+    () => ({
+      onCancelEdit: () => latest.current.onCancelEdit(),
+      onContextMenu: (event: MouseEvent<HTMLElement>) =>
+        latest.current.onContextMenu(event),
+      onEditChange: (content: string) => latest.current.onEditChange(content),
+      onEditSubmit: (event: FormEvent<HTMLFormElement>) =>
+        latest.current.onEditSubmit(event),
+      onOpenLink: (url: string) => latest.current.onOpenLink(url),
+      onOpenProfile: () => latest.current.onOpenProfile(),
+      onProfileContextMenu: (event: MouseEvent<HTMLElement>) =>
+        latest.current.onProfileContextMenu(event),
+      onReact: (emoji: ReactionEmoji) => latest.current.onReact(emoji),
+    }),
+    [],
+  );
+  return <MessageRowContent {...props} {...handlers} />;
+}
+
+const MessageRowContent = memo(
   function MessageRow({
     author,
     canReact,
@@ -269,5 +302,6 @@ export const MessageRow = memo(
     previous.isFollowup === next.isFollowup &&
     previous.isMenuOpen === next.isMenuOpen &&
     previous.isUpdating === next.isUpdating &&
-    previous.serverId === next.serverId,
+    previous.serverId === next.serverId &&
+    previous.separatorRef === next.separatorRef,
 );

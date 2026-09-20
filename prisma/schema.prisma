@@ -518,6 +518,7 @@ model MessageAttachment {
   mimeType        String
   size            Int
   data            Bytes?
+  thumbnail       Bytes?
   externalUrl     String?
   directMessageId String?
   serverMessageId String?

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
+import { createAttachmentThumbnail } from "~/features/chat/server/attachment-thumbnail";
 import {
   getMessageAttachmentFileKind,
   MAX_MESSAGE_ATTACHMENT_SIZE,
@@ -106,6 +107,8 @@ export async function POST(request: Request) {
       const attachment = await db.messageAttachment.create({
         data: {
           data,
+          thumbnail:
+            kind === "IMAGE" ? await createAttachmentThumbnail(data) : null,
           expiresAt,
           fileName: normalizeAttachmentFileName(file.name),
           kind,
