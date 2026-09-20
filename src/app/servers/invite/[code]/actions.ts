@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "~/features/auth";
 import { getAccessibleServerInviteWhere } from "~/features/server/server/invite-access";
 import { db } from "~/server/db";
+import { publishServerState } from "~/server/chat-events";
 import { enforceRateLimits } from "~/server/rate-limit";
 
 function getInvitePath(code: string) {
@@ -86,5 +87,6 @@ export async function joinServerByInvite(code: string, _formData: FormData) {
     redirect(`${getInvitePath(code)}?limit=1`);
   }
 
+  await publishServerState(db, server.id);
   redirect(`/?serverId=${encodeURIComponent(server.id)}`);
 }

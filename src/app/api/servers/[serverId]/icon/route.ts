@@ -10,6 +10,7 @@ import {
   readStaticImageDataUrl,
 } from "~/lib/static-image";
 import { db } from "~/server/db";
+import { publishServerState } from "~/server/chat-events";
 
 export const runtime = "nodejs";
 
@@ -70,6 +71,7 @@ export async function POST(
       data: { image },
     });
 
+    await publishServerState(db, serverId);
     return NextResponse.json({ image: getServerImageUrl(serverId) });
   } catch (error) {
     return NextResponse.json(

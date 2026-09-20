@@ -35,7 +35,7 @@ import {
 } from "~/features/server/server/message-permissions";
 import { addUnreadCountsToServerChannels } from "~/features/server/server/server-overview";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
-import { publishChatEvent } from "~/server/chat-events";
+import { publishChatEvent, publishServerState } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { normalizeOptionalText } from "~/lib/input";
 import { addProfileImageUrl, getServerImageUrl } from "~/lib/static-image";
@@ -258,6 +258,28 @@ function getServerMessageWhere({
   };
 }
 
+// Notify both former and current members after successful structural changes.
+const serverStateProcedure = protectedProcedure.use(
+  async ({ ctx, next, getRawInput }) => {
+    const raw = await getRawInput();
+    const parsed = z.object({ serverId: z.string().min(1) }).safeParse(raw);
+    if (!parsed.success) return next();
+    const { serverId } = parsed.data;
+    const before = await ctx.db.serverMember.findMany({
+      where: { serverId },
+      select: { userId: true },
+    });
+    const result = await next();
+    if (result.ok) {
+      await publishServerState(ctx.db, serverId, [
+        ...before.map(({ userId }) => userId),
+        ctx.session.user.id,
+      ]);
+    }
+    return result;
+  },
+);
+
 export const serverRouter = createTRPCRouter({
   searchPublic: protectedProcedure
     .input(searchPublicServersInput)
@@ -348,7 +370,7 @@ export const serverRouter = createTRPCRouter({
       };
     }),
 
-  updateDiscovery: protectedProcedure
+  updateDiscovery: serverStateProcedure
     .input(updateDiscoveryInput)
     .mutation(async ({ ctx, input }) => {
       const membership = await ctx.db.serverMember.findUnique({
@@ -377,7 +399,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  joinPublic: protectedProcedure
+  joinPublic: serverStateProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
@@ -1003,7 +1025,7 @@ export const serverRouter = createTRPCRouter({
       return { ok: true, readThrough: message.createdAt };
     }),
 
-  updateMyProfile: protectedProcedure
+  updateMyProfile: serverStateProcedure
     .input(serverProfileInput)
     .mutation(async ({ ctx, input }) => {
       const membership = await ctx.db.serverMember.findUnique({
@@ -1484,7 +1506,7 @@ export const serverRouter = createTRPCRouter({
       return { id: message.id };
     }),
 
-  createChannel: protectedProcedure
+  createChannel: serverStateProcedure
     .input(channelInput)
     .mutation(async ({ ctx, input }) => {
       return ctx.db.$transaction(async (tx) => {
@@ -1549,7 +1571,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  updateChannel: protectedProcedure
+  updateChannel: serverStateProcedure
     .input(channelIdInput.extend({ name: channelNameInput }))
     .mutation(async ({ ctx, input }) => {
       const membership = await ctx.db.serverMember.findUnique({
@@ -1609,7 +1631,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  deleteChannel: protectedProcedure
+  deleteChannel: serverStateProcedure
     .input(channelIdInput)
     .mutation(async ({ ctx, input }) => {
       return ctx.db.$transaction(async (tx) => {
@@ -1669,7 +1691,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  update: protectedProcedure
+  update: serverStateProcedure
     .input(serverInput.extend({ serverId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const membership = await ctx.db.serverMember.findUnique({
@@ -1699,7 +1721,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  rotateInvite: protectedProcedure
+  rotateInvite: serverStateProcedure
     .input(z.object({ serverId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const membership = await ctx.db.serverMember.findUnique({
@@ -1726,7 +1748,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  updateMemberRole: protectedProcedure
+  updateMemberRole: serverStateProcedure
     .input(memberRoleInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
@@ -1816,7 +1838,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  removeMember: protectedProcedure
+  removeMember: serverStateProcedure
     .input(memberIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
@@ -1892,7 +1914,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  deleteServer: protectedProcedure
+  deleteServer: serverStateProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
@@ -1929,7 +1951,7 @@ export const serverRouter = createTRPCRouter({
       });
     }),
 
-  leave: protectedProcedure
+  leave: serverStateProcedure
     .input(serverIdInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
