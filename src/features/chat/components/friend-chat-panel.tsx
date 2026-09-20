@@ -1,6 +1,4 @@
 "use client";
-import { isCancelledError } from "@tanstack/react-query";
-import { sortFriendsByLatestMessage } from "~/features/chat/friend-overview";
 
 import {
   Ban,
@@ -9,12 +7,14 @@ import {
   ChevronDown,
   Copy,
   Ellipsis,
+  FileText,
   Flag,
   Hash,
   Inbox,
   LogOut,
   Menu,
   MessageCircle,
+  Link as LinkIcon,
   Pencil,
   Pin,
   Plus,
@@ -28,8 +28,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import dynamic from "next/dynamic";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -43,21 +43,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { ChatQueryError } from "~/features/chat/components/chat-query-error";
-import { ChatConnectionStatus } from "~/features/chat/components/chat-connection-status";
 import {
   ChatComposer,
   type ChatComposerHandle,
-  type ChatComposerSubmission,
 } from "~/features/chat/components/chat-composer";
+import { ChatQueryError } from "~/features/chat/components/chat-query-error";
+import { GlobalSearchDialog } from "~/features/chat/components/global-search-dialog";
+import {
+  MessageAttachmentPicker,
+  type PendingAttachment,
+} from "~/features/chat/components/message-attachment-picker";
+import {
+  ExternalLinkDialog,
+  PinnedMessagesDialog,
+} from "~/features/chat/components/chat-dialogs";
 import {
   Avatar,
+  formatMessageTime,
   getDisplayName,
   getServerDisplayName,
+  MessageText,
+  NewMessagesSeparator,
   PendingMessageRow,
   ProfileAvatar,
 } from "~/features/chat/components/chat-message";
-import { MessageRow } from "~/features/chat/components/message-row";
+import { ServerMemberList } from "~/features/chat/components/server-member-list";
 import { useMessageViewport } from "~/features/chat/components/use-message-viewport";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
 import {
@@ -67,15 +77,15 @@ import {
   type MatchingTopic,
 } from "~/features/chat/matching-prompts";
 import { shouldGroupMessage } from "~/features/chat/message-grouping";
-import {
-  createMessageEventQueue,
-  updateMessagePages,
-} from "~/features/chat/realtime-messages";
+import { groupReactions } from "~/features/chat/reaction-groups";
+import { FriendPanel } from "~/features/friend/components/friend-panel";
+import { GroupDmDialog } from "~/features/group/components/group-dm-dialog";
 import {
   getPresenceDisplayLabel,
   getPresenceDotClassName,
 } from "~/features/profile/presence";
 import { PresenceStatusMenu } from "~/features/profile/components/presence-status-menu";
+import { ProfileSettingsDialog } from "~/features/profile/components/profile-settings-dialog";
 import { ServerRail } from "~/features/server/components/server-rail";
 import { getRealtimeUnreadCount } from "~/features/server/server/server-overview";
 import {
@@ -87,54 +97,28 @@ import {
   type ServerMemberRole,
 } from "~/features/server/server/message-permissions";
 import { type RouterOutputs, api } from "~/trpc/react";
-import { useMessageHistory } from "~/features/chat/components/use-message-history";
-import type { ChatEvent as ChatEventPayload } from "~/server/chat-events";
-
-const ExternalLinkDialog = dynamic(() =>
-  import("~/features/chat/components/chat-dialogs").then(
-    ({ ExternalLinkDialog }) => ExternalLinkDialog,
-  ),
-);
-const FriendPanel = dynamic(() =>
-  import("~/features/friend/components/friend-panel").then(
-    ({ FriendPanel }) => FriendPanel,
-  ),
-);
-const GlobalSearchDialog = dynamic(() =>
-  import("~/features/chat/components/global-search-dialog").then(
-    ({ GlobalSearchDialog }) => GlobalSearchDialog,
-  ),
-);
-const GroupDmDialog = dynamic(() =>
-  import("~/features/group/components/group-dm-dialog").then(
-    ({ GroupDmDialog }) => GroupDmDialog,
-  ),
-);
-const PinnedMessagesDialog = dynamic(() =>
-  import("~/features/chat/components/chat-dialogs").then(
-    ({ PinnedMessagesDialog }) => PinnedMessagesDialog,
-  ),
-);
-const ProfileSettingsDialog = dynamic(() =>
-  import("~/features/profile/components/profile-settings-dialog").then(
-    ({ ProfileSettingsDialog }) => ProfileSettingsDialog,
-  ),
-);
-const ServerMemberList = dynamic(() =>
-  import("~/features/chat/components/server-member-list").then(
-    ({ ServerMemberList }) => ServerMemberList,
-  ),
-);
-const UserProfileDialog = dynamic(() =>
-  import("~/features/profile/components/user-profile-dialog").then(
-    ({ UserProfileDialog }) => UserProfileDialog,
-  ),
-);
 
 type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
 type ChatGroup = RouterOutputs["group"]["list"]["groups"][number];
 type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
+type ChatEventPayload =
+  | { kind: "direct"; userIds: string[] }
+  | { groupId: string; kind: "group"; userIds: string[] }
+  | {
+      change: "created" | "deleted" | "updated";
+      channelId: string | null;
+      kind: "server";
+      senderId: string;
+      serverId: string;
+    }
+  | {
+      isTyping: boolean;
+      kind: "typing";
+      senderId: string;
+      userIds: string[];
+      userName: string;
+    };
 type FriendChatPanelProps = {
   initialSearchOpen?: boolean;
   initialServerId?: string;
@@ -201,11 +185,73 @@ type PendingServerMessage = PendingMessage & {
 };
 
 type ReplyTarget = {
-  conversationKey: string;
   content: string;
   id: string;
   kind: "direct" | "server";
 };
+
+type VisibleMessageAttachment = {
+  fileName: string;
+  id: string;
+  kind: "IMAGE" | "LINK" | "PDF";
+};
+
+function MessageAttachmentList({
+  attachments,
+}: {
+  attachments: VisibleMessageAttachment[];
+}) {
+  if (attachments.length === 0) return null;
+
+  return (
+    <div className="mt-2 grid max-w-2xl gap-2 sm:grid-cols-2">
+      {attachments.map((attachment) => {
+        const href = `/api/attachments/${attachment.id}`;
+        if (attachment.kind === "IMAGE") {
+          return (
+            <a
+              key={attachment.id}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
+            >
+              <Image
+                src={href}
+                alt={attachment.fileName}
+                width={640}
+                height={480}
+                unoptimized
+                loading="lazy"
+                className="h-auto max-h-80 w-full object-contain"
+              />
+              <span className="block truncate px-3 py-2 text-xs font-semibold">
+                {attachment.fileName}
+              </span>
+            </a>
+          );
+        }
+
+        return (
+          <a
+            key={attachment.id}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
+          >
+            {attachment.kind === "PDF" ? (
+              <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <LinkIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className="truncate">{attachment.fileName}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 function shouldGroupPendingMessage(
   message: PendingMessage,
@@ -269,68 +315,64 @@ function handleContextMenuKeyDown(
           : currentIndex < 0
             ? items.length - 1
             : (currentIndex - 1 + items.length) % items.length;
-  items[nextIndex]?.focus({ preventScroll: true });
+  items[nextIndex]?.focus();
 }
 
-const FriendListItem = memo(
-  function FriendListItem({
-    item,
-    onProfileContextMenu,
-    onSelect,
-    selected,
-  }: {
-    item: ChatFriend;
-    onProfileContextMenu: (
-      event: MouseEvent<HTMLElement>,
-      user: ProfileContextUser,
-    ) => void;
-    onSelect: () => void;
-    selected: boolean;
-  }) {
-    const lastMessage = item.lastMessage;
-    const isMine = lastMessage?.senderId === item.currentUserId;
-    const preview = lastMessage
-      ? `${isMine ? "あなた: " : ""}${lastMessage.content}`
-      : "まだメッセージはありません";
+function FriendListItem({
+  item,
+  onProfileContextMenu,
+  onSelect,
+  selected,
+}: {
+  item: ChatFriend;
+  onProfileContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    user: ProfileContextUser,
+  ) => void;
+  onSelect: () => void;
+  selected: boolean;
+}) {
+  const lastMessage = item.lastMessage;
+  const isMine = lastMessage?.senderId === item.currentUserId;
+  const preview = lastMessage
+    ? `${isMine ? "あなた: " : ""}${lastMessage.content}`
+    : "まだメッセージはありません";
 
-    return (
-      <button
-        type="button"
-        onClick={onSelect}
-        className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition ${
-          selected
-            ? "bg-connect-ink text-connect-paper"
-            : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
-        }`}
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition ${
+        selected
+          ? "bg-connect-ink text-connect-paper"
+          : "text-connect-muted hover:bg-connect-surface hover:text-connect-ink"
+      }`}
+    >
+      <div
+        className="relative shrink-0"
+        onContextMenu={(event) => onProfileContextMenu(event, item.friend)}
       >
-        <div
-          className="relative shrink-0"
-          onContextMenu={(event) => onProfileContextMenu(event, item.friend)}
-        >
-          <Avatar
-            user={item.friend}
-            className="border-connect-ink/10 h-10 w-10 rounded-full border"
-          />
-          {item.unreadCount > 0 && (
-            <span className="border-connect-navigation bg-connect-danger text-connect-surface absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 px-1 text-[11px] font-semibold">
-              {item.unreadCount}
-            </span>
-          )}
-        </div>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">
-            {getDisplayName(item.friend)}
+        <Avatar
+          user={item.friend}
+          className="border-connect-ink/10 h-10 w-10 rounded-full border"
+        />
+        {item.unreadCount > 0 && (
+          <span className="border-connect-navigation bg-connect-danger text-connect-surface absolute -right-1 -bottom-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 px-1 text-[11px] font-semibold">
+            {item.unreadCount}
           </span>
-          <span className="text-connect-muted block truncate text-xs">
-            {preview}
-          </span>
+        )}
+      </div>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold">
+          {getDisplayName(item.friend)}
         </span>
-      </button>
-    );
-  },
-  (previous, next) =>
-    previous.item === next.item && previous.selected === next.selected,
-);
+        <span className="text-connect-muted block truncate text-xs">
+          {preview}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 export function FriendChatPanel({
   initialSearchOpen = false,
@@ -351,7 +393,6 @@ export function FriendChatPanel({
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] =
     useState(initialSearchOpen);
   const [isGroupDmOpen, setIsGroupDmOpen] = useState(false);
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<string>();
   const [matchingTopic, setMatchingTopic] = useState<MatchingTopic>("CASUAL");
   const [matchingState, setMatchingState] = useState<"idle" | "waiting">(
@@ -359,6 +400,12 @@ export function FriendChatPanel({
   );
   const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
   const [matchingSafetyAccepted, setMatchingSafetyAccepted] = useState(false);
+  const [directAttachments, setDirectAttachments] = useState<
+    PendingAttachment[]
+  >([]);
+  const [serverAttachments, setServerAttachments] = useState<
+    PendingAttachment[]
+  >([]);
   const [newChannelName, setNewChannelName] = useState("");
   const [isNewChannelFormOpen, setIsNewChannelFormOpen] = useState(false);
   const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
@@ -370,15 +417,9 @@ export function FriendChatPanel({
   } | null>(null);
   const [messageContextMenu, setMessageContextMenu] =
     useState<MessageContextMenu | null>(null);
-  const [storedReplyTarget, setReplyTarget] = useState<ReplyTarget | null>(
-    null,
-  );
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [profileContextMenu, setProfileContextMenu] =
     useState<ProfileContextMenu | null>(null);
-  const [profileDialogTarget, setProfileDialogTarget] = useState<{
-    serverId?: string;
-    userId: string;
-  } | null>(null);
   const [editingMessage, setEditingMessage] = useState<EditingMessage | null>(
     null,
   );
@@ -418,22 +459,22 @@ export function FriendChatPanel({
     PendingServerMessage[]
   >([]);
   const [typingUserName, setTypingUserName] = useState<string | null>(null);
-  const [realtimeStatus, setRealtimeStatus] = useState<
-    "connecting" | "connected" | "reconnecting"
-  >("connecting");
-  const isRealtimeConnected = realtimeStatus === "connected";
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const typingResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const localTypingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const directComposerRef = useRef<ChatComposerHandle | null>(null);
   const serverComposerRef = useRef<ChatComposerHandle | null>(null);
-  const selectedChatRef = useRef({
-    friendId: selectedFriendId,
-    serverChannelId: selectedServerChannelId,
-    serverChannelName: null as string | null,
-    serverId: selectedServerId,
-  });
+  const selectedFriendIdRef = useRef(selectedFriendId);
+  const selectedServerChannelIdRef = useRef(selectedServerChannelId);
+  const lastTypingSentAtRef = useRef(0);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
+
+  selectedFriendIdRef.current = selectedFriendId;
+  selectedServerChannelIdRef.current = selectedServerChannelId;
 
   const friends = api.chat.getFriends.useQuery(undefined, {
     refetchInterval: (query) =>
@@ -441,25 +482,9 @@ export function FriendChatPanel({
         ? false
         : matchingState === "waiting" || !isRealtimeConnected
           ? 5000
-          : 60000,
+          : 30000,
   });
-  const groupConversations = api.group.list.useInfiniteQuery(
-    {},
-    {
-      getNextPageParam: (page) => page.nextCursor,
-      refetchInterval: !isRealtimeConnected ? 5000 : false,
-    },
-  );
-  const listedGroups = useMemo(
-    () => [
-      ...new Map(
-        groupConversations.data?.pages
-          .flatMap((page) => page.groups)
-          .map((group) => [group.id, group]),
-      ).values(),
-    ],
-    [groupConversations.data],
-  );
+  const groupConversations = api.group.list.useQuery();
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -508,7 +533,11 @@ export function FriendChatPanel({
     {
       enabled: Boolean(selectedServerId),
       refetchInterval: (query) =>
-        !isMemberListOpen || query.state.status === "error" ? false : 15000,
+        !isMemberListOpen || query.state.status === "error"
+          ? false
+          : isRealtimeConnected
+            ? 60000
+            : 15000,
     },
   );
   const selectedServerMembers = useMemo(() => {
@@ -586,7 +615,7 @@ export function FriendChatPanel({
           ? false
           : selectedServerId && selectedServerChannel?.id
             ? isRealtimeConnected
-              ? false
+              ? 30000
               : 3000
             : false,
     },
@@ -643,7 +672,7 @@ export function FriendChatPanel({
           ? false
           : selectedFriendId
             ? isRealtimeConnected
-              ? false
+              ? 30000
               : 3000
             : false,
     },
@@ -743,32 +772,10 @@ export function FriendChatPanel({
   const firstDirectUnreadMessageId = directUnreadMessages[0]?.id;
   const firstServerUnreadMessageId = serverUnreadMessages[0]?.id;
 
-  const refreshFriend = useCallback(
-    async (friendId: string) => {
-      const input = { friendId };
-      try {
-        await utils.chat.getFriends.cancel(input);
-        await utils.chat.getFriends.invalidate(input, { refetchType: "none" });
-        const updated = await utils.chat.getFriends.fetch(input);
-        utils.chat.getFriends.setData(undefined, (data) =>
-          data
-            ? sortFriendsByLatestMessage([
-                ...data.filter((item) => item.friend.id !== friendId),
-                ...updated,
-              ])
-            : data,
-        );
-      } catch (error) {
-        if (!isCancelledError(error)) await utils.chat.getFriends.invalidate();
-      }
-    },
-    [utils.chat.getFriends],
-  );
-
   const { mutateAsync: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
       onSuccess: (result, variables) => {
-        void refreshFriend(variables.friendId);
+        void utils.chat.getFriends.invalidate();
         utils.chat.getConversation.setInfiniteData(
           { friendId: variables.friendId },
           (data) =>
@@ -874,25 +881,6 @@ export function FriendChatPanel({
     unreadCount: selectedServerId ? serverUnreadCount : directUnreadCount,
   });
 
-  const messageHistory = useMessageHistory({
-    containerRef: messageViewport.containerRef,
-    conversationKey: selectedServerId
-      ? "server:" + selectedServerId + ":" + selectedServerChannel?.id
-      : selectedFriendId,
-    pageCount:
-      (selectedServerId ? serverConversation.data : conversation.data)?.pages
-        .length ?? 0,
-    hasNextPage: selectedServerId
-      ? serverConversation.hasNextPage
-      : conversation.hasNextPage,
-    isFetching: selectedServerId
-      ? serverConversation.isFetching
-      : conversation.isFetching,
-    fetchNextPage: selectedServerId
-      ? serverConversation.fetchNextPage
-      : conversation.fetchNextPage,
-  });
-
   useEffect(() => {
     const loadedIds = new Set(directMessages.map(({ id }) => id));
     setPendingDirectMessages((messages) => {
@@ -901,7 +889,7 @@ export function FriendChatPanel({
       );
       return next.length === messages.length ? messages : next;
     });
-  }, [directMessages, pendingDirectMessages]);
+  }, [directMessages]);
 
   useEffect(() => {
     const loadedIds = new Set(serverMessages.map(({ id }) => id));
@@ -911,7 +899,7 @@ export function FriendChatPanel({
       );
       return next.length === messages.length ? messages : next;
     });
-  }, [pendingServerMessages, serverMessages]);
+  }, [serverMessages]);
 
   useEffect(() => {
     if (!selectedServer) {
@@ -991,7 +979,7 @@ export function FriendChatPanel({
     const frame = requestAnimationFrame(() => {
       contextMenuRef.current
         ?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')
-        ?.focus({ preventScroll: true });
+        ?.focus();
     });
     return () => cancelAnimationFrame(frame);
   }, [channelContextMenu, messageContextMenu, profileContextMenu]);
@@ -999,7 +987,6 @@ export function FriendChatPanel({
   useEffect(() => {
     setMessageContextMenu(null);
     setProfileContextMenu(null);
-    setReplyTarget(null);
     setEditingMessage(null);
     setIsPinnedMessagesOpen(false);
     setIsMemberListOpen(false);
@@ -1018,189 +1005,62 @@ export function FriendChatPanel({
       selectedFriendContact?.isFriend && !selectedFriendContact.isBlocked,
     );
   const { mutate: publishTyping } = api.chat.setTyping.useMutation();
-  const replyConversationKey = selectedServerId
-    ? `server:${selectedServerId}:${selectedServerChannel?.id ?? ""}`
-    : `direct:${selectedFriendId ?? ""}`;
-  const replyTarget =
-    storedReplyTarget?.conversationKey === replyConversationKey
-      ? storedReplyTarget
-      : null;
-
-  const { mutate: heartbeatMatching } = api.chat.heartbeatMatching.useMutation({
-    onSuccess: (result) => {
-      if (!result.active) void utils.chat.getMatchingStatus.invalidate();
-    },
-  });
-  useEffect(() => {
-    if (matchingState !== "waiting") return;
-    heartbeatMatching();
-    const timer = setInterval(() => heartbeatMatching(), 20_000);
-    return () => clearInterval(timer);
-  }, [matchingState, heartbeatMatching]);
-
-  useEffect(() => {
-    selectedChatRef.current = {
-      friendId: selectedFriendId,
-      serverChannelId: selectedServerChannel?.id ?? null,
-      serverChannelName: selectedServerChannel?.name ?? null,
-      serverId: selectedServerId,
-    };
-  }, [
-    selectedFriendId,
-    selectedServerChannel?.id,
-    selectedServerChannel?.name,
-    selectedServerId,
-  ]);
 
   useEffect(() => {
     const events = new EventSource("/api/chat/events");
-    const enqueueMessage = createMessageEventQueue();
-    let disposed = false;
     events.onopen = () => {
-      setRealtimeStatus("connected");
+      setIsRealtimeConnected(true);
       void utils.chat.getFriends.invalidate();
       void utils.server.getOverview.invalidate();
-      void utils.group.list.invalidate();
-      void utils.group.getConversation.invalidate();
-      const selection = selectedChatRef.current;
-      if (selection.friendId) {
+      if (selectedFriendId) {
         void utils.chat.getConversation.invalidate({
-          friendId: selection.friendId,
+          friendId: selectedFriendId,
         });
       }
-      if (selection.serverId && selection.serverChannelId) {
+      if (selectedServerId && selectedServerChannel?.id) {
         void utils.server.getConversation.invalidate({
-          channelId: selection.serverChannelId,
-          serverId: selection.serverId,
+          channelId: selectedServerChannel.id,
+          serverId: selectedServerId,
         });
       }
-      if (selection.serverId) {
+      if (selectedServerId) {
         void utils.server.getMembers.invalidate({
-          serverId: selection.serverId,
+          serverId: selectedServerId,
         });
       }
     };
-    events.onerror = () => setRealtimeStatus("reconnecting");
-    const handleChatEvent = async (payload: ChatEventPayload) => {
-      if (disposed) return;
-      if (payload.kind === "server-state") {
-        await utils.server.getOverview.invalidate();
-        if (selectedChatRef.current.serverId === payload.serverId) {
-          await utils.server.getMembers.invalidate({
-            serverId: payload.serverId,
-          });
-        }
+    events.onerror = () => setIsRealtimeConnected(false);
+    const handleChatEvent = (event: MessageEvent<string>) => {
+      let payload: ChatEventPayload;
+
+      try {
+        payload = JSON.parse(event.data) as ChatEventPayload;
+      } catch {
         return;
       }
+
       if (payload.kind === "direct") {
-        const me =
-          utils.server.getOverview.getData()?.currentUser.id ??
-          utils.chat.getFriends.getData()?.[0]?.currentUserId;
-        const peerId = payload.userIds.find((id) => id !== me);
-        if (me && peerId) await refreshFriend(peerId);
-        else await utils.chat.getFriends.invalidate();
-        const friendId = selectedChatRef.current.friendId;
-        if (!friendId || !payload.userIds.includes(friendId)) return;
-
-        if (payload.change === "deleted") {
-          utils.chat.getConversation.setInfiniteData({ friendId }, (data) =>
-            data
-              ? {
-                  ...data,
-                  pages: data.pages.map((page) => ({
-                    ...page,
-                    messages: page.messages.filter(
-                      ({ id }) => id !== payload.messageId,
-                    ),
-                  })),
-                }
-              : data,
-          );
-          return;
-        }
-
-        const messageInput = { messageId: payload.messageId };
-        const latestMessage = await utils.chat.getMessage
-          .invalidate(messageInput)
-          .then(() => utils.chat.getMessage.fetch(messageInput))
-          .catch(() => {
-            void utils.chat.getConversation.invalidate({ friendId });
-            return null;
+        void utils.chat.getFriends.invalidate();
+        if (selectedFriendId && payload.userIds.includes(selectedFriendId)) {
+          void utils.chat.getConversation.invalidate({
+            friendId: selectedFriendId,
           });
-        if (!latestMessage || disposed) return;
-        const change = payload.change;
-        utils.chat.getConversation.setInfiniteData({ friendId }, (data) => {
-          if (!data) return data;
-          const pages = updateMessagePages(data.pages, latestMessage, change);
-          return { ...data, pages };
-        });
+        }
         return;
       }
 
       if (payload.kind === "server") {
-        const selection = selectedChatRef.current;
         const isSelectedChannel =
-          payload.serverId === selection.serverId &&
-          (payload.channelId === selection.serverChannelId ||
+          payload.serverId === selectedServerId &&
+          (payload.channelId === selectedServerChannel?.id ||
             (payload.channelId === null &&
-              selection.serverChannelName === "general"));
+              selectedServerChannel?.name === "general"));
 
-        if (isSelectedChannel && selection.serverChannelId) {
-          const input = {
-            channelId: selection.serverChannelId,
+        if (isSelectedChannel && selectedServerChannel?.id) {
+          void utils.server.getConversation.invalidate({
+            channelId: selectedServerChannel.id,
             serverId: payload.serverId,
-          };
-          if (payload.change === "deleted") {
-            utils.server.getConversation.setInfiniteData(input, (data) =>
-              data
-                ? {
-                    ...data,
-                    pages: data.pages.map((page) => ({
-                      ...page,
-                      messages: page.messages.filter(
-                        ({ id }) => id !== payload.messageId,
-                      ),
-                    })),
-                  }
-                : data,
-            );
-            utils.server.getPinnedMessages.setData(input, (messages) =>
-              messages?.filter(({ id }) => id !== payload.messageId),
-            );
-          } else {
-            const messageInput = {
-              messageId: payload.messageId,
-              serverId: payload.serverId,
-            };
-            const latestMessage = await utils.server.getMessage
-              .invalidate(messageInput)
-              .then(() => utils.server.getMessage.fetch(messageInput))
-              .catch(() => {
-                void utils.server.getConversation.invalidate(input);
-                return null;
-              });
-            if (latestMessage && !disposed) {
-              const change = payload.change;
-              utils.server.getConversation.setInfiniteData(input, (data) => {
-                if (!data) return data;
-                const pages = updateMessagePages(
-                  data.pages,
-                  latestMessage,
-                  change,
-                );
-                return { ...data, pages };
-              });
-              utils.server.getPinnedMessages.setData(input, (messages) => {
-                if (!messages) return messages;
-                const remaining = messages.filter(
-                  ({ id }) => id !== latestMessage.id,
-                );
-                return latestMessage.pinnedAt
-                  ? [latestMessage, ...remaining]
-                  : remaining;
-              });
-            }
-          }
+          });
         }
         if (payload.change === "deleted" && !isSelectedChannel) {
           void utils.server.getOverview.invalidate();
@@ -1248,37 +1108,10 @@ export function FriendChatPanel({
 
       if (payload.kind === "group") {
         void utils.group.list.invalidate();
-        const input = { groupId: payload.groupId };
-        if (!payload.messageId || !payload.change) {
-          await utils.group.getMessage.cancel();
-          await utils.group.getConversation.invalidate(input);
-          return;
-        }
-        if (!utils.group.getConversation.getInfiniteData(input)) return;
-        const messageInput = { ...input, messageId: payload.messageId };
-        await utils.group.getMessage.invalidate(messageInput);
-        const message = await utils.group.getMessage.fetch(messageInput);
-        if (disposed) return;
-        const change = payload.change;
-        utils.group.getConversation.setInfiniteData(input, (data) =>
-          data
-            ? {
-                ...data,
-                pages: message
-                  ? updateMessagePages(data.pages, message, change)
-                  : data.pages.map((page) => ({
-                      ...page,
-                      messages: page.messages.filter(
-                        ({ id }) => id !== payload.messageId,
-                      ),
-                    })),
-              }
-            : data,
-        );
         return;
       }
 
-      if (payload.senderId !== selectedChatRef.current.friendId) return;
+      if (payload.senderId !== selectedFriendId) return;
       if (typingResetTimerRef.current) {
         clearTimeout(typingResetTimerRef.current);
       }
@@ -1292,56 +1125,26 @@ export function FriendChatPanel({
         setTypingUserName(null);
       }
     };
-    const chatEventListener: EventListener = (event) => {
-      let payload: ChatEventPayload;
-      try {
-        payload = JSON.parse(
-          (event as MessageEvent<string>).data,
-        ) as ChatEventPayload;
-      } catch {
-        return;
-      }
-      const task =
-        payload.kind === "direct" ||
-        payload.kind === "server" ||
-        (payload.kind === "group" && payload.messageId)
-          ? enqueueMessage(
-              payload.kind === "direct"
-                ? "direct:" + [...payload.userIds].sort().join(":")
-                : `${payload.kind}:${payload.messageId}`,
-              () => handleChatEvent(payload),
-            )
-          : handleChatEvent(payload);
-      void task.catch(() => {
-        if (disposed) return;
-        void utils.chat.getConversation.invalidate();
-        void utils.server.getConversation.invalidate();
-        void utils.group.getConversation.invalidate();
-      });
-    };
-    events.addEventListener("chat", chatEventListener);
+    events.addEventListener("chat", handleChatEvent as EventListener);
 
     return () => {
-      disposed = true;
       events.close();
-      setRealtimeStatus("connecting");
+      setIsRealtimeConnected(false);
       if (typingResetTimerRef.current) {
         clearTimeout(typingResetTimerRef.current);
       }
       setTypingUserName(null);
     };
   }, [
-    refreshFriend,
+    selectedFriendId,
+    selectedServerChannel?.id,
+    selectedServerChannel?.name,
+    selectedServerId,
     utils.chat.getConversation,
     utils.chat.getFriends,
-    utils.chat.getMessage,
     utils.group.list,
-    utils.group.getConversation,
-    utils.group.getMessage,
     utils.server.getConversation,
     utils.server.getMembers,
-    utils.server.getMessage,
-    utils.server.getPinnedMessages,
     utils.server.getOverview,
   ]);
 
@@ -1352,6 +1155,18 @@ export function FriendChatPanel({
     },
     [canSendDirectMessage, publishTyping, selectedFriendId],
   );
+
+  useEffect(() => {
+    return () => {
+      if (localTypingStopTimerRef.current) {
+        clearTimeout(localTypingStopTimerRef.current);
+      }
+      if (lastTypingSentAtRef.current > 0) {
+        broadcastTyping(false);
+      }
+      lastTypingSentAtRef.current = 0;
+    };
+  }, [broadcastTyping]);
 
   const openDirectFriend = useCallback((friendId: string) => {
     setIsNavigationOpen(false);
@@ -1367,6 +1182,43 @@ export function FriendChatPanel({
     setSelectedFriendId(friendId);
     setServerMessage(null);
   }, []);
+
+  useEffect(() => {
+    setDirectAttachments([]);
+  }, [selectedFriendId]);
+
+  useEffect(() => {
+    setServerAttachments([]);
+  }, [selectedServerChannel?.id]);
+
+  const handleDirectDraftChange = useCallback(
+    (value: string) => {
+      if (!value.trim()) {
+        if (localTypingStopTimerRef.current) {
+          clearTimeout(localTypingStopTimerRef.current);
+        }
+        lastTypingSentAtRef.current = 0;
+        broadcastTyping(false);
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTypingSentAtRef.current >= 10_000) {
+        lastTypingSentAtRef.current = now;
+        broadcastTyping(true);
+      }
+
+      if (localTypingStopTimerRef.current) {
+        clearTimeout(localTypingStopTimerRef.current);
+      }
+
+      localTypingStopTimerRef.current = setTimeout(() => {
+        lastTypingSentAtRef.current = 0;
+        broadcastTyping(false);
+      }, 1600);
+    },
+    [broadcastTyping],
+  );
 
   const cancelMatching = api.chat.cancelMatching.useMutation({
     onSuccess: async () => {
@@ -1438,8 +1290,6 @@ export function FriendChatPanel({
         utils.chat.getConversation.invalidate(),
         utils.chat.getFriends.invalidate(),
         utils.chat.getMatchingStatus.invalidate(),
-        utils.group.list.invalidate(),
-        utils.group.getConversation.invalidate(),
         utils.friend.getOverview.invalidate(),
         utils.profile.getByUserId.invalidate(),
         utils.server.getConversation.invalidate(),
@@ -1520,135 +1370,26 @@ export function FriendChatPanel({
 
   const sendMessage = api.chat.sendMessage.useMutation();
   const toggleDirectReaction = api.chat.toggleReaction.useMutation({
-    onSuccess: (result) => {
-      if (!selectedFriendId) return;
-      utils.chat.getConversation.setInfiniteData(
-        { friendId: selectedFriendId },
-        (data) =>
-          data
-            ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.map((chatMessage) =>
-                    chatMessage.id !== result.messageId
-                      ? chatMessage
-                      : {
-                          ...chatMessage,
-                          reactions: result.reacted
-                            ? [
-                                ...chatMessage.reactions,
-                                {
-                                  emoji: result.emoji,
-                                  userId: page.currentUserId,
-                                },
-                              ]
-                            : chatMessage.reactions.filter(
-                                ({ emoji, userId }) =>
-                                  emoji !== result.emoji ||
-                                  userId !== page.currentUserId,
-                              ),
-                        },
-                  ),
-                })),
-              }
-            : data,
-      );
+    onSuccess: async () => {
+      if (selectedFriendId) {
+        await utils.chat.getConversation.invalidate({
+          friendId: selectedFriendId,
+        });
+      }
     },
   });
   const toggleServerReaction = api.server.toggleMessageReaction.useMutation({
-    onSuccess: (result, variables) => {
-      utils.server.getConversation.setInfiniteData(
-        {
-          channelId: selectedServerChannel?.id,
-          serverId: variables.serverId,
-        },
-        (data) =>
-          data
-            ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.map((chatMessage) =>
-                    chatMessage.id !== result.messageId
-                      ? chatMessage
-                      : {
-                          ...chatMessage,
-                          reactions: result.reacted
-                            ? [
-                                ...chatMessage.reactions,
-                                {
-                                  emoji: result.emoji,
-                                  userId: page.currentUser.id,
-                                },
-                              ]
-                            : chatMessage.reactions.filter(
-                                ({ emoji, userId }) =>
-                                  emoji !== result.emoji ||
-                                  userId !== page.currentUser.id,
-                              ),
-                        },
-                  ),
-                })),
-              }
-            : data,
-      );
+    onSuccess: async () => {
+      await utils.server.getConversation.invalidate();
     },
   });
   const toggleSavedMessage = api.chat.toggleSavedMessage.useMutation({
-    onSuccess: (result, variables) => {
-      if (variables.kind === "DIRECT" && selectedFriendId) {
-        utils.chat.getConversation.setInfiniteData(
-          { friendId: selectedFriendId },
-          (data) =>
-            data
-              ? {
-                  ...data,
-                  pages: data.pages.map((page) => ({
-                    ...page,
-                    messages: page.messages.map((chatMessage) =>
-                      chatMessage.id === variables.messageId
-                        ? {
-                            ...chatMessage,
-                            savedBy: result.saved
-                              ? [{ userId: page.currentUserId }]
-                              : [],
-                          }
-                        : chatMessage,
-                    ),
-                  })),
-                }
-              : data,
-        );
-      }
-      if (variables.kind === "SERVER" && selectedServerId) {
-        utils.server.getConversation.setInfiniteData(
-          {
-            channelId: selectedServerChannel?.id,
-            serverId: selectedServerId,
-          },
-          (data) =>
-            data
-              ? {
-                  ...data,
-                  pages: data.pages.map((page) => ({
-                    ...page,
-                    messages: page.messages.map((chatMessage) =>
-                      chatMessage.id === variables.messageId
-                        ? {
-                            ...chatMessage,
-                            savedBy: result.saved
-                              ? [{ userId: page.currentUser.id }]
-                              : [],
-                          }
-                        : chatMessage,
-                    ),
-                  })),
-                }
-              : data,
-        );
-      }
-      void utils.chat.getSavedMessages.invalidate();
+    onSuccess: async () => {
+      await Promise.all([
+        utils.chat.getConversation.invalidate(),
+        utils.server.getConversation.invalidate(),
+        utils.chat.getSavedMessages.invalidate(),
+      ]);
     },
   });
   const sendServerMessage = api.server.sendMessage.useMutation();
@@ -1701,144 +1442,72 @@ export function FriendChatPanel({
   });
 
   const updateDirectMessage = api.chat.updateMessage.useMutation({
-    onSuccess: (updatedMessage) => {
+    onSuccess: async () => {
       setEditingMessage(null);
       setMessageContextMenu(null);
       setMessage(null);
-      if (selectedFriendId) {
-        utils.chat.getConversation.setInfiniteData(
-          { friendId: selectedFriendId },
-          (data) =>
-            data
-              ? {
-                  ...data,
-                  pages: data.pages.map((page) => ({
-                    ...page,
-                    messages: page.messages.map((chatMessage) =>
-                      chatMessage.id === updatedMessage.id
-                        ? { ...chatMessage, content: updatedMessage.content }
-                        : chatMessage,
-                    ),
-                  })),
-                }
-              : data,
-        );
-      }
-      if (selectedFriendId) void refreshFriend(selectedFriendId);
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
 
   const deleteDirectMessage = api.chat.deleteMessage.useMutation({
-    onSuccess: (deletedMessage) => {
+    onSuccess: async () => {
       setMessageContextMenu(null);
-      if (selectedFriendId) {
-        utils.chat.getConversation.setInfiniteData(
-          { friendId: selectedFriendId },
-          (data) =>
-            data
-              ? {
-                  ...data,
-                  pages: data.pages.map((page) => ({
-                    ...page,
-                    messages: page.messages.filter(
-                      ({ id }) => id !== deletedMessage.id,
-                    ),
-                  })),
-                }
-              : data,
-        );
-      }
-      if (selectedFriendId) void refreshFriend(selectedFriendId);
+      await Promise.all([
+        selectedFriendId
+          ? utils.chat.getConversation.invalidate({
+              friendId: selectedFriendId,
+            })
+          : Promise.resolve(),
+        utils.chat.getFriends.invalidate(),
+      ]);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
 
   const updateServerMessage = api.server.updateMessage.useMutation({
-    onSuccess: (updatedMessage, variables) => {
+    onSuccess: async () => {
       setEditingMessage(null);
       setMessageContextMenu(null);
       setServerMessage(null);
-      utils.server.getConversation.setInfiniteData(
-        {
-          channelId: selectedServerChannel?.id,
-          serverId: variables.serverId,
-        },
-        (data) =>
-          data
-            ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.map((chatMessage) =>
-                    chatMessage.id === updatedMessage.id
-                      ? { ...chatMessage, content: updatedMessage.content }
-                      : chatMessage,
-                  ),
-                })),
-              }
-            : data,
-      );
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
   const toggleServerMessagePin = api.server.toggleMessagePin.useMutation({
-    onSuccess: (updatedMessage, variables) => {
+    onSuccess: async () => {
       setMessageContextMenu(null);
       setServerMessage(null);
-      utils.server.getConversation.setInfiniteData(
-        {
-          channelId: selectedServerChannel?.id,
-          serverId: variables.serverId,
-        },
-        (data) =>
-          data
-            ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.map((chatMessage) =>
-                    chatMessage.id === updatedMessage.id
-                      ? { ...chatMessage, pinnedAt: updatedMessage.pinnedAt }
-                      : chatMessage,
-                  ),
-                })),
-              }
-            : data,
-      );
-      if (selectedServerChannel?.id) {
-        void utils.server.getPinnedMessages.invalidate({
-          channelId: selectedServerChannel.id,
-          serverId: variables.serverId,
-        });
-      }
+      await utils.server.getConversation.invalidate({
+        channelId: selectedServerChannel?.id,
+        serverId: selectedServerId ?? "",
+      });
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
 
   const deleteServerMessage = api.server.deleteMessage.useMutation({
-    onSuccess: (deletedMessage, variables) => {
+    onSuccess: async () => {
       setMessageContextMenu(null);
-      utils.server.getConversation.setInfiniteData(
-        {
+      await Promise.all([
+        utils.server.getConversation.invalidate({
           channelId: selectedServerChannel?.id,
-          serverId: variables.serverId,
-        },
-        (data) =>
-          data
-            ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  messages: page.messages.filter(
-                    ({ id }) => id !== deletedMessage.id,
-                  ),
-                })),
-              }
-            : data,
-      );
-      void utils.server.getOverview.invalidate();
+          serverId: selectedServerId ?? "",
+        }),
+        utils.server.getOverview.invalidate(),
+      ]);
     },
     onError: (error) => setServerMessage(getErrorMessage(error)),
   });
@@ -2157,14 +1826,21 @@ export function FriendChatPanel({
     deleteServer.mutate({ serverId: selectedServer.server.id });
   };
 
-  const handleDirectSubmit = async ({
-    attachmentIds,
-    clientId,
-    content,
-  }: ChatComposerSubmission) => {
-    if (!selectedFriendId || !canSendDirectMessage) return;
+  const handleSubmit = (draft: string) => {
+    if (
+      !selectedFriendId ||
+      !canSendDirectMessage ||
+      (!draft.trim() && directAttachments.length === 0)
+    )
+      return;
+    const clientId = crypto.randomUUID();
+    const content = draft.trim() || "添付ファイル";
     const friendId = selectedFriendId;
+    const activeAttachments = directAttachments;
 
+    broadcastTyping(false);
+    directComposerRef.current?.clear();
+    setDirectAttachments([]);
     setMessage(null);
     setPendingDirectMessages((messages) => [
       ...messages,
@@ -2177,56 +1853,78 @@ export function FriendChatPanel({
       },
     ]);
     requestAnimationFrame(messageViewport.scrollToBottom);
+    lastTypingSentAtRef.current = 0;
+    if (localTypingStopTimerRef.current) {
+      clearTimeout(localTypingStopTimerRef.current);
+    }
 
     const activeReply = replyTarget?.kind === "direct" ? replyTarget : null;
     setReplyTarget(null);
-    try {
-      const savedMessage = await sendMessage.mutateAsync({
-        attachmentIds,
+    sendMessage.mutate(
+      {
+        attachmentIds: activeAttachments.map(({ id }) => id),
         clientId,
         content,
         friendId,
         replyToId: activeReply?.id,
-      });
-      setPendingDirectMessages((messages) =>
-        messages.map((pendingMessage) =>
-          pendingMessage.clientId === clientId
-            ? {
-                ...pendingMessage,
-                messageId: savedMessage.id,
-                status: "confirmed",
-              }
-            : pendingMessage,
-        ),
-      );
-      void refreshFriend(friendId);
-    } catch (error) {
-      setPendingDirectMessages((messages) =>
-        messages.filter(
-          (pendingMessage) => pendingMessage.clientId !== clientId,
-        ),
-      );
-      setMessage(getErrorMessage(error));
-      setReplyTarget(activeReply);
-      throw error;
-    }
+      },
+      {
+        onError: (error) => {
+          setPendingDirectMessages((messages) =>
+            messages.filter(
+              (pendingMessage) => pendingMessage.clientId !== clientId,
+            ),
+          );
+          if (
+            selectedFriendIdRef.current === friendId &&
+            !directComposerRef.current?.getValue()
+          ) {
+            directComposerRef.current?.setValue(content);
+          } else if (selectedFriendIdRef.current !== friendId) {
+            localStorage.setItem(`connect:draft:direct:${friendId}`, content);
+          }
+          setDirectAttachments(activeAttachments);
+          setMessage(getErrorMessage(error));
+          setReplyTarget(activeReply);
+        },
+        onSuccess: (savedMessage) => {
+          setPendingDirectMessages((messages) =>
+            messages.map((pendingMessage) =>
+              pendingMessage.clientId === clientId
+                ? {
+                    ...pendingMessage,
+                    messageId: savedMessage.id,
+                    status: "confirmed",
+                  }
+                : pendingMessage,
+            ),
+          );
+          void Promise.all([
+            utils.chat.getConversation.invalidate({ friendId }),
+            utils.chat.getFriends.invalidate(),
+          ]);
+        },
+      },
+    );
   };
 
-  const handleServerSubmit = async ({
-    attachmentIds,
-    clientId,
-    content,
-  }: ChatComposerSubmission) => {
+  const handleServerSubmit = (serverDraft: string) => {
     if (
       !selectedServerId ||
       !selectedServerChannel?.id ||
-      !canSendSelectedServerMessages
+      !canSendSelectedServerMessages ||
+      (!serverDraft.trim() && serverAttachments.length === 0)
     ) {
       return;
     }
     const channelId = selectedServerChannel.id;
+    const clientId = crypto.randomUUID();
+    const content = serverDraft.trim() || "添付ファイル";
     const serverId = selectedServerId;
+    const activeAttachments = serverAttachments;
 
+    serverComposerRef.current?.clear();
+    setServerAttachments([]);
     setServerMessage(null);
     setPendingServerMessages((messages) => [
       ...messages,
@@ -2242,36 +1940,50 @@ export function FriendChatPanel({
     requestAnimationFrame(messageViewport.scrollToBottom);
     const activeReply = replyTarget?.kind === "server" ? replyTarget : null;
     setReplyTarget(null);
-    try {
-      const savedMessage = await sendServerMessage.mutateAsync({
-        attachmentIds,
+    sendServerMessage.mutate(
+      {
+        attachmentIds: activeAttachments.map(({ id }) => id),
         channelId,
         clientId,
         content,
         replyToId: activeReply?.id,
         serverId,
-      });
-      setPendingServerMessages((messages) =>
-        messages.map((pendingMessage) =>
-          pendingMessage.clientId === clientId
-            ? {
-                ...pendingMessage,
-                messageId: savedMessage.id,
-                status: "confirmed",
-              }
-            : pendingMessage,
-        ),
-      );
-    } catch (error) {
-      setPendingServerMessages((messages) =>
-        messages.filter(
-          (pendingMessage) => pendingMessage.clientId !== clientId,
-        ),
-      );
-      setServerMessage(getErrorMessage(error));
-      setReplyTarget(activeReply);
-      throw error;
-    }
+      },
+      {
+        onError: (error) => {
+          setPendingServerMessages((messages) =>
+            messages.filter(
+              (pendingMessage) => pendingMessage.clientId !== clientId,
+            ),
+          );
+          if (
+            selectedServerChannelIdRef.current === channelId &&
+            !serverComposerRef.current?.getValue()
+          ) {
+            serverComposerRef.current?.setValue(content);
+          } else if (selectedServerChannelIdRef.current !== channelId) {
+            localStorage.setItem(`connect:draft:server:${channelId}`, content);
+          }
+          setServerAttachments(activeAttachments);
+          setServerMessage(getErrorMessage(error));
+          setReplyTarget(activeReply);
+        },
+        onSuccess: (savedMessage) => {
+          setPendingServerMessages((messages) =>
+            messages.map((pendingMessage) =>
+              pendingMessage.clientId === clientId
+                ? {
+                    ...pendingMessage,
+                    messageId: savedMessage.id,
+                    status: "confirmed",
+                  }
+                : pendingMessage,
+            ),
+          );
+          void utils.server.getConversation.invalidate({ channelId, serverId });
+        },
+      },
+    );
   };
 
   const handleCreateChannel = (event: FormEvent<HTMLFormElement>) => {
@@ -2448,7 +2160,6 @@ export function FriendChatPanel({
       return;
     }
     setReplyTarget({
-      conversationKey: replyConversationKey,
       content: messageContextTarget.content,
       id: messageContextTarget.id,
       kind: messageContextMenu.kind,
@@ -2464,11 +2175,18 @@ export function FriendChatPanel({
     ) {
       return;
     }
-    if (messageContextMenu.kind === "server") {
-      serverComposerRef.current?.quote(messageContextTarget.content);
-    } else {
-      directComposerRef.current?.quote(messageContextTarget.content);
-    }
+    const quoted = messageContextTarget.content
+      .split("\n")
+      .map((line) => `> ${line}`)
+      .join("\n");
+    const composer =
+      messageContextMenu.kind === "server"
+        ? serverComposerRef.current
+        : directComposerRef.current;
+    const draft = composer?.getValue() ?? "";
+    composer?.setValue(
+      `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(0, 1000),
+    );
     setMessageContextMenu(null);
   };
 
@@ -2653,29 +2371,27 @@ export function FriendChatPanel({
         onSearch={() => setIsGlobalSearchOpen(true)}
         selectedServerId={selectedServerId}
       />
-      {isGlobalSearchOpen && (
-        <GlobalSearchDialog
-          open
-          onOpenChange={setIsGlobalSearchOpen}
-          onOpenDirect={selectFriend}
-          onOpenGroup={(groupId) => {
-            setSelectedGroupId(groupId);
-            setIsGroupDmOpen(true);
-          }}
-          onOpenServer={(serverId, channelId) => {
-            const membership = serverOverview.data?.memberships.find(
-              (item) => item.server.id === serverId,
-            );
-            if (membership) selectServer(membership);
-            else {
-              setSelectedServerId(serverId);
-              setSelectedFriendId(null);
-              setIsNavigationOpen(false);
-            }
-            if (channelId) setSelectedServerChannelId(channelId);
-          }}
-        />
-      )}
+      <GlobalSearchDialog
+        open={isGlobalSearchOpen}
+        onOpenChange={setIsGlobalSearchOpen}
+        onOpenDirect={selectFriend}
+        onOpenGroup={(groupId) => {
+          setSelectedGroupId(groupId);
+          setIsGroupDmOpen(true);
+        }}
+        onOpenServer={(serverId, channelId) => {
+          const membership = serverOverview.data?.memberships.find(
+            (item) => item.server.id === serverId,
+          );
+          if (membership) selectServer(membership);
+          else {
+            setSelectedServerId(serverId);
+            setSelectedFriendId(null);
+            setIsNavigationOpen(false);
+          }
+          if (channelId) setSelectedServerChannelId(channelId);
+        }}
+      />
       <aside
         className={`${
           isNavigationOpen ? "flex" : "hidden"
@@ -2785,7 +2501,7 @@ export function FriendChatPanel({
                   <input
                     value={newChannelName}
                     onChange={(event) => setNewChannelName(event.target.value)}
-                    className="border-connect-ink/15 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder focus:border-connect-action focus:ring-connect-focus-soft min-h-9 min-w-0 flex-1 rounded-md border px-2 text-sm focus:ring-2 focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-ink placeholder:text-connect-placeholder min-h-9 min-w-0 flex-1 rounded-md border px-2 text-sm"
                     placeholder="new-channel"
                     maxLength={32}
                     aria-label="チャンネル名"
@@ -3030,18 +2746,20 @@ export function FriendChatPanel({
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedGroupId(undefined);
-                    setIsGroupDmOpen(true);
-                  }}
-                  className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
-                  aria-label="グループDMを開く"
-                  title="グループDMを開く"
+                <GroupDmDialog
+                  initialGroupId={selectedGroupId}
+                  open={isGroupDmOpen}
+                  onOpenChange={setIsGroupDmOpen}
                 >
-                  <Users className="h-4 w-4" aria-hidden="true" />
-                </button>
+                  <button
+                    type="button"
+                    className="hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
+                    aria-label="グループDMを開く"
+                    title="グループDMを開く"
+                  >
+                    <Users className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </GroupDmDialog>
               </div>
             </div>
 
@@ -3050,7 +2768,7 @@ export function FriendChatPanel({
                 <div className="bg-connect-surface mx-2 h-14 animate-pulse rounded-md" />
               )}
 
-              {listedGroups.map((group) => (
+              {groupConversations.data?.groups.map((group) => (
                 <button
                   key={group.id}
                   type="button"
@@ -3078,23 +2796,6 @@ export function FriendChatPanel({
                 </button>
               ))}
 
-              {groupConversations.hasNextPage && (
-                <button
-                  type="button"
-                  disabled={groupConversations.isFetchingNextPage}
-                  onClick={() => void groupConversations.fetchNextPage()}
-                  className="hover:bg-connect-surface min-h-11 w-full rounded-md px-3 py-2 text-sm"
-                >
-                  {groupConversations.isFetchingNextPage
-                    ? "読み込み中…"
-                    : "グループをさらに表示"}
-                </button>
-              )}
-              {groupConversations.isError && (
-                <p role="alert" className="text-connect-danger px-3 text-sm">
-                  グループ一覧を取得できませんでした
-                </p>
-              )}
               {friends.isLoading && (
                 <div className="space-y-2 px-2">
                   {[0, 1, 2].map((item) => (
@@ -3194,9 +2895,6 @@ export function FriendChatPanel({
                 <ProfileAvatar
                   user={selectedFriend}
                   className="h-8 w-8"
-                  onClick={() =>
-                    setProfileDialogTarget({ userId: selectedFriend.userId })
-                  }
                   onContextMenu={(event) =>
                     openProfileContextMenu(event, selectedFriend)
                   }
@@ -3241,39 +2939,26 @@ export function FriendChatPanel({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setIsProfileSettingsOpen(true)}
-              className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
-              aria-label="設定"
-            >
-              <Settings className="h-5 w-5" aria-hidden="true" />
-            </button>
+            <ProfileSettingsDialog>
+              <button
+                type="button"
+                className="text-connect-muted hover:bg-connect-surface hover:text-connect-ink flex h-11 w-11 items-center justify-center rounded-md transition"
+                aria-label="設定"
+              >
+                <Settings className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </ProfileSettingsDialog>
           </div>
         </header>
 
         {hasChatQueryError && <ChatQueryError onRetry={retryChatQueries} />}
-        <ChatConnectionStatus
-          isReconnecting={
-            !hasChatQueryError && realtimeStatus === "reconnecting"
-          }
-        />
 
         <div className="flex min-h-0 flex-1">
           <div className="flex min-w-0 flex-1 flex-col">
             <div
               ref={messageViewport.containerRef}
               data-chat-viewport
-              tabIndex={0}
-              aria-label="メッセージ履歴"
-              onWheel={messageHistory.handleWheel}
-              onTouchStart={messageHistory.handleTouchStart}
-              onTouchMove={messageHistory.handleTouchMove}
-              onKeyDown={messageHistory.handleKeyDown}
-              onScroll={() => {
-                messageViewport.handleScroll();
-                messageHistory.handleScroll();
-              }}
+              onScroll={messageViewport.handleScroll}
               className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5"
             >
               {selectedServer ? (
@@ -3313,23 +2998,19 @@ export function FriendChatPanel({
                   {serverConversationData && hasServerMessages && (
                     <div>
                       {serverConversation.hasNextPage && (
-                        <div
-                          className="text-connect-muted pb-4 text-center text-sm"
-                          role="status"
-                        >
-                          {serverConversation.isFetchingNextPage ? (
-                            "読み込み中…"
-                          ) : serverConversation.isFetchNextPageError ? (
-                            <button
-                              type="button"
-                              className="min-h-11 px-3 underline"
-                              onClick={() => void messageHistory.loadOlder()}
-                            >
-                              過去のメッセージを再試行
-                            </button>
-                          ) : (
-                            "上にスクロールして過去のメッセージを表示"
-                          )}
+                        <div className="flex justify-center pb-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void serverConversation.fetchNextPage()
+                            }
+                            disabled={serverConversation.isFetchingNextPage}
+                            className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
+                          >
+                            {serverConversation.isFetchingNextPage
+                              ? "読み込み中..."
+                              : "過去のメッセージを読み込む"}
+                          </button>
                         </div>
                       )}
                       {serverMessages.map((chatMessage, messageIndex) => {
@@ -3352,68 +3033,170 @@ export function FriendChatPanel({
                         const isEditing =
                           editingMessage?.kind === "server" &&
                           editingMessage.messageId === chatMessage.id;
+                        const isFollowup =
+                          !chatMessage.pinnedAt &&
+                          chatMessage.id !== firstServerUnreadMessageId &&
+                          shouldGroupMessage(
+                            chatMessage,
+                            serverMessages[messageIndex - 1],
+                          );
 
                         return (
-                          <MessageRow
+                          <article
                             key={chatMessage.id}
-                            author={author}
-                            canReact={canReactToSelectedServerMessages}
-                            editingContent={
-                              isEditing ? editingMessage.content : null
-                            }
-                            firstUnread={
-                              chatMessage.id === firstServerUnreadMessageId
-                            }
-                            isFollowup={
-                              !chatMessage.pinnedAt &&
-                              chatMessage.id !== firstServerUnreadMessageId &&
-                              shouldGroupMessage(
-                                chatMessage,
-                                serverMessages[messageIndex - 1],
-                              )
-                            }
-                            isMenuOpen={
-                              messageContextMenu?.kind === "server" &&
-                              messageContextMenu.messageId === chatMessage.id
-                            }
-                            isUpdating={
-                              isEditing && updateServerMessage.isPending
-                            }
-                            message={chatMessage}
-                            onCancelEdit={() => setEditingMessage(null)}
                             onContextMenu={(event) =>
                               openServerMessageMenu(event, chatMessage)
                             }
-                            onEditChange={(content) =>
-                              setEditingMessage((current) =>
-                                current?.kind === "server" &&
-                                current.messageId === chatMessage.id
-                                  ? { ...current, content }
-                                  : current,
-                              )
-                            }
-                            onEditSubmit={handleMessageEditSubmit}
-                            onOpenLink={setPendingExternalLink}
-                            onOpenProfile={() =>
-                              setProfileDialogTarget({
-                                serverId: selectedServer.server.id,
-                                userId: author.userId,
-                              })
-                            }
-                            onProfileContextMenu={(event) =>
-                              openProfileContextMenu(event, author)
-                            }
-                            onReact={(emoji) =>
-                              selectedServerId &&
-                              toggleServerReaction.mutate({
-                                emoji,
-                                messageId: chatMessage.id,
-                                serverId: selectedServerId,
-                              })
-                            }
-                            separatorRef={messageViewport.unreadRef}
-                            serverId={selectedServer.server.id}
-                          />
+                            className={`group hover:bg-connect-paper relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                          >
+                            {chatMessage.id === firstServerUnreadMessageId && (
+                              <NewMessagesSeparator
+                                separatorRef={messageViewport.unreadRef}
+                              />
+                            )}
+                            {isFollowup ? (
+                              <time
+                                dateTime={chatMessage.createdAt.toISOString()}
+                                className="text-connect-neutral mt-1 w-10 shrink-0 text-center text-[10px] opacity-0 transition group-hover:opacity-100"
+                                aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
+                              >
+                                {formatMessageTime(chatMessage.createdAt)}
+                              </time>
+                            ) : (
+                              <ProfileAvatar
+                                user={author}
+                                serverId={selectedServer.server.id}
+                                className="mt-1 h-10 w-10"
+                                onContextMenu={(event) =>
+                                  openProfileContextMenu(event, author)
+                                }
+                              />
+                            )}
+                            <div className="min-w-0 flex-1 text-left">
+                              {chatMessage.replyTo && (
+                                <div className="border-connect-action/35 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                                  {getDisplayName(chatMessage.replyTo.sender)}:{" "}
+                                  {chatMessage.replyTo.content}
+                                </div>
+                              )}
+                              {!isFollowup && (
+                                <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                                  <span className="text-connect-ink text-sm font-semibold">
+                                    {getDisplayName(author)}
+                                  </span>
+                                  <time className="text-connect-neutral text-xs">
+                                    {formatMessageTime(chatMessage.createdAt)}
+                                  </time>
+                                  {chatMessage.pinnedAt && (
+                                    <span className="text-connect-action inline-flex items-center gap-1 text-xs font-medium">
+                                      <Pin
+                                        className="h-3 w-3"
+                                        aria-hidden="true"
+                                      />
+                                      ピン留め
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {isEditing ? (
+                                <form
+                                  onSubmit={handleMessageEditSubmit}
+                                  className="space-y-2"
+                                >
+                                  <textarea
+                                    value={editingMessage.content}
+                                    onChange={(event) =>
+                                      setEditingMessage({
+                                        ...editingMessage,
+                                        content: event.target.value,
+                                      })
+                                    }
+                                    className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6"
+                                    maxLength={1000}
+                                    autoFocus
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingMessage(null)}
+                                      className="border-connect-ink/15 text-connect-muted hover:bg-connect-paper inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-semibold transition"
+                                    >
+                                      キャンセル
+                                    </button>
+                                    <button
+                                      type="submit"
+                                      disabled={
+                                        !editingMessage.content.trim() ||
+                                        updateServerMessage.isPending
+                                      }
+                                      className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-9 items-center rounded-md px-3 text-sm font-semibold transition disabled:opacity-50"
+                                    >
+                                      保存
+                                    </button>
+                                  </div>
+                                </form>
+                              ) : (
+                                <p className="text-connect-ink text-left leading-7 break-words whitespace-pre-wrap">
+                                  <MessageText
+                                    content={chatMessage.content}
+                                    onOpenLink={setPendingExternalLink}
+                                  />
+                                </p>
+                              )}
+                              <MessageAttachmentList
+                                attachments={chatMessage.attachments}
+                              />
+                              {chatMessage.reactions.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {groupReactions(chatMessage.reactions).map(
+                                    ([emoji, reactions]) => (
+                                      <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={() =>
+                                          selectedServerId &&
+                                          toggleServerReaction.mutate({
+                                            emoji: emoji as "\u{1F44D}",
+                                            messageId: chatMessage.id,
+                                            serverId: selectedServerId,
+                                          })
+                                        }
+                                        disabled={
+                                          !canReactToSelectedServerMessages
+                                        }
+                                        className="border-connect-ink/15 bg-connect-paper min-h-8 rounded-full border px-2 text-xs disabled:cursor-default"
+                                        title={
+                                          canReactToSelectedServerMessages
+                                            ? undefined
+                                            : "閲覧のみのためリアクションできません"
+                                        }
+                                      >
+                                        {emoji} {reactions.length}
+                                      </button>
+                                    ),
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(event) =>
+                                openServerMessageMenu(event, chatMessage)
+                              }
+                              className="text-connect-muted hover:bg-connect-highlight focus-visible:ring-connect-action flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none md:absolute md:top-1 md:right-2"
+                              aria-label="メッセージ操作"
+                              aria-haspopup="menu"
+                              aria-expanded={
+                                messageContextMenu?.kind === "server" &&
+                                messageContextMenu.messageId === chatMessage.id
+                              }
+                            >
+                              <Settings
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
+                            </button>
+                          </article>
                         );
                       })}
                       {activeServerPendingMessages.map(
@@ -3434,13 +3217,6 @@ export function FriendChatPanel({
                             )}
                             message={pendingMessage}
                             onOpenLink={setPendingExternalLink}
-                            onOpenProfile={() =>
-                              setProfileDialogTarget({
-                                serverId: selectedServer.server.id,
-                                userId:
-                                  serverConversationData.currentUser.userId,
-                              })
-                            }
                             serverId={selectedServer.server.id}
                           />
                         ),
@@ -3515,11 +3291,6 @@ export function FriendChatPanel({
                           <ProfileAvatar
                             user={directConversation.friend}
                             className="mb-4 h-20 w-20"
-                            onClick={() =>
-                              setProfileDialogTarget({
-                                userId: directConversation.friend.userId,
-                              })
-                            }
                             onContextMenu={(event) =>
                               openProfileContextMenu(
                                 event,
@@ -3543,90 +3314,174 @@ export function FriendChatPanel({
                     hasDirectMessages && (
                       <div>
                         {conversation.hasNextPage && (
-                          <div
-                            className="text-connect-muted pb-4 text-center text-sm"
-                            role="status"
-                          >
-                            {conversation.isFetchingNextPage ? (
-                              "読み込み中…"
-                            ) : conversation.isFetchNextPageError ? (
-                              <button
-                                type="button"
-                                className="min-h-11 px-3 underline"
-                                onClick={() => void messageHistory.loadOlder()}
-                              >
-                                過去のメッセージを再試行
-                              </button>
-                            ) : (
-                              "上にスクロールして過去のメッセージを表示"
-                            )}
+                          <div className="flex justify-center pb-4">
+                            <button
+                              type="button"
+                              onClick={() => void conversation.fetchNextPage()}
+                              disabled={conversation.isFetchingNextPage}
+                              className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
+                            >
+                              {conversation.isFetchingNextPage
+                                ? "読み込み中..."
+                                : "過去のメッセージを読み込む"}
+                            </button>
                           </div>
                         )}
                         {directMessages.map((chatMessage, messageIndex) => {
-                          const author =
+                          const isMine =
                             chatMessage.senderId ===
-                            directConversation.currentUserId
-                              ? directConversation.currentUser
-                              : directConversation.friend;
+                            directConversation.currentUserId;
+                          const author = isMine
+                            ? directConversation.currentUser
+                            : directConversation.friend;
                           const isEditing =
                             editingMessage?.kind === "direct" &&
                             editingMessage.messageId === chatMessage.id;
+                          const isFollowup = shouldGroupMessage(
+                            chatMessage,
+                            chatMessage.id === firstDirectUnreadMessageId
+                              ? undefined
+                              : directMessages[messageIndex - 1],
+                          );
 
                           return (
-                            <MessageRow
+                            <article
                               key={chatMessage.id}
-                              author={author}
-                              canReact
-                              editingContent={
-                                isEditing ? editingMessage.content : null
-                              }
-                              firstUnread={
-                                chatMessage.id === firstDirectUnreadMessageId
-                              }
-                              isFollowup={shouldGroupMessage(
-                                chatMessage,
-                                chatMessage.id === firstDirectUnreadMessageId
-                                  ? undefined
-                                  : directMessages[messageIndex - 1],
-                              )}
-                              isMenuOpen={
-                                messageContextMenu?.kind === "direct" &&
-                                messageContextMenu.messageId === chatMessage.id
-                              }
-                              isUpdating={
-                                isEditing && updateDirectMessage.isPending
-                              }
-                              message={chatMessage}
-                              onCancelEdit={() => setEditingMessage(null)}
                               onContextMenu={(event) =>
                                 openDirectMessageMenu(event, chatMessage)
                               }
-                              onEditChange={(content) =>
-                                setEditingMessage((current) =>
-                                  current?.kind === "direct" &&
-                                  current.messageId === chatMessage.id
-                                    ? { ...current, content }
-                                    : current,
-                                )
-                              }
-                              onEditSubmit={handleMessageEditSubmit}
-                              onOpenLink={setPendingExternalLink}
-                              onOpenProfile={() =>
-                                setProfileDialogTarget({
-                                  userId: author.userId,
-                                })
-                              }
-                              onProfileContextMenu={(event) =>
-                                openProfileContextMenu(event, author)
-                              }
-                              onReact={(emoji) =>
-                                toggleDirectReaction.mutate({
-                                  emoji,
-                                  messageId: chatMessage.id,
-                                })
-                              }
-                              separatorRef={messageViewport.unreadRef}
-                            />
+                              className={`group hover:bg-connect-paper relative flex flex-wrap items-start gap-x-3 gap-y-0 rounded-md px-2 ${isFollowup ? "py-0.5" : "py-1.5"}`}
+                            >
+                              {chatMessage.id ===
+                                firstDirectUnreadMessageId && (
+                                <NewMessagesSeparator
+                                  separatorRef={messageViewport.unreadRef}
+                                />
+                              )}
+                              {isFollowup ? (
+                                <time
+                                  dateTime={chatMessage.createdAt.toISOString()}
+                                  className="text-connect-neutral mt-1 w-10 shrink-0 text-center text-[10px] opacity-0 transition group-hover:opacity-100"
+                                  aria-label={`${getDisplayName(author)}、${formatMessageTime(chatMessage.createdAt)}`}
+                                >
+                                  {formatMessageTime(chatMessage.createdAt)}
+                                </time>
+                              ) : (
+                                <ProfileAvatar
+                                  user={author}
+                                  className="mt-1 h-10 w-10"
+                                  onContextMenu={(event) =>
+                                    openProfileContextMenu(event, author)
+                                  }
+                                />
+                              )}
+                              <div className="min-w-0 flex-1 text-left">
+                                {chatMessage.replyTo && (
+                                  <div className="border-connect-action/35 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                                    {getDisplayName(chatMessage.replyTo.sender)}
+                                    : {chatMessage.replyTo.content}
+                                  </div>
+                                )}
+                                {!isFollowup && (
+                                  <div className="mb-1 flex flex-wrap items-baseline gap-x-2">
+                                    <span className="text-connect-ink text-sm font-semibold">
+                                      {getDisplayName(author)}
+                                    </span>
+                                    <time className="text-connect-neutral text-xs">
+                                      {formatMessageTime(chatMessage.createdAt)}
+                                    </time>
+                                  </div>
+                                )}
+                                {isEditing ? (
+                                  <form
+                                    onSubmit={handleMessageEditSubmit}
+                                    className="space-y-2"
+                                  >
+                                    <textarea
+                                      value={editingMessage.content}
+                                      onChange={(event) =>
+                                        setEditingMessage({
+                                          ...editingMessage,
+                                          content: event.target.value,
+                                        })
+                                      }
+                                      className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-24 w-full resize-y rounded-md border px-3 py-2 text-left leading-6"
+                                      maxLength={1000}
+                                      autoFocus
+                                    />
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingMessage(null)}
+                                        className="border-connect-ink/15 text-connect-muted hover:bg-connect-paper inline-flex min-h-9 items-center rounded-md border px-3 text-sm font-semibold transition"
+                                      >
+                                        キャンセル
+                                      </button>
+                                      <button
+                                        type="submit"
+                                        disabled={
+                                          !editingMessage.content.trim() ||
+                                          updateDirectMessage.isPending
+                                        }
+                                        className="bg-connect-action text-connect-surface hover:bg-connect-action-hover inline-flex min-h-9 items-center rounded-md px-3 text-sm font-semibold transition disabled:opacity-50"
+                                      >
+                                        保存
+                                      </button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <p className="text-connect-ink text-left leading-7 break-words whitespace-pre-wrap">
+                                    <MessageText
+                                      content={chatMessage.content}
+                                      onOpenLink={setPendingExternalLink}
+                                    />
+                                  </p>
+                                )}
+                                <MessageAttachmentList
+                                  attachments={chatMessage.attachments}
+                                />
+                                {chatMessage.reactions.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {groupReactions(chatMessage.reactions).map(
+                                      ([emoji, reactions]) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() =>
+                                            toggleDirectReaction.mutate({
+                                              emoji: emoji as "\u{1F44D}",
+                                              messageId: chatMessage.id,
+                                            })
+                                          }
+                                          className="border-connect-ink/15 bg-connect-paper min-h-8 rounded-full border px-2 text-xs"
+                                        >
+                                          {emoji} {reactions.length}
+                                        </button>
+                                      ),
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(event) =>
+                                  openDirectMessageMenu(event, chatMessage)
+                                }
+                                className="text-connect-muted hover:bg-connect-highlight focus-visible:ring-connect-action flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none md:absolute md:top-1 md:right-2"
+                                aria-label="メッセージ操作"
+                                aria-haspopup="menu"
+                                aria-expanded={
+                                  messageContextMenu?.kind === "direct" &&
+                                  messageContextMenu.messageId ===
+                                    chatMessage.id
+                                }
+                              >
+                                <Settings
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </button>
+                            </article>
                           );
                         })}
                         {activeDirectPendingMessages.map(
@@ -3642,11 +3497,6 @@ export function FriendChatPanel({
                               )}
                               message={pendingMessage}
                               onOpenLink={setPendingExternalLink}
-                              onOpenProfile={() =>
-                                setProfileDialogTarget({
-                                  userId: directConversation.currentUser.userId,
-                                })
-                              }
                             />
                           ),
                         )}
@@ -3693,33 +3543,37 @@ export function FriendChatPanel({
                         </button>
                       </div>
                     )}
+                  {canSendSelectedServerMessages && (
+                    <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
+                      <MessageAttachmentPicker
+                        attachments={serverAttachments}
+                        disabled={sendServerMessage.isPending}
+                        onChange={setServerAttachments}
+                        onError={setServerMessage}
+                      />
+                    </div>
+                  )}
                   <ChatComposer
-                    key={`server:${selectedServerId}:${selectedServerChannel?.id ?? ""}`}
                     ref={serverComposerRef}
                     disabled={
                       !selectedServerChannel?.id ||
                       !canSendSelectedServerMessages
                     }
-                    joinedToReply={
+                    hasAttachments={serverAttachments.length > 0}
+                    hasReply={
                       replyTarget?.kind === "server" &&
                       canSendSelectedServerMessages
                     }
-                    onError={setServerMessage}
                     onSubmit={handleServerSubmit}
-                    replyToId={
-                      replyTarget?.kind === "server"
-                        ? replyTarget.id
-                        : undefined
-                    }
                     placeholder={
                       canSendSelectedServerMessages
                         ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
                         : "閲覧のみのためメッセージを送信できません"
                     }
                     storageKey={
-                      selectedServerChannel?.id && currentServerUser?.id
-                        ? `connect:draft:${currentServerUser.id}:server:${selectedServerChannel.id}`
-                        : null
+                      selectedServerChannel?.id
+                        ? `connect:draft:server:${selectedServerChannel.id}`
+                        : undefined
                     }
                   />
                 </>
@@ -3779,7 +3633,7 @@ export function FriendChatPanel({
                             )
                           }
                           disabled={matchingState === "waiting"}
-                          className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-11 flex-1 rounded-md border px-3 focus:ring-2 focus:outline-none disabled:opacity-50"
+                          className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-11 flex-1 rounded-md border px-3 disabled:opacity-50"
                           aria-label="話したいこと"
                         >
                           {MATCHING_TOPICS.map((topic) => (
@@ -3921,6 +3775,16 @@ export function FriendChatPanel({
                           </button>
                         </div>
                       )}
+                      {canSendDirectMessage && (
+                        <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
+                          <MessageAttachmentPicker
+                            attachments={directAttachments}
+                            disabled={sendMessage.isPending}
+                            onChange={setDirectAttachments}
+                            onError={setMessage}
+                          />
+                        </div>
+                      )}
                       <div className="text-connect-neutral mb-2 min-h-5 px-1 text-sm">
                         {typingUserName
                           ? `${typingUserName} が入力中...`
@@ -3929,18 +3793,12 @@ export function FriendChatPanel({
                             : "フレンドではないため、新しいメッセージは送信できません"}
                       </div>
                       <ChatComposer
-                        key={`direct:${selectedFriendId ?? ""}`}
                         ref={directComposerRef}
                         disabled={!selectedFriendId || !canSendDirectMessage}
-                        joinedToReply={replyTarget?.kind === "direct"}
-                        onError={setMessage}
-                        onSubmit={handleDirectSubmit}
-                        replyToId={
-                          replyTarget?.kind === "direct"
-                            ? replyTarget.id
-                            : undefined
-                        }
-                        onTypingChange={broadcastTyping}
+                        hasAttachments={directAttachments.length > 0}
+                        hasReply={replyTarget?.kind === "direct"}
+                        onSubmit={handleSubmit}
+                        onValueChange={handleDirectDraftChange}
                         placeholder={
                           !canSendDirectMessage
                             ? "この会話には送信できません"
@@ -3949,9 +3807,9 @@ export function FriendChatPanel({
                               : "フレンドを選択してください"
                         }
                         storageKey={
-                          selectedFriendId && directConversation?.currentUserId
-                            ? `connect:draft:${directConversation.currentUserId}:direct:${selectedFriendId}`
-                            : null
+                          selectedFriendId
+                            ? `connect:draft:direct:${selectedFriendId}`
+                            : undefined
                         }
                       />
                     </>
@@ -3970,15 +3828,10 @@ export function FriendChatPanel({
               isUpdatingRole={updateServerMemberRole.isPending}
               members={selectedServerMembers}
               onClose={() => setIsMemberListOpen(false)}
-              onOpenProfile={(userId) =>
-                setProfileDialogTarget({
-                  serverId: selectedServer.server.id,
-                  userId,
-                })
-              }
               onProfileContextMenu={openProfileContextMenu}
               onRemove={handleRemoveServerMember}
               onUpdateRole={handleUpdateServerMemberRole}
+              serverId={selectedServer.server.id}
             />
           )}
         </div>
@@ -4045,7 +3898,7 @@ export function FriendChatPanel({
               <input
                 value={serverNameDraft}
                 onChange={(event) => setServerNameDraft(event.target.value)}
-                className="border-connect-ink/15 bg-connect-surface text-connect-ink focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface text-connect-ink min-h-11 w-full rounded-md border px-3"
                 maxLength={50}
                 required
               />
@@ -4116,7 +3969,7 @@ export function FriendChatPanel({
                     value={`/servers/invite/${selectedServer.server.inviteCode}`}
                     readOnly
                     onFocus={(event) => event.currentTarget.select()}
-                    className="border-connect-ink/15 bg-connect-surface text-connect-muted focus:border-connect-action focus:ring-connect-focus-soft min-h-11 min-w-0 flex-1 rounded-md border px-3 text-sm focus:ring-2 focus:outline-none"
+                    className="border-connect-ink/15 bg-connect-surface text-connect-muted min-h-11 min-w-0 flex-1 rounded-md border px-3 text-sm"
                     aria-label="招待リンク"
                   />
                   <button
@@ -4212,7 +4065,7 @@ export function FriendChatPanel({
                 onChange={(event) =>
                   setReportReason(event.target.value as ReportReason)
                 }
-                className="border-connect-ink/15 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft min-h-11 w-full rounded-md border px-3 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface min-h-11 w-full rounded-md border px-3"
               >
                 {reportReasons.map((reason) => (
                   <option key={reason.value} value={reason.value}>
@@ -4228,7 +4081,7 @@ export function FriendChatPanel({
               <textarea
                 value={reportDetails}
                 onChange={(event) => setReportDetails(event.target.value)}
-                className="border-connect-ink/15 bg-connect-surface focus:border-connect-action focus:ring-connect-focus-soft min-h-28 w-full resize-y rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
+                className="border-connect-ink/15 bg-connect-surface min-h-28 w-full resize-y rounded-md border px-3 py-2"
                 maxLength={500}
               />
             </label>
@@ -4340,46 +4193,20 @@ export function FriendChatPanel({
         </DialogContent>
       </Dialog>
 
-      {isGroupDmOpen && (
-        <GroupDmDialog
-          isRealtimeConnected={isRealtimeConnected}
-          isReconnecting={realtimeStatus === "reconnecting"}
-          initialGroupId={selectedGroupId}
-          open
-          onOpenChange={setIsGroupDmOpen}
-        />
-      )}
+      <PinnedMessagesDialog
+        isLoading={serverConversation.isLoading}
+        messages={serverConversationData?.pinnedMessages}
+        onOpenChange={setIsPinnedMessagesOpen}
+        onOpenLink={setPendingExternalLink}
+        onProfileContextMenu={openProfileContextMenu}
+        open={isPinnedMessagesOpen}
+        serverId={selectedServer?.server.id}
+      />
 
-      {isProfileSettingsOpen && (
-        <ProfileSettingsDialog open onOpenChange={setIsProfileSettingsOpen} />
-      )}
-
-      {profileDialogTarget && (
-        <UserProfileDialog
-          open
-          onOpenChange={(open) => !open && setProfileDialogTarget(null)}
-          serverId={profileDialogTarget.serverId}
-          userId={profileDialogTarget.userId}
-        />
-      )}
-
-      {isPinnedMessagesOpen && (
-        <PinnedMessagesDialog
-          channelId={selectedServerChannel?.id}
-          onOpenChange={setIsPinnedMessagesOpen}
-          onOpenLink={setPendingExternalLink}
-          onProfileContextMenu={openProfileContextMenu}
-          open
-          serverId={selectedServer?.server.id}
-        />
-      )}
-
-      {pendingExternalLink && (
-        <ExternalLinkDialog
-          onClose={() => setPendingExternalLink(null)}
-          url={pendingExternalLink}
-        />
-      )}
+      <ExternalLinkDialog
+        onClose={() => setPendingExternalLink(null)}
+        url={pendingExternalLink}
+      />
 
       {moderationNotice && (
         <div

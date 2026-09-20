@@ -203,9 +203,14 @@
   }
 }
 
-:where(a, button, input, select, textarea, [role="button"]):focus-visible {
+:where(a, button, [role="button"]):focus-visible {
   outline: 2px solid var(--connect-focus);
   outline-offset: 2px;
+}
+
+:where(input, select, textarea):focus {
+  box-shadow: none;
+  outline: none;
 }
 
 :where(
@@ -219,15 +224,6 @@
   [role="option"]:not([aria-disabled="true"])
 ) {
   cursor: pointer;
-}
-
-textarea[data-chat-input]:focus-visible {
-  outline: none;
-}
-
-[data-chat-composer]:focus-within {
-  outline: 2px solid var(--connect-focus);
-  outline-offset: 2px;
 }
 
 .scrollbar-hidden {

@@ -2,263 +2,150 @@
 
 import { Send } from "lucide-react";
 import {
-  getMessageSendAttempt,
-  type MessageSendAttempt,
-} from "~/features/chat/message-send-attempt";
-import {
   forwardRef,
+  memo,
   useCallback,
   useEffect,
-  useId,
   useImperativeHandle,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 
-import {
-  EmojiPickerButton,
-  MessageAttachmentPicker,
-  PendingAttachmentList,
-  type PendingAttachment,
-} from "~/features/chat/components/message-attachment-picker";
-
 export type ChatComposerHandle = {
-  quote: (content: string) => void;
-};
-
-export type ChatComposerSubmission = {
-  attachmentIds: string[];
-  clientId: string;
-  content: string;
+  clear: () => void;
+  getValue: () => string;
+  setValue: (value: string) => void;
 };
 
 type ChatComposerProps = {
-  disabled?: boolean;
-  joinedToReply?: boolean;
-  onError: (message: string) => void;
-  onSubmit: (submission: ChatComposerSubmission) => Promise<void>;
-  onTypingChange?: (isTyping: boolean) => void;
+  disabled: boolean;
+  hasAttachments: boolean;
+  hasReply: boolean;
+  onSubmit: (value: string) => void;
+  onValueChange?: (value: string) => void;
   placeholder: string;
-  replyToId?: string;
-  storageKey: string | null;
+  storageKey?: string;
 };
 
-function persistDraft(key: string | null, value: string) {
-  if (!key || typeof window === "undefined") return;
+type PendingDraftSave = {
+  key: string;
+  value: string;
+};
+
+function persistDraft({ key, value }: PendingDraftSave) {
   if (value) localStorage.setItem(key, value);
   else localStorage.removeItem(key);
 }
 
-export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
+const ChatComposerBase = forwardRef<ChatComposerHandle, ChatComposerProps>(
   function ChatComposer(
     {
-      disabled: externallyDisabled = false,
-      joinedToReply = false,
-      onError,
+      disabled,
+      hasAttachments,
+      hasReply,
       onSubmit,
-      onTypingChange,
+      onValueChange,
       placeholder,
-      replyToId,
       storageKey,
     },
     ref,
   ) {
-    const disabled = externallyDisabled || !storageKey;
-    const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
-    const [draft, setDraft] = useState("");
-    const [isSending, setIsSending] = useState(false);
-    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-    const inputHintId = useId();
-    const draftRef = useRef({ key: storageKey, value: draft });
-    const typingStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-      null,
-    );
-    const lastTypingSentAtRef = useRef(0);
-    const sendAttempt = useRef<MessageSendAttempt | undefined>(undefined);
+    const [value, setValue] = useState("");
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const pendingSaveRef = useRef<PendingDraftSave | null>(null);
 
-    const updateDraft = useCallback(
-      (value: string) => {
-        draftRef.current = { key: storageKey, value };
-        setDraft(value);
+    const cancelPendingSave = useCallback(() => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      pendingSaveRef.current = null;
+    }, []);
 
-        if (!onTypingChange) return;
-        if (!value.trim()) {
-          if (typingStopTimerRef.current) {
-            clearTimeout(typingStopTimerRef.current);
-          }
-          lastTypingSentAtRef.current = 0;
-          onTypingChange(false);
-          return;
-        }
+    const flushPendingSave = useCallback(() => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (pendingSaveRef.current) persistDraft(pendingSaveRef.current);
+      saveTimerRef.current = null;
+      pendingSaveRef.current = null;
+    }, []);
 
-        const now = Date.now();
-        if (now - lastTypingSentAtRef.current >= 10_000) {
-          lastTypingSentAtRef.current = now;
-          onTypingChange(true);
-        }
-        if (typingStopTimerRef.current) {
-          clearTimeout(typingStopTimerRef.current);
-        }
-        typingStopTimerRef.current = setTimeout(() => {
-          lastTypingSentAtRef.current = 0;
-          onTypingChange(false);
-        }, 1600);
+    const scheduleSave = useCallback((key: string, nextValue: string) => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      pendingSaveRef.current = { key, value: nextValue };
+      saveTimerRef.current = setTimeout(() => {
+        if (pendingSaveRef.current) persistDraft(pendingSaveRef.current);
+        saveTimerRef.current = null;
+        pendingSaveRef.current = null;
+      }, 400);
+    }, []);
+
+    const updateValue = useCallback(
+      (nextValue: string) => {
+        setValue(nextValue);
+        if (storageKey) scheduleSave(storageKey, nextValue);
+        onValueChange?.(nextValue);
       },
-      [onTypingChange, storageKey],
+      [onValueChange, scheduleSave, storageKey],
     );
 
-    useLayoutEffect(() => {
-      const value = storageKey ? (localStorage.getItem(storageKey) ?? "") : "";
-      draftRef.current = { key: storageKey, value };
-      setDraft(value);
-    }, [storageKey]);
+    useEffect(() => {
+      flushPendingSave();
+      setValue(storageKey ? (localStorage.getItem(storageKey) ?? "") : "");
+
+      return flushPendingSave;
+    }, [flushPendingSave, storageKey]);
 
     useImperativeHandle(
       ref,
       () => ({
-        quote(content) {
-          const quoted = content
-            .split("\n")
-            .map((line) => `> ${line}`)
-            .join("\n");
-          updateDraft(
-            `${draftRef.current.value.trimEnd()}${draftRef.current.value ? "\n" : ""}${quoted}\n`.slice(
-              0,
-              1000,
-            ),
-          );
-          requestAnimationFrame(() => textareaRef.current?.focus());
+        clear: () => {
+          cancelPendingSave();
+          if (storageKey) localStorage.removeItem(storageKey);
+          setValue("");
         },
+        getValue: () => value,
+        setValue: updateValue,
       }),
-      [updateDraft],
+      [cancelPendingSave, storageKey, updateValue, value],
     );
-
-    useEffect(() => {
-      const timer = setTimeout(
-        () => persistDraft(storageKey, draftRef.current.value),
-        400,
-      );
-      return () => clearTimeout(timer);
-    }, [draft, storageKey]);
-
-    useEffect(
-      () => () => {
-        persistDraft(draftRef.current.key, draftRef.current.value);
-        if (typingStopTimerRef.current) {
-          clearTimeout(typingStopTimerRef.current);
-        }
-        if (lastTypingSentAtRef.current > 0) onTypingChange?.(false);
-      },
-      [onTypingChange],
-    );
-
-    const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (disabled || isSending || (!draft.trim() && attachments.length === 0))
-        return;
-
-      const previousDraft = draft;
-      const previousAttachments = attachments;
-      const content = draft.trim() || "添付ファイル";
-      const attachmentIds = previousAttachments.map(({ id }) => id);
-      const attempt = getMessageSendAttempt(sendAttempt.current, {
-        attachmentIds,
-        content,
-        conversationId: storageKey ?? "",
-        replyToId,
-      });
-      sendAttempt.current = attempt;
-      updateDraft("");
-      setAttachments([]);
-      persistDraft(storageKey, "");
-      setIsSending(true);
-
-      try {
-        await onSubmit({
-          attachmentIds,
-          clientId: attempt.clientId,
-          content,
-        });
-        sendAttempt.current = undefined;
-      } catch (error) {
-        const restoredDraft = draftRef.current.value || previousDraft;
-        draftRef.current = { key: storageKey, value: restoredDraft };
-        setDraft(restoredDraft);
-        setAttachments((current) =>
-          current.length > 0 ? current : previousAttachments,
-        );
-        persistDraft(storageKey, restoredDraft);
-        onError(error instanceof Error ? error.message : "送信に失敗しました");
-      } finally {
-        setIsSending(false);
-      }
-    };
 
     return (
       <form
-        data-chat-composer
-        onSubmit={(event) => void submit(event)}
-        className={`border-connect-ink/15 bg-connect-paper flex flex-col border ${joinedToReply ? "rounded-b-md" : "rounded-md"}`}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (disabled || (!value.trim() && !hasAttachments)) return;
+          onSubmit(value);
+        }}
+        className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${hasReply ? "rounded-b-md" : "rounded-md"}`}
       >
-        <PendingAttachmentList
-          attachments={attachments}
-          disabled={isSending}
-          onChange={setAttachments}
-        />
-        <div className="flex min-w-0 items-end gap-1 px-2 py-1.5">
-          <MessageAttachmentPicker
-            attachments={attachments}
-            conversationKey={storageKey}
-            disabled={disabled || isSending}
-            onChange={setAttachments}
-            onError={onError}
-          />
-          <textarea
-            ref={textareaRef}
-            data-chat-input
-            aria-describedby={inputHintId}
-            value={draft}
-            onChange={(event) => updateDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                event.nativeEvent.keyCode !== 229
-              ) {
-                event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
-              }
-            }}
-            className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-11 min-w-0 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-            placeholder={placeholder}
-            disabled={disabled}
-            maxLength={1000}
-          />
-          <EmojiPickerButton
-            disabled={disabled || isSending}
-            onChange={updateDraft}
-            textareaRef={textareaRef}
-            value={draft}
-          />
-          <button
-            type="submit"
-            disabled={
-              disabled ||
-              isSending ||
-              (!draft.trim() && attachments.length === 0)
+        <textarea
+          data-chat-input
+          value={value}
+          onChange={(event) => updateValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
             }
-            className="bg-connect-ink text-connect-paper focus-visible:outline-connect-action enabled:hover:bg-connect-ink-2 flex size-11 shrink-0 items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 enabled:active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="送信"
-          >
-            <Send className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
-        <p id={inputHintId} className="text-connect-muted px-3 pb-2 text-xs">
-          Enterで送信 · Shift+Enterで改行
-        </p>
+          }}
+          className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
+          placeholder={placeholder}
+          disabled={disabled}
+          maxLength={1000}
+        />
+        <button
+          type="submit"
+          disabled={disabled || (!value.trim() && !hasAttachments)}
+          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="送信"
+        >
+          <Send className="h-5 w-5" aria-hidden="true" />
+        </button>
       </form>
     );
   },
 );
+
+export const ChatComposer = memo(ChatComposerBase);
