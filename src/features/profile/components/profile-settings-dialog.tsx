@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import dynamic from "next/dynamic";
 
 import {
   Dialog,
@@ -10,7 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { ProfileForm } from "~/features/profile/components/profile-form";
+
+const ProfileForm = dynamic(
+  () =>
+    import("~/features/profile/components/profile-form").then(
+      (module) => module.ProfileForm,
+    ),
+  { loading: () => <p role="status">プロフィール設定を読み込み中…</p> },
+);
 
 export function ProfileSettingsDialog({
   children,
