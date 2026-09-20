@@ -53,7 +53,9 @@ the palette between pages.
 
 ## Interaction and motion
 
-- Visible result means silent success.
+- When an action has a clear visible result, omit a redundant success toast.
+  Preserve accessible status feedback when assistive technology would otherwise
+  miss the result, and always communicate failures that need user action.
 - Keyboard focus is immediate and visible.
 - Hover-only controls are not the sole route to an action.
 - Motion is limited to short opacity and transform transitions, with reduced
