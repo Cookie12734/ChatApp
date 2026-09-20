@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 import { createTRPCClient, httpLink } from "@trpc/client";
 import superjson from "superjson";
 import type { AppRouter } from "../src/server/api/root";
@@ -75,6 +76,173 @@ async function openGroup(page: Page) {
 }
 
 test.describe.configure({ mode: "serial" });
+
+for (const width of [1280, 375]) {
+  test(`設定フォームの遅延読み込み後も開閉とフォーカス復帰ができる (${width}px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 812 });
+    const settingsRequests: string[] = [];
+    page.on("request", (request) => {
+      if (
+        /\/api\/trpc\/.*(?:notification\.getSettings|profile\.getMine)/.test(
+          request.url(),
+        )
+      ) {
+        settingsRequests.push(request.url());
+      }
+    });
+    await login(page);
+    expect(settingsRequests).toHaveLength(0);
+
+    for (const name of ["通知設定", "プロフィール設定"]) {
+      const trigger = page.getByRole("button", { name, exact: true });
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name, exact: true });
+      await expect(dialog).toBeVisible();
+      if (name === "通知設定") {
+        await expect(dialog.getByRole("checkbox").first()).toBeEnabled();
+      } else {
+        await expect(dialog.getByLabel("名前", { exact: true })).toBeVisible();
+      }
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(trigger).toBeFocused();
+      await trigger.click();
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole("button", { name: "Close", exact: true }).click();
+      await expect(dialog).toBeHidden();
+      await expect(trigger).toBeFocused();
+    }
+  });
+}
+
+test("DMの新着は相手1人分だけ一覧を更新する", async ({ page }) => {
+  await login(page);
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: /E2E Member/ }).first(),
+  ).toBeVisible();
+  const client = apiClient(page);
+  const subset = await client.chat.getFriends.query({ friendId: memberId });
+  expect(subset.map(({ friend }) => friend.id)).toEqual([memberId]);
+  expect(
+    await client.chat.getFriends.query({ friendId: "not-a-contact" }),
+  ).toEqual([]);
+  let fullRequests = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    const names = url.pathname.split("/").at(-1)?.split(",") ?? [];
+    const index = names.indexOf("chat.getFriends");
+    if (index < 0) return;
+    const raw = JSON.parse(url.searchParams.get("input") ?? "{}") as Record<
+      string,
+      { json?: { friendId?: string } }
+    >;
+    if (!raw[String(index)]?.json?.friendId) fullRequests++;
+  });
+  const content = `scoped-overview-${runId}`;
+  const sent = await client.chat.sendMessage.mutate({
+    friendId: memberId,
+    content,
+    clientId: crypto.randomUUID(),
+  });
+  try {
+    await expect(
+      page.getByRole("button").filter({ hasText: `あなた: ${content}` }),
+    ).toBeVisible();
+    expect(fullRequests).toBe(0);
+    await client.chat.deleteMessage.mutate({ messageId: sent.id });
+    await expect(
+      page.getByRole("button").filter({ hasText: `あなた: ${content}` }),
+    ).toHaveCount(0);
+    expect(fullRequests).toBe(0);
+  } finally {
+    await prisma.directMessage.deleteMany({ where: { id: sent.id } });
+  }
+});
+
+test("画像プレビューは縮小して保存し原本と同じ閲覧制限を適用する", async ({
+  page,
+  browser,
+}) => {
+  await login(page);
+  const original = await sharp({
+    create: { width: 1600, height: 1200, channels: 3, background: "#446633" },
+  })
+    .png()
+    .toBuffer();
+  const uploaded = await page.request.post("/api/attachments", {
+    multipart: {
+      file: { name: "preview.png", mimeType: "image/png", buffer: original },
+    },
+  });
+  expect(uploaded.ok()).toBe(true);
+  const { attachment } = (await uploaded.json()) as {
+    attachment: { id: string };
+  };
+  const url = `/api/attachments/${attachment.id}`;
+  const context = await browser.newContext();
+  try {
+    const thumbnail = await page.request.get(`${url}?preview=1`);
+    expect(thumbnail.headers()["content-type"]).toBe("image/webp");
+    expect(thumbnail.headers()["cache-control"]).toContain("no-store");
+    expect((await sharp(await thumbnail.body()).metadata()).width).toBe(640);
+    expect(await (await page.request.get(url)).body()).toEqual(original);
+    const peer = await context.newPage();
+    await login(peer, memberEmail);
+    expect((await peer.request.get(`${url}?preview=1`)).status()).toBe(404);
+    const sent = await apiClient(page).chat.sendMessage.mutate({
+      friendId: memberId,
+      content: "preview-test",
+      clientId: crypto.randomUUID(),
+      attachmentIds: [attachment.id],
+    });
+    try {
+      expect((await peer.request.get(`${url}?preview=1`)).status()).toBe(200);
+      await page.goto("/");
+      const image = page.getByAltText("preview.png", { exact: true });
+      await expect(image).toBeVisible();
+      await expect(image).toHaveAttribute("src", /preview=1/);
+      await expect
+        .poll(() =>
+          image.evaluate(
+            (element) => (element as HTMLImageElement).naturalWidth,
+          ),
+        )
+        .toBe(640);
+      // Existing images acquire their preview lazily without changing the original.
+      await prisma.messageAttachment.update({
+        where: { id: attachment.id },
+        data: { thumbnail: null },
+      });
+      expect((await peer.request.get(`${url}?preview=1`)).status()).toBe(200);
+      expect(
+        (
+          await prisma.messageAttachment.findUniqueOrThrow({
+            where: { id: attachment.id },
+            select: { thumbnail: true },
+          })
+        ).thumbnail,
+      ).not.toBeNull();
+      const block = await prisma.userBlock.create({
+        data: { blockerId: ownerId, blockedId: memberId },
+      });
+      try {
+        expect((await peer.request.get(`${url}?preview=1`)).status()).toBe(404);
+        expect((await peer.request.get(url)).status()).toBe(404);
+      } finally {
+        await prisma.userBlock.delete({ where: { id: block.id } });
+      }
+    } finally {
+      await prisma.directMessage.deleteMany({ where: { id: sent.id } });
+    }
+  } finally {
+    await context.close();
+    await prisma.messageAttachment.deleteMany({ where: { id: attachment.id } });
+  }
+});
 
 test.beforeAll(async () => {
   const passwordHash = await bcrypt.hash(password, 4);
@@ -168,6 +336,80 @@ test.afterAll(async () => {
     await prisma.groupConversation.deleteMany({ where: { id: groupId } });
   await prisma.user.deleteMany({ where: { id: { in: [ownerId, memberId] } } });
   await prisma.$disconnect();
+});
+
+test("DMとサーバーは最新25件だけ表示し上スクロールで履歴を追加する", async ({
+  page,
+}) => {
+  await login(page);
+  const viewport = page.locator("[data-chat-viewport]");
+  await expect(viewport.locator("article")).toHaveCount(25);
+  await expect(
+    viewport.getByText("履歴メッセージ 1", { exact: true }),
+  ).toHaveCount(0);
+  await viewport.focus();
+  await viewport.press("Control+Home");
+  await expect(viewport.locator("article")).toHaveCount(36);
+  await expect
+    .poll(() => viewport.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+
+  const ids = Array.from({ length: 61 }, (_, i) => `history-dm-${runId}-${i}`);
+  await prisma.directMessage.createMany({
+    data: ids.map((id, i) => ({
+      id,
+      senderId: memberId,
+      receiverId: ownerId,
+      content: `paging-dm-${i + 1}`,
+      createdAt: new Date(Date.now() - (61 - i) * 1000),
+      readAt: new Date(),
+    })),
+  });
+  try {
+    await page.goto("/");
+    await expect(viewport.locator("article")).toHaveCount(25);
+    await expect(viewport.locator("article").first()).toContainText(
+      "paging-dm-37",
+    );
+    // A narrow viewport exercises the same history behavior on mobile.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page
+      .getByRole("button", { name: /E2E Member.*paging-dm-61/ })
+      .click();
+    await expect(viewport).toBeVisible();
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    await viewport.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await expect(viewport.locator("article")).toHaveCount(50);
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    await viewport.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await expect(viewport.locator("article")).toHaveCount(61);
+    await expect(viewport.locator("article").first()).toContainText(
+      "paging-dm-1",
+    );
+    const client = apiClient(page);
+    const first = await client.chat.getConversation.query({
+      friendId: memberId,
+    });
+    const second = await client.chat.getConversation.query({
+      friendId: memberId,
+      cursor: first.nextCursor,
+    });
+    expect(first.messages).toHaveLength(25);
+    expect(second.messages).toHaveLength(25);
+    expect(
+      new Set([...first.messages, ...second.messages].map(({ id }) => id)).size,
+    ).toBe(50);
+  } finally {
+    await prisma.directMessage.deleteMany({ where: { id: { in: ids } } });
+  }
 });
 
 test("送信待ちのメッセージを灰色で即時表示する", async ({ page }) => {
@@ -327,22 +569,62 @@ test("グループDMの過去ログと相手の新着が時系列で表示され
   await expect(
     dialog.locator("article").getByText("group-history-105", { exact: true }),
   ).toHaveCount(1);
-  await dialog.getByRole("button", { name: /過去のメッセージ/ }).click();
+  const viewport = dialog.locator("[data-group-chat-viewport]");
+  await expect(dialog.locator("article")).toHaveCount(25);
+  for (const count of [50, 75, 100, 105]) {
+    const anchor = await viewport.evaluate((element) => {
+      element.scrollTop = 0;
+      const first = element.querySelector("article")!;
+      return {
+        text: first.textContent,
+        top: first.getBoundingClientRect().top,
+      };
+    });
+    await expect(dialog.locator("article")).toHaveCount(count);
+    await expect
+      .poll(() => viewport.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    await expect
+      .poll(() =>
+        viewport.evaluate((element, anchor) => {
+          const previousFirst = [...element.querySelectorAll("article")].find(
+            (article) => article.textContent === anchor.text,
+          )!;
+          return Math.abs(
+            previousFirst.getBoundingClientRect().top - anchor.top,
+          );
+        }, anchor),
+      )
+      .toBeLessThan(2);
+  }
   await expect(dialog.locator("article").first()).toContainText(
     "group-history-1",
   );
   await expect(dialog.locator("article").last()).toContainText(
     "group-history-105",
   );
+  let historyRequests = 0;
+  page.on("request", (request) => {
+    if (request.url().includes("group.getConversation")) historyRequests++;
+  });
+  await viewport.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
   const content = `group-incoming-${runId}`;
-  await prisma.groupMessage.create({
+  const incoming = await prisma.groupMessage.create({
     data: { groupId, senderId: memberId, content },
   });
   const event = await prisma.chatEvent.create({
     data: {
       kind: "group",
       audienceIds: [ownerId, memberId],
-      payload: { kind: "group", groupId, userIds: [ownerId, memberId] },
+      payload: {
+        kind: "group",
+        groupId,
+        userIds: [ownerId, memberId],
+        messageId: incoming.id,
+        change: "created",
+      },
     },
   });
   chatEventIds.push(event.id);
@@ -352,6 +634,18 @@ test("グループDMの過去ログと相手の新着が時系列で表示され
     timeout: 10000,
   });
   await expect(dialog.locator("article").last()).toContainText(content);
+  await apiClient(page).group.toggleReaction.mutate({
+    groupId,
+    messageId: incoming.id,
+    emoji: "👍",
+  });
+  await expect(
+    dialog
+      .locator("article")
+      .last()
+      .getByRole("button", { name: "👍 1", exact: true }),
+  ).toHaveCount(1);
+  expect(historyRequests).toBe(0);
 });
 
 test("SSE接続を60秒以上維持し、会話の定期再取得なしでチャンネル変更を取得する", async ({
@@ -372,13 +666,30 @@ test("SSE接続を60秒以上維持し、会話の定期再取得なしでチャ
   ).toBeVisible();
   await page.waitForTimeout(1000);
   const initialConversations = conversations;
-  const channel = await prisma.serverChannel.create({
-    data: { serverId, name: `audit-${runId}` },
+  const channel = await apiClient(page).server.createChannel.mutate({
+    serverId,
+    name: `audit-${runId}`,
   });
   try {
     await expect(
       page.getByRole("button", { name: channel.name, exact: true }),
-    ).toBeVisible({ timeout: 20000 });
+    ).toBeVisible({ timeout: 5000 });
+    const renamed = "renamed-" + runId;
+    await apiClient(page).server.updateChannel.mutate({
+      serverId,
+      channelId: channel.id,
+      name: renamed,
+    });
+    await expect(
+      page.getByRole("button", { name: renamed, exact: true }),
+    ).toBeVisible();
+    await apiClient(page).server.deleteChannel.mutate({
+      serverId,
+      channelId: channel.id,
+    });
+    await expect(
+      page.getByRole("button", { name: renamed, exact: true }),
+    ).toHaveCount(0);
     await page.waitForTimeout(65000);
     expect(connections).toBe(1);
     expect(conversations).toBe(initialConversations);
@@ -483,6 +794,16 @@ test("グループの返信引用にも双方向のブロックを適用する",
       ).toBeUndefined();
       expect(
         conversation.messages.find(({ id }) => id === reply.id)?.replyTo,
+      ).toBeNull();
+      expect(
+        await client.group.getMessage.query({
+          groupId,
+          messageId: original.id,
+        }),
+      ).toBeNull();
+      expect(
+        (await client.group.getMessage.query({ groupId, messageId: reply.id }))
+          ?.replyTo,
       ).toBeNull();
       const overview = await client.group.list.query();
       expect(
@@ -764,7 +1085,7 @@ test("グループの作成・名前変更・招待・退出を別の参加者�
     await expect(groupButton).toBeVisible();
     await groupButton.click();
     const content = `removed-group-content-${runId}`;
-    await client.group.sendMessage.mutate({
+    const sent = await client.group.sendMessage.mutate({
       groupId: group.id,
       content,
       clientId: crypto.randomUUID(),
@@ -780,6 +1101,12 @@ test("グループの作成・名前変更・招待・退出を別の参加者�
       dialog.getByText(`renamed-group-${runId}`, { exact: true }).first(),
     ).toBeVisible();
     await client.group.removeMember.mutate({ groupId: group.id, memberId });
+    await expect(
+      apiClient(peer).group.getMessage.query({
+        groupId: group.id,
+        messageId: sent.id,
+      }),
+    ).rejects.toMatchObject({ data: { code: "NOT_FOUND" } });
     await expect(
       dialog.getByText(`renamed-group-${runId}`, { exact: true }),
     ).toHaveCount(0);
@@ -947,6 +1274,9 @@ test("グループ送信の完了時に編集中の下書きを消さない", as
     });
     const content = `draft-in-flight-${edit}-${runId}`;
     await input.fill(content);
+    await expect(
+      dialog.getByRole("button", { name: "送信", exact: true }),
+    ).toBeEnabled();
     await input.press("Enter");
     await started;
     if (edit) {
@@ -1650,6 +1980,30 @@ test("グループを100件以上読み込み古い会話も両方の一覧か�
       dialog.getByRole("heading", { name: oldestName, exact: true }),
     ).toBeVisible();
     await expect(dialog.getByPlaceholder("グループへメッセージ")).toBeEnabled();
+    const searchable = `old-group-search-${runId}`;
+    await prisma.groupMessage.create({
+      data: {
+        groupId: ids[0]!,
+        senderId: ownerId,
+        content: searchable,
+      },
+    });
+    // Search must open an authorized group even when its list page is absent.
+    for (const width of [1280, 375]) {
+      await page.setViewportSize({ width, height: 812 });
+      await page.reload();
+      await page.getByRole("button", { name: "横断検索", exact: true }).click();
+      const search = page.getByRole("dialog", {
+        name: "横断検索",
+        exact: true,
+      });
+      await search.getByPlaceholder("キーワード").fill(searchable);
+      await search.getByRole("button").filter({ hasText: searchable }).click();
+      await expect(
+        dialog.getByRole("heading", { name: oldestName, exact: true }),
+      ).toBeVisible();
+      await expect(dialog.getByText(searchable, { exact: true })).toBeVisible();
+    }
   } finally {
     await prisma.groupConversation.deleteMany({ where: { id: { in: ids } } });
   }
@@ -1804,6 +2158,194 @@ test("ブラウザに購読が残っていてもサーバーで失効した通�
     ).toBe(true);
   } finally {
     await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+  }
+});
+
+for (const kind of ["direct", "server"] as const) {
+  test(`${kind}の送信失敗後も新しい下書きを再読み込みで復元する`, async ({
+    page,
+  }) => {
+    await login(page);
+    if (kind === "direct") await page.goto("/");
+    const input = page.locator("textarea[data-chat-input]");
+    await expect(input).toBeEnabled();
+    const procedure =
+      kind === "direct" ? "chat.sendMessage" : "server.sendMessage";
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let started!: () => void;
+    const requested = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    await page.route(
+      `**/api/trpc/**${procedure}**`,
+      async (route) => {
+        started();
+        await gate;
+        await route.abort("failed");
+      },
+      { times: 1 },
+    );
+    try {
+      await input.fill("失敗する最初の文章");
+      await input.press("Enter");
+      await requested;
+      const newer = `newer-draft-${kind}-${runId}`;
+      const key =
+        kind === "direct"
+          ? `connect:draft:${ownerId}:direct:${memberId}`
+          : `connect:draft:${ownerId}:server:${channelId}`;
+      await input.fill(newer);
+      await expect
+        .poll(() => page.evaluate((key) => localStorage.getItem(key), key))
+        .toBe(newer);
+      const failed = page.waitForEvent("requestfailed", {
+        predicate: (request) => request.url().includes(procedure),
+      });
+      release();
+      await failed;
+      await expect(
+        page.getByRole("button", { name: "送信", exact: true }),
+      ).toBeEnabled();
+      await expect(input).toHaveValue(newer);
+      expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe(
+        newer,
+      );
+      await page.reload();
+      await expect(input).toHaveValue(newer);
+    } finally {
+      release();
+    }
+  });
+}
+
+test("所有者の退出は同時のメンバー追加を待って共有グループを保護する", async ({
+  page,
+}) => {
+  await login(page);
+  const group = await prisma.groupConversation.create({
+    data: {
+      createdById: ownerId,
+      members: { create: { userId: ownerId, role: "OWNER" } },
+    },
+  });
+  let leaving: Promise<unknown> | undefined;
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "GroupConversation" WHERE "id" = ${group.id} FOR UPDATE`;
+        leaving = apiClient(page)
+          .group.leave.mutate({ groupId: group.id })
+          .then(
+            (value) => ({ value }),
+            (error: unknown) => ({ error }),
+          );
+        await expect
+          .poll(async () => {
+            const rows = await tx.$queryRaw<Array<{ count: bigint }>>`
+              SELECT count(*) AS count FROM pg_locks
+              WHERE NOT granted AND pg_backend_pid() = ANY(pg_blocking_pids(pid))
+        `;
+            return Number(rows[0]?.count ?? 0);
+          })
+          .toBeGreaterThan(0);
+        await tx.groupConversationMember.create({
+          data: { groupId: group.id, userId: memberId },
+        });
+        await tx.groupMessage.create({
+          data: {
+            groupId: group.id,
+            senderId: memberId,
+            content: "保持すべき履歴",
+          },
+        });
+      },
+      { timeout: 15000 },
+    );
+    expect(await leaving).toMatchObject({
+      error: { data: { code: "FORBIDDEN" } },
+    });
+    expect(
+      await prisma.groupConversationMember.count({
+        where: { groupId: group.id },
+      }),
+    ).toBe(2);
+    expect(
+      await prisma.groupMessage.count({ where: { groupId: group.id } }),
+    ).toBe(1);
+  } finally {
+    await leaving;
+    await prisma.groupConversation.deleteMany({ where: { id: group.id } });
+  }
+});
+
+test("候補取得後に相手の話題が変わった場合はマッチを確定しない", async ({
+  page,
+}) => {
+  await login(page);
+  let matching: Promise<unknown> | undefined;
+  try {
+    await prisma.friendship.deleteMany({
+      where: {
+        OR: [
+          { userId: ownerId, friendId: memberId },
+          { userId: memberId, friendId: ownerId },
+        ],
+      },
+    });
+    await prisma.matchingQueue.create({
+      data: { userId: memberId, topic: "GAME" },
+    });
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${memberId} FOR UPDATE`;
+        matching = apiClient(page)
+          .chat.matchRandom.mutate({ topic: "GAME" })
+          .then(
+            (value) => ({ value }),
+            (error: unknown) => ({ error }),
+          );
+        await expect
+          .poll(async () => {
+            const rows = await tx.$queryRaw<Array<{ count: bigint }>>`
+              SELECT count(*) AS count FROM pg_locks
+              WHERE NOT granted AND pg_backend_pid() = ANY(pg_blocking_pids(pid))
+        `;
+            return Number(rows[0]?.count ?? 0);
+          })
+          .toBeGreaterThan(0);
+        await tx.matchingQueue.update({
+          where: { userId: memberId },
+          data: { topic: "WORRIES" },
+        });
+      },
+      { timeout: 15000 },
+    );
+    expect(await matching).toMatchObject({
+      value: { status: "waiting", topic: "GAME" },
+    });
+    expect(
+      await prisma.matchingQueue.findUnique({ where: { userId: memberId } }),
+    ).toMatchObject({ topic: "WORRIES", matchedUserId: null });
+    expect(
+      await prisma.friendship.count({
+        where: { userId: ownerId, friendId: memberId },
+      }),
+    ).toBe(0);
+  } finally {
+    await matching;
+    await prisma.matchingQueue.deleteMany({
+      where: { userId: { in: [ownerId, memberId] } },
+    });
+    await prisma.friendship.createMany({
+      data: [
+        { userId: ownerId, friendId: memberId },
+        { userId: memberId, friendId: ownerId },
+      ],
+      skipDuplicates: true,
+    });
   }
 });
 

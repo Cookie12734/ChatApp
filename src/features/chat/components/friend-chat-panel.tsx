@@ -1,4 +1,6 @@
 "use client";
+import { isCancelledError } from "@tanstack/react-query";
+import { sortFriendsByLatestMessage } from "~/features/chat/friend-overview";
 
 import {
   Ban,
@@ -85,6 +87,7 @@ import {
   type ServerMemberRole,
 } from "~/features/server/server/message-permissions";
 import { type RouterOutputs, api } from "~/trpc/react";
+import { useMessageHistory } from "~/features/chat/components/use-message-history";
 import type { ChatEvent as ChatEventPayload } from "~/server/chat-events";
 
 const ExternalLinkDialog = dynamic(() =>
@@ -438,7 +441,7 @@ export function FriendChatPanel({
         ? false
         : matchingState === "waiting" || !isRealtimeConnected
           ? 5000
-          : 15000,
+          : 60000,
   });
   const groupConversations = api.group.list.useInfiniteQuery(
     {},
@@ -447,13 +450,16 @@ export function FriendChatPanel({
       refetchInterval: !isRealtimeConnected ? 5000 : false,
     },
   );
-  const listedGroups = [
-    ...new Map(
-      groupConversations.data?.pages
-        .flatMap((page) => page.groups)
-        .map((group) => [group.id, group]),
-    ).values(),
-  ];
+  const listedGroups = useMemo(
+    () => [
+      ...new Map(
+        groupConversations.data?.pages
+          .flatMap((page) => page.groups)
+          .map((group) => [group.id, group]),
+      ).values(),
+    ],
+    [groupConversations.data],
+  );
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -472,7 +478,11 @@ export function FriendChatPanel({
   const pendingMatchFeedback = api.chat.getPendingMatchFeedback.useQuery();
   const serverOverview = api.server.getOverview.useQuery(undefined, {
     refetchInterval: (query) =>
-      query.state.status === "error" ? false : 15000,
+      query.state.status === "error"
+        ? false
+        : isRealtimeConnected
+          ? 60000
+          : 15000,
   });
   const selectedServer = useMemo(() => {
     return (
@@ -733,10 +743,32 @@ export function FriendChatPanel({
   const firstDirectUnreadMessageId = directUnreadMessages[0]?.id;
   const firstServerUnreadMessageId = serverUnreadMessages[0]?.id;
 
+  const refreshFriend = useCallback(
+    async (friendId: string) => {
+      const input = { friendId };
+      try {
+        await utils.chat.getFriends.cancel(input);
+        await utils.chat.getFriends.invalidate(input, { refetchType: "none" });
+        const updated = await utils.chat.getFriends.fetch(input);
+        utils.chat.getFriends.setData(undefined, (data) =>
+          data
+            ? sortFriendsByLatestMessage([
+                ...data.filter((item) => item.friend.id !== friendId),
+                ...updated,
+              ])
+            : data,
+        );
+      } catch (error) {
+        if (!isCancelledError(error)) await utils.chat.getFriends.invalidate();
+      }
+    },
+    [utils.chat.getFriends],
+  );
+
   const { mutateAsync: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
       onSuccess: (result, variables) => {
-        void utils.chat.getFriends.invalidate();
+        void refreshFriend(variables.friendId);
         utils.chat.getConversation.setInfiniteData(
           { friendId: variables.friendId },
           (data) =>
@@ -840,6 +872,25 @@ export function FriendChatPanel({
       : (activeDirectPendingMessages.at(-1)?.clientId ?? latestDirectMessageId),
     onReadLatest: markLatestMessageRead,
     unreadCount: selectedServerId ? serverUnreadCount : directUnreadCount,
+  });
+
+  const messageHistory = useMessageHistory({
+    containerRef: messageViewport.containerRef,
+    conversationKey: selectedServerId
+      ? "server:" + selectedServerId + ":" + selectedServerChannel?.id
+      : selectedFriendId,
+    pageCount:
+      (selectedServerId ? serverConversation.data : conversation.data)?.pages
+        .length ?? 0,
+    hasNextPage: selectedServerId
+      ? serverConversation.hasNextPage
+      : conversation.hasNextPage,
+    isFetching: selectedServerId
+      ? serverConversation.isFetching
+      : conversation.isFetching,
+    fetchNextPage: selectedServerId
+      ? serverConversation.fetchNextPage
+      : conversation.fetchNextPage,
   });
 
   useEffect(() => {
@@ -1032,8 +1083,22 @@ export function FriendChatPanel({
     events.onerror = () => setRealtimeStatus("reconnecting");
     const handleChatEvent = async (payload: ChatEventPayload) => {
       if (disposed) return;
+      if (payload.kind === "server-state") {
+        await utils.server.getOverview.invalidate();
+        if (selectedChatRef.current.serverId === payload.serverId) {
+          await utils.server.getMembers.invalidate({
+            serverId: payload.serverId,
+          });
+        }
+        return;
+      }
       if (payload.kind === "direct") {
-        void utils.chat.getFriends.invalidate();
+        const me =
+          utils.server.getOverview.getData()?.currentUser.id ??
+          utils.chat.getFriends.getData()?.[0]?.currentUserId;
+        const peerId = payload.userIds.find((id) => id !== me);
+        if (me && peerId) await refreshFriend(peerId);
+        else await utils.chat.getFriends.invalidate();
         const friendId = selectedChatRef.current.friendId;
         if (!friendId || !payload.userIds.includes(friendId)) return;
 
@@ -1183,9 +1248,33 @@ export function FriendChatPanel({
 
       if (payload.kind === "group") {
         void utils.group.list.invalidate();
-        void utils.group.getConversation.invalidate({
-          groupId: payload.groupId,
-        });
+        const input = { groupId: payload.groupId };
+        if (!payload.messageId || !payload.change) {
+          await utils.group.getMessage.cancel();
+          await utils.group.getConversation.invalidate(input);
+          return;
+        }
+        if (!utils.group.getConversation.getInfiniteData(input)) return;
+        const messageInput = { ...input, messageId: payload.messageId };
+        await utils.group.getMessage.invalidate(messageInput);
+        const message = await utils.group.getMessage.fetch(messageInput);
+        if (disposed) return;
+        const change = payload.change;
+        utils.group.getConversation.setInfiniteData(input, (data) =>
+          data
+            ? {
+                ...data,
+                pages: message
+                  ? updateMessagePages(data.pages, message, change)
+                  : data.pages.map((page) => ({
+                      ...page,
+                      messages: page.messages.filter(
+                        ({ id }) => id !== payload.messageId,
+                      ),
+                    })),
+              }
+            : data,
+        );
         return;
       }
 
@@ -1213,9 +1302,14 @@ export function FriendChatPanel({
         return;
       }
       const task =
-        payload.kind === "direct" || payload.kind === "server"
-          ? enqueueMessage(`${payload.kind}:${payload.messageId}`, () =>
-              handleChatEvent(payload),
+        payload.kind === "direct" ||
+        payload.kind === "server" ||
+        (payload.kind === "group" && payload.messageId)
+          ? enqueueMessage(
+              payload.kind === "direct"
+                ? "direct:" + [...payload.userIds].sort().join(":")
+                : `${payload.kind}:${payload.messageId}`,
+              () => handleChatEvent(payload),
             )
           : handleChatEvent(payload);
       void task.catch(() => {
@@ -1237,11 +1331,13 @@ export function FriendChatPanel({
       setTypingUserName(null);
     };
   }, [
+    refreshFriend,
     utils.chat.getConversation,
     utils.chat.getFriends,
     utils.chat.getMessage,
     utils.group.list,
     utils.group.getConversation,
+    utils.group.getMessage,
     utils.server.getConversation,
     utils.server.getMembers,
     utils.server.getMessage,
@@ -1628,7 +1724,7 @@ export function FriendChatPanel({
               : data,
         );
       }
-      void utils.chat.getFriends.invalidate();
+      if (selectedFriendId) void refreshFriend(selectedFriendId);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
@@ -1653,7 +1749,7 @@ export function FriendChatPanel({
               : data,
         );
       }
-      void utils.chat.getFriends.invalidate();
+      if (selectedFriendId) void refreshFriend(selectedFriendId);
     },
     onError: (error) => setMessage(getErrorMessage(error)),
   });
@@ -2103,7 +2199,7 @@ export function FriendChatPanel({
             : pendingMessage,
         ),
       );
-      void utils.chat.getFriends.invalidate();
+      void refreshFriend(friendId);
     } catch (error) {
       setPendingDirectMessages((messages) =>
         messages.filter(
@@ -3168,7 +3264,16 @@ export function FriendChatPanel({
             <div
               ref={messageViewport.containerRef}
               data-chat-viewport
-              onScroll={messageViewport.handleScroll}
+              tabIndex={0}
+              aria-label="メッセージ履歴"
+              onWheel={messageHistory.handleWheel}
+              onTouchStart={messageHistory.handleTouchStart}
+              onTouchMove={messageHistory.handleTouchMove}
+              onKeyDown={messageHistory.handleKeyDown}
+              onScroll={() => {
+                messageViewport.handleScroll();
+                messageHistory.handleScroll();
+              }}
               className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5"
             >
               {selectedServer ? (
@@ -3208,19 +3313,23 @@ export function FriendChatPanel({
                   {serverConversationData && hasServerMessages && (
                     <div>
                       {serverConversation.hasNextPage && (
-                        <div className="flex justify-center pb-4">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void serverConversation.fetchNextPage()
-                            }
-                            disabled={serverConversation.isFetchingNextPage}
-                            className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
-                          >
-                            {serverConversation.isFetchingNextPage
-                              ? "読み込み中..."
-                              : "過去のメッセージを読み込む"}
-                          </button>
+                        <div
+                          className="text-connect-muted pb-4 text-center text-sm"
+                          role="status"
+                        >
+                          {serverConversation.isFetchingNextPage ? (
+                            "読み込み中…"
+                          ) : serverConversation.isFetchNextPageError ? (
+                            <button
+                              type="button"
+                              className="min-h-11 px-3 underline"
+                              onClick={() => void messageHistory.loadOlder()}
+                            >
+                              過去のメッセージを再試行
+                            </button>
+                          ) : (
+                            "上にスクロールして過去のメッセージを表示"
+                          )}
                         </div>
                       )}
                       {serverMessages.map((chatMessage, messageIndex) => {
@@ -3434,17 +3543,23 @@ export function FriendChatPanel({
                     hasDirectMessages && (
                       <div>
                         {conversation.hasNextPage && (
-                          <div className="flex justify-center pb-4">
-                            <button
-                              type="button"
-                              onClick={() => void conversation.fetchNextPage()}
-                              disabled={conversation.isFetchingNextPage}
-                              className="border-connect-ink/15 bg-connect-surface text-connect-muted hover:bg-connect-paper min-h-9 rounded-md border px-3 text-sm font-semibold transition disabled:opacity-50"
-                            >
-                              {conversation.isFetchingNextPage
-                                ? "読み込み中..."
-                                : "過去のメッセージを読み込む"}
-                            </button>
+                          <div
+                            className="text-connect-muted pb-4 text-center text-sm"
+                            role="status"
+                          >
+                            {conversation.isFetchingNextPage ? (
+                              "読み込み中…"
+                            ) : conversation.isFetchNextPageError ? (
+                              <button
+                                type="button"
+                                className="min-h-11 px-3 underline"
+                                onClick={() => void messageHistory.loadOlder()}
+                              >
+                                過去のメッセージを再試行
+                              </button>
+                            ) : (
+                              "上にスクロールして過去のメッセージを表示"
+                            )}
                           </div>
                         )}
                         {directMessages.map((chatMessage, messageIndex) => {

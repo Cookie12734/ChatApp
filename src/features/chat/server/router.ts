@@ -456,103 +456,120 @@ export const chatRouter = createTRPCRouter({
       };
     }),
 
-  getFriends: protectedProcedure.query(async ({ ctx }) => {
-    const currentUserId = ctx.session.user.id;
-    const [blocks, friendships, sentPeers, receivedPeers] = await Promise.all([
-      ctx.db.userBlock.findMany({
-        where: {
-          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
-        },
-        select: { blockedId: true, blockerId: true },
-      }),
-      ctx.db.friendship.findMany({
-        where: { userId: currentUserId },
-        orderBy: { createdAt: "desc" },
-        select: { friendId: true, id: true },
-      }),
-      ctx.db.directMessage.groupBy({
-        by: ["receiverId"],
-        where: { senderId: currentUserId },
-      }),
-      ctx.db.directMessage.groupBy({
-        by: ["senderId"],
-        where: { receiverId: currentUserId },
-      }),
-    ]);
-    const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
-    const blockedPeerIdSet = new Set(blockedPeerIds);
-    const friendshipByFriendId = new Map(
-      friendships.map((friendship) => [friendship.friendId, friendship.id]),
-    );
-    const contactIds = new Set([
-      ...friendshipByFriendId.keys(),
-      ...sentPeers.map((message) => message.receiverId),
-      ...receivedPeers.map((message) => message.senderId),
-    ]);
-    const contacts = await ctx.db.user.findMany({
-      where: { id: { in: [...contactIds] } },
-      select: {
-        id: true,
-        userId: true,
-        name: true,
-        sentDirectMessages: {
-          where: { receiverId: currentUserId },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            receiverId: true,
-            senderId: true,
+  getFriends: protectedProcedure
+    .input(z.object({ friendId: z.string().min(1) }).optional())
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const [blocks, friendships, sentPeers, receivedPeers] = await Promise.all(
+        [
+          ctx.db.userBlock.findMany({
+            where: {
+              OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+            },
+            select: { blockedId: true, blockerId: true },
+          }),
+          ctx.db.friendship.findMany({
+            where: {
+              userId: currentUserId,
+              ...(input?.friendId ? { friendId: input.friendId } : {}),
+            },
+            orderBy: { createdAt: "desc" },
+            select: { friendId: true, id: true },
+          }),
+          ctx.db.directMessage.groupBy({
+            by: ["receiverId"],
+            where: {
+              senderId: currentUserId,
+              ...(input?.friendId ? { receiverId: input.friendId } : {}),
+            },
+          }),
+          ctx.db.directMessage.groupBy({
+            by: ["senderId"],
+            where: {
+              receiverId: currentUserId,
+              ...(input?.friendId ? { senderId: input.friendId } : {}),
+            },
+          }),
+        ],
+      );
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const blockedPeerIdSet = new Set(blockedPeerIds);
+      const friendshipByFriendId = new Map(
+        friendships.map((friendship) => [friendship.friendId, friendship.id]),
+      );
+      const contactIds = new Set([
+        ...friendshipByFriendId.keys(),
+        ...sentPeers.map((message) => message.receiverId),
+        ...receivedPeers.map((message) => message.senderId),
+      ]);
+      const contacts = await ctx.db.user.findMany({
+        where: { id: { in: [...contactIds] } },
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          sentDirectMessages: {
+            where: { receiverId: currentUserId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              receiverId: true,
+              senderId: true,
+            },
           },
-        },
-        receivedDirectMessages: {
-          where: { senderId: currentUserId },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            receiverId: true,
-            senderId: true,
+          receivedDirectMessages: {
+            where: { senderId: currentUserId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              receiverId: true,
+              senderId: true,
+            },
           },
-        },
-        _count: {
-          select: {
-            sentDirectMessages: {
-              where: { receiverId: currentUserId, readAt: null },
+          _count: {
+            select: {
+              sentDirectMessages: {
+                where: { receiverId: currentUserId, readAt: null },
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    const friends = contacts.map((contact) => {
-      const { _count, receivedDirectMessages, sentDirectMessages, ...friend } =
-        contact;
-      const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
-      const isBlocked = blockedPeerIdSet.has(friend.id);
+      const friends = contacts.map((contact) => {
+        const {
+          _count,
+          receivedDirectMessages,
+          sentDirectMessages,
+          ...friend
+        } = contact;
+        const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
+        const isBlocked = blockedPeerIdSet.has(friend.id);
 
-      return {
-        currentUserId,
-        friendshipId,
-        friend: addProfileImageUrl(friend),
-        isBlocked,
-        isFriend: friendshipId !== null,
-        lastMessage: isBlocked
-          ? null
-          : getLatestFriendMessage(
-              sentDirectMessages[0],
-              receivedDirectMessages[0],
-            ),
-        unreadCount: isBlocked ? 0 : _count.sentDirectMessages,
-      };
-    });
+        return {
+          currentUserId,
+          friendshipId,
+          friend: addProfileImageUrl(friend),
+          isBlocked,
+          isFriend: friendshipId !== null,
+          lastMessage: isBlocked
+            ? null
+            : getLatestFriendMessage(
+                sentDirectMessages[0],
+                receivedDirectMessages[0],
+              ),
+          unreadCount: isBlocked ? 0 : _count.sentDirectMessages,
+        };
+      });
 
-    return sortFriendsByLatestMessage(friends);
-  }),
+      return sortFriendsByLatestMessage(friends);
+    }),
 
   getMatchingStatus: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
@@ -1269,6 +1286,7 @@ export const chatRouter = createTRPCRouter({
           where: {
             id: match.id,
             matchedUserId: null,
+            topic: input.topic,
             updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
           },
           data: { matchedUserId: currentUserId },

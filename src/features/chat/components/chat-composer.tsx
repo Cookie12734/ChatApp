@@ -182,15 +182,13 @@ export const ChatComposer = forwardRef<ChatComposerHandle, ChatComposerProps>(
         });
         sendAttempt.current = undefined;
       } catch (error) {
-        setDraft((current) => {
-          if (current) return current;
-          draftRef.current = { key: storageKey, value: previousDraft };
-          return previousDraft;
-        });
+        const restoredDraft = draftRef.current.value || previousDraft;
+        draftRef.current = { key: storageKey, value: restoredDraft };
+        setDraft(restoredDraft);
         setAttachments((current) =>
           current.length > 0 ? current : previousAttachments,
         );
-        persistDraft(storageKey, previousDraft);
+        persistDraft(storageKey, restoredDraft);
         onError(error instanceof Error ? error.message : "送信に失敗しました");
       } finally {
         setIsSending(false);

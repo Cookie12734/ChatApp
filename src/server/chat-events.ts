@@ -1,13 +1,20 @@
 import type { PrismaClient } from "@prisma/client";
 
 export type ChatEvent =
+  | { kind: "server-state"; serverId: string; userIds: string[] }
   | {
       change: "created" | "deleted" | "updated";
       kind: "direct";
       messageId: string;
       userIds: string[];
     }
-  | { groupId: string; kind: "group"; userIds: string[] }
+  | {
+      groupId: string;
+      kind: "group";
+      userIds: string[];
+      messageId?: string;
+      change?: "created" | "updated";
+    }
   | {
       change: "created" | "deleted" | "updated";
       channelId: string | null;
@@ -25,6 +32,24 @@ export type ChatEvent =
     };
 
 type ChatEventDatabase = Pick<PrismaClient, "chatEvent" | "$transaction">;
+
+export async function publishServerState(
+  db: ChatEventDatabase & Pick<PrismaClient, "serverMember">,
+  serverId: string,
+  formerUserIds: string[] = [],
+) {
+  const members = await db.serverMember.findMany({
+    where: { serverId },
+    select: { userId: true },
+  });
+  await publishChatEvent(db, {
+    kind: "server-state",
+    serverId,
+    userIds: [
+      ...new Set([...formerUserIds, ...members.map(({ userId }) => userId)]),
+    ],
+  });
+}
 type ChatEventListener = (event: ChatEvent) => void;
 type ChatEventSubscription = {
   listener: ChatEventListener;

@@ -19,6 +19,7 @@ import {
   Fragment,
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -48,6 +49,8 @@ import {
   PendingAttachmentList,
   type PendingAttachment,
 } from "~/features/chat/components/message-attachment-picker";
+import { useMessageHistory } from "~/features/chat/components/use-message-history";
+import { updateMessagePages } from "~/features/chat/realtime-messages";
 import { api } from "~/trpc/react";
 import { groupReactions } from "~/features/chat/reaction-groups";
 import { flattenMessagePages } from "~/features/chat/message-page";
@@ -117,6 +120,8 @@ export function GroupDmDialog({
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
   const [draft, setDraft] = useState("");
+  const draftRef = useRef("");
+  const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const [replyTo, setReplyTo] = useState<{ content: string; id: string }>();
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [message, setMessage] = useState<string>();
@@ -159,11 +164,43 @@ export function GroupDmDialog({
   const conversation = api.group.getConversation.useInfiniteQuery(
     { groupId: selectedGroupId ?? "" },
     {
-      enabled: open && listedGroups.some(({ id }) => id === selectedGroupId),
+      enabled: open && Boolean(selectedGroupId),
+      retry: (failureCount, error) =>
+        error.data?.code !== "NOT_FOUND" &&
+        error.data?.code !== "FORBIDDEN" &&
+        failureCount < 3,
       getNextPageParam: (page) => page.nextCursor,
       refetchInterval: open && !isRealtimeConnected ? 5000 : false,
     },
   );
+  const refreshMessage = async (
+    groupId: string,
+    messageId: string,
+    change: "created" | "updated",
+  ) => {
+    const input = { groupId, messageId };
+    try {
+      await utils.group.getMessage.invalidate(input);
+      const message = await utils.group.getMessage.fetch(input);
+      utils.group.getConversation.setInfiniteData({ groupId }, (data) =>
+        data
+          ? {
+              ...data,
+              pages: message
+                ? updateMessagePages(data.pages, message, change)
+                : data.pages.map((page) => ({
+                    ...page,
+                    messages: page.messages.filter(
+                      ({ id }) => id !== messageId,
+                    ),
+                  })),
+            }
+          : data,
+      );
+    } catch {
+      await utils.group.getConversation.invalidate({ groupId });
+    }
+  };
   const createGroup = api.group.create.useMutation({
     onSuccess: async (group) => {
       await utils.group.list.invalidate();
@@ -187,7 +224,10 @@ export function GroupDmDialog({
           submittedDraft.revision
       ) {
         localStorage.removeItem(submittedDraft.draftKey);
-        if (submittedDraft.draftKey === draftKey) setDraft("");
+        if (submittedDraft.draftKey === draftKey) {
+          draftRef.current = "";
+          setDraft("");
+        }
       }
       if (variables.groupId === selectedGroupId) {
         setReplyTo((current) =>
@@ -198,18 +238,20 @@ export function GroupDmDialog({
         );
       }
       await Promise.all([
-        utils.group.getConversation.invalidate(),
+        refreshMessage(variables.groupId, _message.id, "created"),
         utils.group.list.invalidate(),
       ]);
     },
     onError: (error) => setMessage(error.message),
   });
   const toggleReaction = api.group.toggleReaction.useMutation({
-    onSuccess: async () => utils.group.getConversation.invalidate(),
+    onSuccess: async (_result, variables) =>
+      refreshMessage(variables.groupId, variables.messageId, "updated"),
     onError: (error) => setMessage(error.message),
   });
   const toggleSaved = api.group.toggleSaved.useMutation({
-    onSuccess: async () => utils.group.getConversation.invalidate(),
+    onSuccess: async (_result, variables) =>
+      refreshMessage(variables.groupId, variables.messageId, "updated"),
     onError: (error) => setMessage(error.message),
   });
   const reportMessage = api.moderation.reportMessage.useMutation({
@@ -220,7 +262,14 @@ export function GroupDmDialog({
     onError: (error) => setMessage(error.message),
   });
 
-  const selectedGroup = listedGroups.find(({ id }) => id === selectedGroupId);
+  const selectedGroup =
+    conversation.isError &&
+    (!conversation.isFetchNextPageError ||
+      ["NOT_FOUND", "FORBIDDEN", "UNAUTHORIZED"].includes(
+        conversation.error.data?.code ?? "",
+      ))
+      ? undefined
+      : conversation.data?.pages[0]?.group;
   const messages = useMemo(
     () =>
       selectedGroup && conversation.data
@@ -229,16 +278,21 @@ export function GroupDmDialog({
     [conversation.data, selectedGroup],
   );
 
+  const messageHistory = useMessageHistory({
+    containerRef: messageScrollRef,
+    conversationKey: open && !isCreating ? (selectedGroupId ?? null) : null,
+    pageCount: conversation.data?.pages.length ?? 0,
+    hasNextPage: conversation.hasNextPage,
+    isFetching: conversation.isFetching,
+    fetchNextPage: conversation.fetchNextPage,
+  });
+
   useEffect(() => {
     if (initialGroupId) setSelectedGroupId(initialGroupId);
   }, [initialGroupId]);
 
   useEffect(() => {
-    if (
-      groups.data &&
-      selectedGroupId !== null &&
-      !listedGroups.some(({ id }) => id === selectedGroupId)
-    ) {
+    if (groups.data && selectedGroupId === undefined) {
       setSelectedGroupId(listedGroups[0]?.id);
     }
   }, [groups.data, listedGroups, selectedGroupId]);
@@ -268,21 +322,26 @@ export function GroupDmDialog({
   ]);
 
   useEffect(() => {
-    setDraft(draftKey ? (localStorage.getItem(draftKey) ?? "") : "");
+    draftRef.current = draftKey ? (localStorage.getItem(draftKey) ?? "") : "";
+    setDraft(draftRef.current);
     setReplyTo(undefined);
     setAttachments([]);
   }, [draftKey]);
 
-  const updateDraft = (value: string) => {
-    setDraft(value);
-    if (!draftKey) return;
-    draftRevisions.current.set(
-      draftKey,
-      (draftRevisions.current.get(draftKey) ?? 0) + 1,
-    );
-    if (value) localStorage.setItem(draftKey, value);
-    else localStorage.removeItem(draftKey);
-  };
+  const updateDraft = useCallback(
+    (value: string) => {
+      draftRef.current = value;
+      setDraft(value);
+      if (!draftKey) return;
+      draftRevisions.current.set(
+        draftKey,
+        (draftRevisions.current.get(draftKey) ?? 0) + 1,
+      );
+      if (value) localStorage.setItem(draftKey, value);
+      else localStorage.removeItem(draftKey);
+    },
+    [draftKey],
+  );
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -308,6 +367,266 @@ export function GroupDmDialog({
     setMessage(undefined);
     sendMessage.mutate({ ...input, clientId: attempt.clientId });
   };
+
+  const { mutate: reactToMessage, isPending: isReacting } = toggleReaction;
+  const { mutate: saveMessage, isPending: isSaving } = toggleSaved;
+  const isSending = sendMessage.isPending;
+  const messageList = useMemo(
+    () => (
+      <div className="space-y-2">
+        {messages.map((chatMessage, index) => {
+          const reactionGroups = groupReactions(chatMessage.reactions);
+          const startsNewDay =
+            messages[index - 1]?.createdAt.toDateString() !==
+            chatMessage.createdAt.toDateString();
+          return (
+            <Fragment key={chatMessage.id}>
+              {startsNewDay && (
+                <div className="text-connect-muted flex items-center gap-3 py-3 text-xs">
+                  <span className="bg-connect-ink/15 h-px flex-1" />
+                  <time dateTime={chatMessage.createdAt.toISOString()}>
+                    {messageDateFormatter.format(chatMessage.createdAt)}
+                  </time>
+                  <span className="bg-connect-ink/15 h-px flex-1" />
+                </div>
+              )}
+              <article className="hover:bg-connect-surface group rounded-md p-2">
+                {chatMessage.replyTo && (
+                  <div className="border-connect-action/30 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
+                    {getDisplayName(chatMessage.replyTo.sender)}:{" "}
+                    {chatMessage.replyTo.content}
+                  </div>
+                )}
+                <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-x-3">
+                  <ProfileAvatar
+                    user={chatMessage.sender}
+                    className="mt-1 h-9 w-9"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <p className="min-w-0 text-sm font-bold break-words">
+                        {getDisplayName(chatMessage.sender)}
+                      </p>
+                      <time
+                        dateTime={chatMessage.createdAt.toISOString()}
+                        className="text-connect-muted shrink-0 text-xs"
+                      >
+                        {formatMessageTime(chatMessage.createdAt)}
+                      </time>
+                    </div>
+                    <p className="leading-7 break-words whitespace-pre-wrap">
+                      <MessageText
+                        content={chatMessage.content}
+                        onOpenLink={(url) =>
+                          window.open(url, "_blank", "noopener,noreferrer")
+                        }
+                      />
+                    </p>
+                    {chatMessage.attachments.length > 0 && (
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        {chatMessage.attachments.map((attachment) =>
+                          attachment.kind === "IMAGE" ? (
+                            <a
+                              key={attachment.id}
+                              href={`/api/attachments/${attachment.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`/api/attachments/${attachment.id}?preview=1`}
+                                loading="lazy"
+                                alt={attachment.fileName}
+                                className="max-h-64 w-full object-contain"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              key={attachment.id}
+                              href={`/api/attachments/${attachment.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
+                            >
+                              {attachment.kind === "PDF" ? (
+                                <FileText className="h-4 w-4" />
+                              ) : (
+                                <LinkIcon className="h-4 w-4" />
+                              )}
+                              <span className="truncate">
+                                {attachment.fileName}
+                              </span>
+                            </a>
+                          ),
+                        )}
+                      </div>
+                    )}
+                    {reactionGroups.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {reactionGroups.map(([emoji, reactions]) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() =>
+                              selectedGroupId &&
+                              reactToMessage({
+                                emoji: emoji as (typeof REACTIONS)[number],
+                                groupId: selectedGroupId,
+                                messageId: chatMessage.id,
+                              })
+                            }
+                            className="border-connect-ink/15 bg-connect-paper hover:bg-connect-highlight min-h-8 rounded-full border px-2 text-xs"
+                          >
+                            {emoji} {reactions.length}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-start-2 flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyTo({
+                          content: chatMessage.content,
+                          id: chatMessage.id,
+                        });
+                        textareaRef.current?.focus();
+                      }}
+                      className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
+                      aria-label="返信"
+                    >
+                      <Reply className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger asChild>
+                        <button
+                          type="button"
+                          className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
+                          aria-label="その他の操作"
+                        >
+                          <Ellipsis className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                          align="end"
+                          sideOffset={4}
+                          collisionPadding={12}
+                          onCloseAutoFocus={(event) => {
+                            if (focusComposerAfterMenuClose.current) {
+                              event.preventDefault();
+                              focusComposerAfterMenuClose.current = false;
+                              textareaRef.current?.focus();
+                            } else if (reportingMessageId) {
+                              event.preventDefault();
+                            }
+                          }}
+                          className="border-connect-ink/15 bg-connect-paper text-connect-ink z-[var(--z-dropdown)] max-h-[var(--radix-dropdown-menu-content-available-height)] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border p-1 shadow-md"
+                        >
+                          <DropdownMenu.Item
+                            disabled={isSending}
+                            onSelect={() => {
+                              const quoted = chatMessage.content
+                                .split("\n")
+                                .map((line) => `> ${line}`)
+                                .join("\n");
+                              updateDraft(
+                                `${draftRef.current.trimEnd()}${draftRef.current ? "\n" : ""}${quoted}\n`.slice(
+                                  0,
+                                  1000,
+                                ),
+                              );
+                              focusComposerAfterMenuClose.current = true;
+                            }}
+                            className={menuItemClassName}
+                          >
+                            <Quote className="h-4 w-4" aria-hidden="true" />
+                            引用
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item
+                            disabled={isSaving}
+                            onSelect={() =>
+                              selectedGroupId &&
+                              saveMessage({
+                                groupId: selectedGroupId,
+                                messageId: chatMessage.id,
+                              })
+                            }
+                            className={menuItemClassName}
+                          >
+                            <Bookmark
+                              className={`h-4 w-4 ${chatMessage.isSaved ? "fill-current" : ""}`}
+                              aria-hidden="true"
+                            />
+                            {chatMessage.isSaved ? "保存解除" : "保存"}
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
+                          <DropdownMenu.Label className="text-connect-muted px-3 py-2 text-xs">
+                            リアクション
+                          </DropdownMenu.Label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {REACTIONS.map((emoji) => (
+                              <DropdownMenu.Item
+                                key={emoji}
+                                disabled={isReacting}
+                                onSelect={() =>
+                                  selectedGroupId &&
+                                  reactToMessage({
+                                    emoji,
+                                    groupId: selectedGroupId,
+                                    messageId: chatMessage.id,
+                                  })
+                                }
+                                className={`${menuItemClassName} justify-center`}
+                                aria-label={`${emoji}でリアクション`}
+                              >
+                                {emoji}
+                              </DropdownMenu.Item>
+                            ))}
+                          </div>
+                          {chatMessage.senderId !== currentUserId && (
+                            <>
+                              <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
+                              <DropdownMenu.Item
+                                onSelect={() =>
+                                  setReportingMessageId(chatMessage.id)
+                                }
+                                className={`${menuItemClassName} text-connect-danger`}
+                              >
+                                <AlertCircle
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                                通報
+                              </DropdownMenu.Item>
+                            </>
+                          )}
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
+                  </div>
+                </div>
+              </article>
+            </Fragment>
+          );
+        })}
+      </div>
+    ),
+    [
+      messages,
+      selectedGroupId,
+      currentUserId,
+      reactToMessage,
+      saveMessage,
+      isReacting,
+      isSaving,
+      isSending,
+      reportingMessageId,
+      updateDraft,
+    ],
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -474,271 +793,49 @@ export function GroupDmDialog({
               </div>
             </header>
             <ChatConnectionStatus isReconnecting={isReconnecting} />
+            {conversation.isError && (
+              <p role="alert" className="text-connect-danger p-4 text-sm">
+                {conversation.error.message}
+              </p>
+            )}
             <div
-              ref={setMessageScrollElement}
+              ref={(element) => {
+                messageScrollRef.current = element;
+                setMessageScrollElement(element);
+              }}
+              data-group-chat-viewport
+              tabIndex={0}
+              aria-label="グループのメッセージ履歴"
+              onWheel={messageHistory.handleWheel}
+              onTouchStart={messageHistory.handleTouchStart}
+              onTouchMove={messageHistory.handleTouchMove}
+              onKeyDown={messageHistory.handleKeyDown}
+              onScroll={messageHistory.handleScroll}
               className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4"
             >
               {conversation.hasNextPage && (
-                <button
-                  type="button"
-                  onClick={() => void conversation.fetchNextPage()}
-                  className="border-connect-ink/15 bg-connect-surface mx-auto mb-4 block min-h-10 rounded-md border px-3 text-sm font-semibold"
+                <div
+                  className="text-connect-muted mb-4 text-center text-sm"
+                  role="status"
                 >
-                  過去のメッセージ
-                </button>
+                  {conversation.isFetchingNextPage ? (
+                    "読み込み中…"
+                  ) : conversation.isFetchNextPageError ? (
+                    <button
+                      type="button"
+                      className="min-h-11 px-3 underline"
+                      onClick={() => void messageHistory.loadOlder()}
+                    >
+                      過去のメッセージを再試行
+                    </button>
+                  ) : (
+                    "上にスクロールして過去のメッセージを表示"
+                  )}
+                </div>
               )}
-              <div className="space-y-2">
-                {messages.map((chatMessage, index) => {
-                  const reactionGroups = groupReactions(chatMessage.reactions);
-                  const startsNewDay =
-                    messages[index - 1]?.createdAt.toDateString() !==
-                    chatMessage.createdAt.toDateString();
-                  return (
-                    <Fragment key={chatMessage.id}>
-                      {startsNewDay && (
-                        <div className="text-connect-muted flex items-center gap-3 py-3 text-xs">
-                          <span className="bg-connect-ink/15 h-px flex-1" />
-                          <time dateTime={chatMessage.createdAt.toISOString()}>
-                            {messageDateFormatter.format(chatMessage.createdAt)}
-                          </time>
-                          <span className="bg-connect-ink/15 h-px flex-1" />
-                        </div>
-                      )}
-                      <article className="hover:bg-connect-surface group rounded-md p-2">
-                        {chatMessage.replyTo && (
-                          <div className="border-connect-action/30 text-connect-muted mb-1 block max-w-full truncate border-l-2 pl-2 text-xs">
-                            {getDisplayName(chatMessage.replyTo.sender)}:{" "}
-                            {chatMessage.replyTo.content}
-                          </div>
-                        )}
-                        <div className="grid grid-cols-[36px_minmax(0,1fr)] items-start gap-x-3">
-                          <ProfileAvatar
-                            user={chatMessage.sender}
-                            className="mt-1 h-9 w-9"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-baseline gap-x-2">
-                              <p className="min-w-0 text-sm font-bold break-words">
-                                {getDisplayName(chatMessage.sender)}
-                              </p>
-                              <time
-                                dateTime={chatMessage.createdAt.toISOString()}
-                                className="text-connect-muted shrink-0 text-xs"
-                              >
-                                {formatMessageTime(chatMessage.createdAt)}
-                              </time>
-                            </div>
-                            <p className="leading-7 break-words whitespace-pre-wrap">
-                              <MessageText
-                                content={chatMessage.content}
-                                onOpenLink={(url) =>
-                                  window.open(
-                                    url,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  )
-                                }
-                              />
-                            </p>
-                            {chatMessage.attachments.length > 0 && (
-                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                                {chatMessage.attachments.map((attachment) =>
-                                  attachment.kind === "IMAGE" ? (
-                                    <a
-                                      key={attachment.id}
-                                      href={`/api/attachments/${attachment.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
-                                    >
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img
-                                        src={`/api/attachments/${attachment.id}`}
-                                        alt={attachment.fileName}
-                                        className="max-h-64 w-full object-contain"
-                                      />
-                                    </a>
-                                  ) : (
-                                    <a
-                                      key={attachment.id}
-                                      href={`/api/attachments/${attachment.id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="border-connect-ink/15 bg-connect-paper flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-semibold"
-                                    >
-                                      {attachment.kind === "PDF" ? (
-                                        <FileText className="h-4 w-4" />
-                                      ) : (
-                                        <LinkIcon className="h-4 w-4" />
-                                      )}
-                                      <span className="truncate">
-                                        {attachment.fileName}
-                                      </span>
-                                    </a>
-                                  ),
-                                )}
-                              </div>
-                            )}
-                            {reactionGroups.length > 0 && (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {reactionGroups.map(([emoji, reactions]) => (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() =>
-                                      selectedGroupId &&
-                                      toggleReaction.mutate({
-                                        emoji:
-                                          emoji as (typeof REACTIONS)[number],
-                                        groupId: selectedGroupId,
-                                        messageId: chatMessage.id,
-                                      })
-                                    }
-                                    className="border-connect-ink/15 bg-connect-paper hover:bg-connect-highlight min-h-8 rounded-full border px-2 text-xs"
-                                  >
-                                    {emoji} {reactions.length}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <div className="col-start-2 flex gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReplyTo({
-                                  content: chatMessage.content,
-                                  id: chatMessage.id,
-                                });
-                                textareaRef.current?.focus();
-                              }}
-                              className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
-                              aria-label="返信"
-                            >
-                              <Reply className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                            <DropdownMenu.Root>
-                              <DropdownMenu.Trigger asChild>
-                                <button
-                                  type="button"
-                                  className="hover:bg-connect-highlight flex h-11 w-11 items-center justify-center rounded-md"
-                                  aria-label="その他の操作"
-                                >
-                                  <Ellipsis
-                                    className="h-4 w-4"
-                                    aria-hidden="true"
-                                  />
-                                </button>
-                              </DropdownMenu.Trigger>
-                              <DropdownMenu.Portal>
-                                <DropdownMenu.Content
-                                  align="end"
-                                  sideOffset={4}
-                                  collisionPadding={12}
-                                  onCloseAutoFocus={(event) => {
-                                    if (focusComposerAfterMenuClose.current) {
-                                      event.preventDefault();
-                                      focusComposerAfterMenuClose.current = false;
-                                      textareaRef.current?.focus();
-                                    } else if (reportingMessageId) {
-                                      event.preventDefault();
-                                    }
-                                  }}
-                                  className="border-connect-ink/15 bg-connect-paper text-connect-ink z-[var(--z-dropdown)] max-h-[var(--radix-dropdown-menu-content-available-height)] w-56 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-md border p-1 shadow-md"
-                                >
-                                  <DropdownMenu.Item
-                                    disabled={sendMessage.isPending}
-                                    onSelect={() => {
-                                      const quoted = chatMessage.content
-                                        .split("\n")
-                                        .map((line) => `> ${line}`)
-                                        .join("\n");
-                                      updateDraft(
-                                        `${draft.trimEnd()}${draft ? "\n" : ""}${quoted}\n`.slice(
-                                          0,
-                                          1000,
-                                        ),
-                                      );
-                                      focusComposerAfterMenuClose.current = true;
-                                    }}
-                                    className={menuItemClassName}
-                                  >
-                                    <Quote
-                                      className="h-4 w-4"
-                                      aria-hidden="true"
-                                    />
-                                    引用
-                                  </DropdownMenu.Item>
-                                  <DropdownMenu.Item
-                                    disabled={toggleSaved.isPending}
-                                    onSelect={() =>
-                                      selectedGroupId &&
-                                      toggleSaved.mutate({
-                                        groupId: selectedGroupId,
-                                        messageId: chatMessage.id,
-                                      })
-                                    }
-                                    className={menuItemClassName}
-                                  >
-                                    <Bookmark
-                                      className={`h-4 w-4 ${chatMessage.isSaved ? "fill-current" : ""}`}
-                                      aria-hidden="true"
-                                    />
-                                    {chatMessage.isSaved ? "保存解除" : "保存"}
-                                  </DropdownMenu.Item>
-                                  <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
-                                  <DropdownMenu.Label className="text-connect-muted px-3 py-2 text-xs">
-                                    リアクション
-                                  </DropdownMenu.Label>
-                                  <div className="grid grid-cols-3 gap-1">
-                                    {REACTIONS.map((emoji) => (
-                                      <DropdownMenu.Item
-                                        key={emoji}
-                                        disabled={toggleReaction.isPending}
-                                        onSelect={() =>
-                                          selectedGroupId &&
-                                          toggleReaction.mutate({
-                                            emoji,
-                                            groupId: selectedGroupId,
-                                            messageId: chatMessage.id,
-                                          })
-                                        }
-                                        className={`${menuItemClassName} justify-center`}
-                                        aria-label={`${emoji}でリアクション`}
-                                      >
-                                        {emoji}
-                                      </DropdownMenu.Item>
-                                    ))}
-                                  </div>
-                                  {chatMessage.senderId !== currentUserId && (
-                                    <>
-                                      <DropdownMenu.Separator className="bg-connect-ink/15 my-1 h-px" />
-                                      <DropdownMenu.Item
-                                        onSelect={() =>
-                                          setReportingMessageId(chatMessage.id)
-                                        }
-                                        className={`${menuItemClassName} text-connect-danger`}
-                                      >
-                                        <AlertCircle
-                                          className="h-4 w-4"
-                                          aria-hidden="true"
-                                        />
-                                        通報
-                                      </DropdownMenu.Item>
-                                    </>
-                                  )}
-                                </DropdownMenu.Content>
-                              </DropdownMenu.Portal>
-                            </DropdownMenu.Root>
-                          </div>
-                        </div>
-                      </article>
-                    </Fragment>
-                  );
-                })}
-              </div>
+              {messageList}
             </div>
-            {selectedGroupId && (
+            {selectedGroup && (
               <form onSubmit={submit} className="p-3">
                 {replyTo && (
                   <div className="bg-connect-highlight border-connect-ink/15 flex items-center justify-between rounded-t-md border px-3 py-2 text-sm">

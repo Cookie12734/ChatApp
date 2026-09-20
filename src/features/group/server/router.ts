@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { isSameAttachmentSet } from "~/features/chat/server/message-idempotency";
 
 import {
@@ -194,6 +194,65 @@ function addMemberImages<T extends { user: { userId: string } }>(member: T) {
   return { ...member, user: addProfileImageUrl(member.user) };
 }
 
+function groupMessageSelect(currentUserId: string, blockedPeerIds: string[]) {
+  return {
+    attachments: {
+      select: {
+        fileName: true,
+        id: true,
+        kind: true,
+        mimeType: true,
+        size: true,
+      },
+    },
+    clientId: true,
+    content: true,
+    createdAt: true,
+    groupId: true,
+    id: true,
+    replyToId: true,
+    senderId: true,
+    sender: { select: { id: true, name: true, userId: true } },
+    replyTo: {
+      where: { senderId: { notIn: blockedPeerIds } },
+      select: {
+        content: true,
+        createdAt: true,
+        id: true,
+        sender: {
+          select: { id: true, name: true, userId: true },
+        },
+        senderId: true,
+      },
+    },
+    reactions: {
+      orderBy: [{ emoji: "asc" }, { createdAt: "asc" }],
+      select: { createdAt: true, emoji: true, userId: true },
+    },
+    savedBy: {
+      where: { userId: currentUserId },
+      select: { userId: true },
+    },
+  } satisfies Prisma.GroupMessageSelect;
+}
+
+type GroupMessage = Prisma.GroupMessageGetPayload<{
+  select: ReturnType<typeof groupMessageSelect>;
+}>;
+const addMessageImages = ({
+  replyTo,
+  savedBy,
+  sender,
+  ...message
+}: GroupMessage) => ({
+  ...message,
+  isSaved: savedBy.length > 0,
+  replyTo: replyTo
+    ? { ...replyTo, sender: addProfileImageUrl(replyTo.sender) }
+    : null,
+  sender: addProfileImageUrl(sender),
+});
+
 async function publishGroupChange(
   database: Pick<
     PrismaClient,
@@ -201,6 +260,7 @@ async function publishGroupChange(
   >,
   groupId: string,
   removedUserIds: string[] = [],
+  messageId?: string,
 ) {
   const members = await database.groupConversationMember.findMany({
     where: { groupId },
@@ -209,6 +269,7 @@ async function publishGroupChange(
   await publishChatEvent(database, {
     groupId,
     kind: "group",
+    ...(messageId ? { messageId, change: "updated" as const } : {}),
     userIds: [
       ...new Set([...members.map(({ userId }) => userId), ...removedUserIds]),
     ],
@@ -358,6 +419,30 @@ export const groupRouter = createTRPCRouter({
       return result;
     }),
 
+  getMessage: protectedProcedure
+    .input(markReadInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      await enforceGroupRateLimit(currentUserId, "message-read", 240);
+      await requireGroupMembership(ctx.db, input.groupId, currentUserId);
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      });
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const message = await ctx.db.groupMessage.findFirst({
+        where: {
+          id: input.messageId,
+          groupId: input.groupId,
+          senderId: { notIn: blockedPeerIds },
+        },
+        select: groupMessageSelect(currentUserId, blockedPeerIds),
+      });
+      return message ? addMessageImages(message) : null;
+    }),
+
   getConversation: protectedProcedure
     .input(conversationInput)
     .query(async ({ ctx, input }) => {
@@ -412,45 +497,7 @@ export const groupRouter = createTRPCRouter({
           },
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: MESSAGE_PAGE_SIZE + 1,
-          select: {
-            attachments: {
-              select: {
-                fileName: true,
-                id: true,
-                kind: true,
-                mimeType: true,
-                size: true,
-              },
-            },
-            clientId: true,
-            content: true,
-            createdAt: true,
-            groupId: true,
-            id: true,
-            replyToId: true,
-            senderId: true,
-            sender: { select: { id: true, name: true, userId: true } },
-            replyTo: {
-              where: { senderId: { notIn: blockedPeerIds } },
-              select: {
-                content: true,
-                createdAt: true,
-                id: true,
-                sender: {
-                  select: { id: true, name: true, userId: true },
-                },
-                senderId: true,
-              },
-            },
-            reactions: {
-              orderBy: [{ emoji: "asc" }, { createdAt: "asc" }],
-              select: { createdAt: true, emoji: true, userId: true },
-            },
-            savedBy: {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            },
-          },
+          select: groupMessageSelect(currentUserId, blockedPeerIds),
         }),
       ]);
 
@@ -461,16 +508,7 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      const messagePage = messages.map(
-        ({ replyTo, savedBy, sender, ...message }) => ({
-          ...message,
-          isSaved: savedBy.length > 0,
-          replyTo: replyTo
-            ? { ...replyTo, sender: addProfileImageUrl(replyTo.sender) }
-            : null,
-          sender: addProfileImageUrl(sender),
-        }),
-      );
+      const messagePage = messages.map(addMessageImages);
 
       return {
         currentUser: addProfileImageUrl(currentUser),
@@ -624,6 +662,8 @@ export const groupRouter = createTRPCRouter({
       await publishChatEvent(ctx.db, {
         groupId: input.groupId,
         kind: "group",
+        messageId: result.message.id,
+        change: "created",
         userIds: [currentUserId, ...result.recipientIds],
       });
       result.recipientIds.forEach((recipientId) =>
@@ -818,6 +858,12 @@ export const groupRouter = createTRPCRouter({
       await enforceGroupRateLimit(currentUserId, "leave", 20);
 
       const result = await ctx.db.$transaction(async (tx) => {
+        // Serialize the member count and deletion with member additions.
+        await tx.$queryRaw`
+          SELECT "id" FROM "GroupConversation"
+          WHERE "id" = ${input.groupId}
+          FOR UPDATE
+        `;
         const membership = await requireGroupMembership(
           tx,
           input.groupId,
@@ -914,7 +960,7 @@ export const groupRouter = createTRPCRouter({
           reacted: !reaction,
         };
       });
-      await publishGroupChange(ctx.db, input.groupId);
+      await publishGroupChange(ctx.db, input.groupId, [], input.messageId);
       return result;
     }),
 

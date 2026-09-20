@@ -1,4 +1,4 @@
-export const MESSAGE_PAGE_SIZE = 100;
+export const MESSAGE_PAGE_SIZE = 25;
 
 export function flattenMessagePages<M>(pages: { messages: M[] }[]) {
   return [...pages].reverse().flatMap((page) => page.messages);

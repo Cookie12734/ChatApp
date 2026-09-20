@@ -14,6 +14,27 @@ import {
 
 const message = (id, timestamp) => ({ id, createdAt: new Date(timestamp) });
 
+test("history defaults to 25 messages and pages without gaps at equal timestamps", () => {
+  const all = Array.from({ length: 61 }, (_, i) =>
+    message(String(61 - i).padStart(2, "0"), 100),
+  );
+  const pages = [];
+  let remaining = all;
+  while (remaining.length) {
+    const page = prepareMessagePage(remaining.slice(0, 26));
+    pages.push(page);
+    assert.ok(page.messages.length <= 25);
+    const cursor = decodeMessageCursor(page.nextCursor);
+    if (!cursor) break;
+    remaining = all.filter(({ id }) => id < cursor.id);
+  }
+  assert.deepEqual(
+    pages.map(({ messages }) => messages.length),
+    [25, 25, 11],
+  );
+  assert.deepEqual(flattenMessagePages(pages), [...all].reverse());
+});
+
 test("history pages are rendered oldest first without mutating the cache", () => {
   const pages = [
     prepareMessagePage([message("4", 4), message("3", 3)]),

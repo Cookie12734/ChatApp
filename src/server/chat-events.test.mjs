@@ -9,6 +9,23 @@ import {
   takePendingLocalEventIds,
 } from "./chat-events.ts";
 
+test("server structure events reach former members but never unrelated users", () => {
+  const event = {
+    kind: "server-state",
+    serverId: "server-a",
+    userIds: ["member", "removed"],
+  };
+  assert.equal(canReceiveChatEvent(event, "removed", new Set()), true);
+  assert.equal(
+    canReceiveChatEvent(event, "outsider", new Set(["server-a"])),
+    false,
+  );
+  assert.deepEqual(getChatEventRecord(event).audienceIds, [
+    "member",
+    "removed",
+  ]);
+});
+
 test("chat event records target direct participants without server fanout", () => {
   assert.deepEqual(
     getChatEventRecord({
