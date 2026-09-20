@@ -6,11 +6,13 @@ type MatchingConversationDecision = {
   firstUserId: string;
   secondUserConversationConsent: boolean | null;
   secondUserId: string;
+  topic?: string;
 };
 
 export function getConsentedConversationWindows(
   results: MatchingConversationDecision[],
   userId: string,
+  topic?: string,
 ) {
   const sortedResults = [...results].sort(
     (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
@@ -20,6 +22,7 @@ export function getConsentedConversationWindows(
     const isFirstUser = result.firstUserId === userId;
     const isSecondUser = result.secondUserId === userId;
     if (!isFirstUser && !isSecondUser) return [];
+    if (topic !== undefined && result.topic !== topic) return [];
 
     const consent = isFirstUser
       ? result.firstUserConversationConsent

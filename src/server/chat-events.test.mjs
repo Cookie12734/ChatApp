@@ -9,13 +9,40 @@ import {
   takePendingLocalEventIds,
 } from "./chat-events.ts";
 
+test("server structure events reach former members but never unrelated users", () => {
+  const event = {
+    kind: "server-state",
+    serverId: "server-a",
+    userIds: ["member", "removed"],
+  };
+  assert.equal(canReceiveChatEvent(event, "removed", new Set()), true);
+  assert.equal(
+    canReceiveChatEvent(event, "outsider", new Set(["server-a"])),
+    false,
+  );
+  assert.deepEqual(getChatEventRecord(event).audienceIds, [
+    "member",
+    "removed",
+  ]);
+});
+
 test("chat event records target direct participants without server fanout", () => {
   assert.deepEqual(
-    getChatEventRecord({ kind: "direct", userIds: ["me", "friend"] }),
+    getChatEventRecord({
+      change: "created",
+      kind: "direct",
+      messageId: "message-a",
+      userIds: ["me", "friend"],
+    }),
     {
       audienceIds: ["me", "friend"],
       kind: "direct",
-      payload: { kind: "direct", userIds: ["me", "friend"] },
+      payload: {
+        change: "created",
+        kind: "direct",
+        messageId: "message-a",
+        userIds: ["me", "friend"],
+      },
       serverId: null,
     },
   );
@@ -24,6 +51,7 @@ test("chat event records target direct participants without server fanout", () =
       change: "created",
       channelId: "general",
       kind: "server",
+      messageId: "message-b",
       senderId: "owner",
       serverId: "server-a",
     }),
@@ -34,6 +62,7 @@ test("chat event records target direct participants without server fanout", () =
         change: "created",
         channelId: "general",
         kind: "server",
+        messageId: "message-b",
         senderId: "owner",
         serverId: "server-a",
       },
@@ -47,7 +76,12 @@ test("chat event recipients are filtered by participant or server membership", (
 
   assert.equal(
     canReceiveChatEvent(
-      { kind: "direct", userIds: ["me", "friend"] },
+      {
+        change: "created",
+        kind: "direct",
+        messageId: "message-a",
+        userIds: ["me", "friend"],
+      },
       "me",
       serverIds,
     ),
@@ -55,7 +89,12 @@ test("chat event recipients are filtered by participant or server membership", (
   );
   assert.equal(
     canReceiveChatEvent(
-      { kind: "direct", userIds: ["other", "friend"] },
+      {
+        change: "created",
+        kind: "direct",
+        messageId: "message-a",
+        userIds: ["other", "friend"],
+      },
       "me",
       serverIds,
     ),
@@ -67,6 +106,7 @@ test("chat event recipients are filtered by participant or server membership", (
         change: "created",
         channelId: "general",
         kind: "server",
+        messageId: "message-b",
         senderId: "friend",
         serverId: "server-a",
       },

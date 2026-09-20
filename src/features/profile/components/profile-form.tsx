@@ -340,6 +340,7 @@ export function ProfileForm() {
         </h2>
         <p className="text-connect-danger-strong mt-2 text-sm leading-6">
           この操作は取り消せません。所有中のサーバーがある場合は削除できないため、先に所有権を移譲するかサーバーを削除してください。
+          所有中のグループDMに他のメンバーがいる場合も削除できません。
         </p>
         <label className="mt-4 block">
           <span className="text-connect-danger-strong mb-2 block text-sm font-semibold">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "~/features/auth";
+import { createAttachmentThumbnail } from "~/features/chat/server/attachment-thumbnail";
 import { db } from "~/server/db";
 
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ function contentDisposition(fileName: string, inline: boolean) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ attachmentId: string }> },
 ) {
   const session = await auth();
@@ -19,7 +20,6 @@ export async function GET(
   const attachment = await db.messageAttachment.findUnique({
     where: { id: attachmentId },
     select: {
-      data: true,
       directMessage: { select: { receiverId: true, senderId: true } },
       expiresAt: true,
       externalUrl: true,
@@ -103,16 +103,47 @@ export async function GET(
   if (attachment.kind === "LINK" && attachment.externalUrl) {
     return NextResponse.redirect(attachment.externalUrl);
   }
-  if (!attachment.data) return new Response("Not found", { status: 404 });
+  const preview =
+    attachment.kind === "IMAGE" &&
+    new URL(request.url).searchParams.get("preview") === "1";
+  // Read binary content only after the same membership/block checks for both variants.
+  let thumbnail = preview
+    ? (
+        await db.messageAttachment.findUnique({
+          where: { id: attachmentId },
+          select: { thumbnail: true },
+        })
+      )?.thumbnail
+    : null;
+  let data = thumbnail;
+  if (!data) {
+    data = (
+      await db.messageAttachment.findUnique({
+        where: { id: attachmentId },
+        select: { data: true },
+      })
+    )?.data;
+    if (preview && data) {
+      thumbnail = await createAttachmentThumbnail(data);
+      if (thumbnail) {
+        await db.messageAttachment.updateMany({
+          where: { id: attachmentId, thumbnail: null },
+          data: { thumbnail },
+        });
+        data = thumbnail;
+      }
+    }
+  }
+  if (!data) return new Response("Not found", { status: 404 });
 
-  return new Response(attachment.data, {
+  return new Response(data, {
     headers: {
       "Cache-Control": "private, no-store",
       "Content-Disposition": contentDisposition(
-        attachment.fileName,
+        thumbnail ? `${attachment.fileName}.webp` : attachment.fileName,
         attachment.kind === "IMAGE",
       ),
-      "Content-Type": attachment.mimeType,
+      "Content-Type": thumbnail ? "image/webp" : attachment.mimeType,
       "X-Content-Type-Options": "nosniff",
     },
   });

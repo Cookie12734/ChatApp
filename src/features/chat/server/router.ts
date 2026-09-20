@@ -17,9 +17,13 @@ import {
   getMatchingConversationConsentTarget,
   getMatchingRatingTarget,
   hasSettledMatch,
+  MATCHING_QUEUE_TTL_MS,
 } from "~/features/chat/server/matching-permissions";
 import { pickMatchingCandidate } from "~/features/chat/server/matching-ranking";
-import { isSameDirectMessage } from "~/features/chat/server/message-idempotency";
+import {
+  isSameAttachmentSet,
+  isSameDirectMessage,
+} from "~/features/chat/server/message-idempotency";
 import {
   isSearchResultBeforeCursor,
   SEARCH_MESSAGE_KINDS,
@@ -41,7 +45,7 @@ import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { addProfileImageUrl } from "~/lib/static-image";
-import { sendPushNotification } from "~/features/notification/server/push";
+import { schedulePushNotification } from "~/features/notification/server/push";
 
 const friendIdInput = z.object({
   friendId: z.string().min(1),
@@ -176,7 +180,6 @@ async function refreshMatchingTopicProfile(
   const recentResults = await database.matchingResult.findMany({
     where: {
       createdAt: { gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) },
-      topic,
       OR: [{ firstUserId: userId }, { secondUserId: userId }],
     },
     orderBy: { createdAt: "desc" },
@@ -187,6 +190,7 @@ async function refreshMatchingTopicProfile(
       firstUserId: true,
       secondUserConversationConsent: true,
       secondUserId: true,
+      topic: true,
     },
   });
   // ponytail: scan at most 50 match records in memory; move this windowing to
@@ -194,6 +198,7 @@ async function refreshMatchingTopicProfile(
   const conversationWindows = getConsentedConversationWindows(
     recentResults,
     userId,
+    topic,
   );
 
   if (conversationWindows.length === 0) {
@@ -451,112 +456,138 @@ export const chatRouter = createTRPCRouter({
       };
     }),
 
-  getFriends: protectedProcedure.query(async ({ ctx }) => {
-    const currentUserId = ctx.session.user.id;
-    const [blocks, friendships, sentPeers, receivedPeers] = await Promise.all([
-      ctx.db.userBlock.findMany({
-        where: {
-          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
-        },
-        select: { blockedId: true, blockerId: true },
-      }),
-      ctx.db.friendship.findMany({
-        where: { userId: currentUserId },
-        orderBy: { createdAt: "desc" },
-        select: { friendId: true, id: true },
-      }),
-      ctx.db.directMessage.groupBy({
-        by: ["receiverId"],
-        where: { senderId: currentUserId },
-      }),
-      ctx.db.directMessage.groupBy({
-        by: ["senderId"],
-        where: { receiverId: currentUserId },
-      }),
-    ]);
-    const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
-    const blockedPeerIdSet = new Set(blockedPeerIds);
-    const friendshipByFriendId = new Map(
-      friendships.map((friendship) => [friendship.friendId, friendship.id]),
-    );
-    const contactIds = new Set([
-      ...friendshipByFriendId.keys(),
-      ...sentPeers.map((message) => message.receiverId),
-      ...receivedPeers.map((message) => message.senderId),
-    ]);
-    const contacts = await ctx.db.user.findMany({
-      where: { id: { in: [...contactIds] } },
-      select: {
-        id: true,
-        userId: true,
-        name: true,
-        sentDirectMessages: {
-          where: { receiverId: currentUserId },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            receiverId: true,
-            senderId: true,
+  getFriends: protectedProcedure
+    .input(z.object({ friendId: z.string().min(1) }).optional())
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const [blocks, friendships, sentPeers, receivedPeers] = await Promise.all(
+        [
+          ctx.db.userBlock.findMany({
+            where: {
+              OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+            },
+            select: { blockedId: true, blockerId: true },
+          }),
+          ctx.db.friendship.findMany({
+            where: {
+              userId: currentUserId,
+              ...(input?.friendId ? { friendId: input.friendId } : {}),
+            },
+            orderBy: { createdAt: "desc" },
+            select: { friendId: true, id: true },
+          }),
+          ctx.db.directMessage.groupBy({
+            by: ["receiverId"],
+            where: {
+              senderId: currentUserId,
+              ...(input?.friendId ? { receiverId: input.friendId } : {}),
+            },
+          }),
+          ctx.db.directMessage.groupBy({
+            by: ["senderId"],
+            where: {
+              receiverId: currentUserId,
+              ...(input?.friendId ? { senderId: input.friendId } : {}),
+            },
+          }),
+        ],
+      );
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const blockedPeerIdSet = new Set(blockedPeerIds);
+      const friendshipByFriendId = new Map(
+        friendships.map((friendship) => [friendship.friendId, friendship.id]),
+      );
+      const contactIds = new Set([
+        ...friendshipByFriendId.keys(),
+        ...sentPeers.map((message) => message.receiverId),
+        ...receivedPeers.map((message) => message.senderId),
+      ]);
+      const contacts = await ctx.db.user.findMany({
+        where: { id: { in: [...contactIds] } },
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          sentDirectMessages: {
+            where: { receiverId: currentUserId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              receiverId: true,
+              senderId: true,
+            },
           },
-        },
-        receivedDirectMessages: {
-          where: { senderId: currentUserId },
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            receiverId: true,
-            senderId: true,
+          receivedDirectMessages: {
+            where: { senderId: currentUserId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              receiverId: true,
+              senderId: true,
+            },
           },
-        },
-        _count: {
-          select: {
-            sentDirectMessages: {
-              where: { receiverId: currentUserId, readAt: null },
+          _count: {
+            select: {
+              sentDirectMessages: {
+                where: { receiverId: currentUserId, readAt: null },
+              },
             },
           },
         },
-      },
-    });
+      });
 
-    const friends = contacts.map((contact) => {
-      const { _count, receivedDirectMessages, sentDirectMessages, ...friend } =
-        contact;
-      const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
-      const isBlocked = blockedPeerIdSet.has(friend.id);
+      const friends = contacts.map((contact) => {
+        const {
+          _count,
+          receivedDirectMessages,
+          sentDirectMessages,
+          ...friend
+        } = contact;
+        const friendshipId = friendshipByFriendId.get(friend.id) ?? null;
+        const isBlocked = blockedPeerIdSet.has(friend.id);
 
-      return {
-        currentUserId,
-        friendshipId,
-        friend: addProfileImageUrl(friend),
-        isBlocked,
-        isFriend: friendshipId !== null,
-        lastMessage: isBlocked
-          ? null
-          : getLatestFriendMessage(
-              sentDirectMessages[0],
-              receivedDirectMessages[0],
-            ),
-        unreadCount: isBlocked ? 0 : _count.sentDirectMessages,
-      };
-    });
+        return {
+          currentUserId,
+          friendshipId,
+          friend: addProfileImageUrl(friend),
+          isBlocked,
+          isFriend: friendshipId !== null,
+          lastMessage: isBlocked
+            ? null
+            : getLatestFriendMessage(
+                sentDirectMessages[0],
+                receivedDirectMessages[0],
+              ),
+          unreadCount: isBlocked ? 0 : _count.sentDirectMessages,
+        };
+      });
 
-    return sortFriendsByLatestMessage(friends);
-  }),
+      return sortFriendsByLatestMessage(friends);
+    }),
 
   getMatchingStatus: protectedProcedure.query(async ({ ctx }) => {
     const currentUserId = ctx.session.user.id;
     const queue = await ctx.db.matchingQueue.findUnique({
       where: { userId: currentUserId },
-      select: { matchedUserId: true, matchingResultId: true, topic: true },
+      select: {
+        matchedUserId: true,
+        matchingResultId: true,
+        topic: true,
+        updatedAt: true,
+      },
     });
 
-    if (!queue) {
+    if (
+      !queue ||
+      (!queue.matchedUserId &&
+        queue.updatedAt.getTime() <= Date.now() - MATCHING_QUEUE_TTL_MS)
+    ) {
       return { status: "idle" as const };
     }
 
@@ -601,6 +632,26 @@ export const chatRouter = createTRPCRouter({
           topic: queue.topic,
         }
       : { status: "idle" as const };
+  }),
+
+  heartbeatMatching: protectedProcedure.mutation(async ({ ctx }) => {
+    await enforceTRPCRateLimits([
+      {
+        limit: 10,
+        scope: "chat:matching-heartbeat:user",
+        subject: ctx.session.user.id,
+        windowMs: 60_000,
+      },
+    ]);
+    const result = await ctx.db.matchingQueue.updateMany({
+      where: {
+        userId: ctx.session.user.id,
+        matchedUserId: null,
+        updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
+      },
+      data: { updatedAt: new Date() },
+    });
+    return { active: result.count === 1 };
   }),
 
   getMatchingHistory: protectedProcedure
@@ -744,6 +795,28 @@ export const chatRouter = createTRPCRouter({
       ]);
       let matchedPeerId: string | undefined;
       const result = await ctx.db.$transaction(async (tx) => {
+        const participants = await tx.matchingResult.findUnique({
+          where: { id: input.matchId },
+          select: { firstUserId: true, secondUserId: true },
+        });
+        if (
+          !participants ||
+          ![participants.firstUserId, participants.secondUserId].includes(
+            currentUserId,
+          )
+        ) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        const [firstUserId, secondUserId] = getFriendRequestLockIds(
+          participants.firstUserId,
+          participants.secondUserId,
+        );
+        // Serialize consent with blocking and friendship removal.
+        await tx.$queryRaw`
+          SELECT "id" FROM "User"
+          WHERE "id" IN (${firstUserId}, ${secondUserId})
+          ORDER BY "id" FOR UPDATE
+        `;
         await tx.$queryRaw`
           SELECT "id" FROM "MatchingResult"
           WHERE "id" = ${input.matchId}
@@ -781,7 +854,8 @@ export const chatRouter = createTRPCRouter({
 
         const now = new Date();
         const isExpired =
-          !match.rematchRequest || match.rematchRequest.expiresAt <= now;
+          match.rematchRequest?.status !== "PENDING" ||
+          match.rematchRequest.expiresAt <= now;
         const firstRequestedAt = isExpired
           ? isFirstUser
             ? now
@@ -829,7 +903,7 @@ export const chatRouter = createTRPCRouter({
         };
       });
       if (matchedPeerId) {
-        await sendPushNotification(ctx.db, {
+        schedulePushNotification(ctx.db, {
           kind: "MATCHING",
           recipientId: matchedPeerId,
           title: "再マッチしました",
@@ -1166,6 +1240,7 @@ export const chatRouter = createTRPCRouter({
         const waitingUsers = await tx.matchingQueue.findMany({
           where: {
             matchedUserId: null,
+            updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
             topic: input.topic,
             userId: { notIn: excludedUserIds },
           },
@@ -1208,7 +1283,12 @@ export const chatRouter = createTRPCRouter({
         // ponytail: weighted selection from the oldest 50 keeps this cheap;
         // move ranking to the database if the queue grows materially.
         const claimed = await tx.matchingQueue.updateMany({
-          where: { id: match.id, matchedUserId: null },
+          where: {
+            id: match.id,
+            matchedUserId: null,
+            topic: input.topic,
+            updatedAt: { gt: new Date(Date.now() - MATCHING_QUEUE_TTL_MS) },
+          },
           data: { matchedUserId: currentUserId },
         });
 
@@ -1260,7 +1340,7 @@ export const chatRouter = createTRPCRouter({
         };
       });
       if (newlyMatchedPeerId) {
-        await sendPushNotification(ctx.db, {
+        schedulePushNotification(ctx.db, {
           kind: "MATCHING",
           recipientId: newlyMatchedPeerId,
           title: "マッチングしました",
@@ -1407,10 +1487,68 @@ export const chatRouter = createTRPCRouter({
       };
     }),
 
+  getMessage: protectedProcedure
+    .input(messageIdInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      const message = await ctx.db.directMessage.findFirst({
+        where: {
+          id: input.messageId,
+          OR: [{ receiverId: currentUserId }, { senderId: currentUserId }],
+        },
+        select: {
+          attachments: {
+            select: {
+              fileName: true,
+              id: true,
+              kind: true,
+              mimeType: true,
+              size: true,
+            },
+          },
+          id: true,
+          content: true,
+          createdAt: true,
+          readAt: true,
+          receiverId: true,
+          reactions: { select: { emoji: true, userId: true } },
+          replyTo: {
+            select: {
+              content: true,
+              id: true,
+              sender: { select: { id: true, name: true, userId: true } },
+            },
+          },
+          savedBy: {
+            where: { userId: currentUserId },
+            select: { userId: true },
+          },
+          senderId: true,
+        },
+      });
+      if (!message) return null;
+
+      const peerId =
+        message.senderId === currentUserId
+          ? message.receiverId
+          : message.senderId;
+      await assertNotBlocked(ctx.db, currentUserId, peerId);
+      return message;
+    }),
+
   markConversationRead: protectedProcedure
     .input(markConversationReadInput)
     .mutation(async ({ ctx, input }) => {
       const currentUserId = ctx.session.user.id;
+      await enforceTRPCRateLimits([
+        {
+          limit: 120,
+          scope: "chat:read:user",
+          subject: currentUserId,
+          windowMs: 60 * 1000,
+        },
+      ]);
+      await assertNotBlocked(ctx.db, currentUserId, input.friendId);
       const message = await ctx.db.directMessage.findFirst({
         where: {
           id: input.messageId,
@@ -1509,7 +1647,7 @@ export const chatRouter = createTRPCRouter({
         currentUserId,
         input.friendId,
       );
-      const message = await ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         await tx.$queryRaw`
           SELECT "id"
           FROM "User"
@@ -1555,6 +1693,7 @@ export const chatRouter = createTRPCRouter({
           }
         }
 
+        const newMessageId = crypto.randomUUID();
         const storedMessage = await tx.directMessage.upsert({
           where: {
             senderId_clientId: {
@@ -1563,6 +1702,7 @@ export const chatRouter = createTRPCRouter({
             },
           },
           create: {
+            id: newMessageId,
             clientId: input.clientId,
             content,
             receiverId: input.friendId,
@@ -1583,6 +1723,19 @@ export const chatRouter = createTRPCRouter({
             code: "CONFLICT",
             message: "同じ送信IDを別のメッセージには使用できません",
           });
+        }
+
+        if (storedMessage.id !== newMessageId) {
+          const attachments = await tx.messageAttachment.findMany({
+            where: { directMessageId: storedMessage.id },
+            select: { id: true },
+          });
+          if (!isSameAttachmentSet(attachments, input.attachmentIds)) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "同じ送信IDで添付ファイルを変更できません",
+            });
+          }
         }
 
         if (input.attachmentIds.length > 0) {
@@ -1615,20 +1768,42 @@ export const chatRouter = createTRPCRouter({
               message: "添付ファイルが無効か期限切れです",
             });
           }
-          await tx.messageAttachment.updateMany({
-            where: { directMessageId: null, id: { in: attachmentIds } },
+          const attached = await tx.messageAttachment.updateMany({
+            where: {
+              id: { in: attachmentIds },
+              directMessageId: null,
+              serverMessageId: null,
+              groupMessageId: null,
+              expiresAt: { gt: new Date() },
+            },
             data: { directMessageId: storedMessage.id, expiresAt: null },
           });
+          if (
+            storedMessage.id === newMessageId &&
+            attached.count !== attachmentIds.length
+          ) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "添付ファイルは使用済みか期限切れです",
+            });
+          }
         }
 
-        return storedMessage;
+        return {
+          message: storedMessage,
+          created: storedMessage.id === newMessageId,
+        };
       });
 
-      void publishChatEvent(ctx.db, {
+      const { message } = result;
+      if (!result.created) return message;
+      await publishChatEvent(ctx.db, {
+        change: "created",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, input.friendId],
       });
-      await sendPushNotification(ctx.db, {
+      schedulePushNotification(ctx.db, {
         body: content,
         kind: "DIRECT_MESSAGE",
         recipientId: input.friendId,
@@ -1673,7 +1848,9 @@ export const chatRouter = createTRPCRouter({
       });
 
       void publishChatEvent(ctx.db, {
+        change: "updated",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, message.receiverId],
       });
       return updatedMessage;
@@ -1709,7 +1886,9 @@ export const chatRouter = createTRPCRouter({
 
       await ctx.db.directMessage.delete({ where: { id: message.id } });
       void publishChatEvent(ctx.db, {
+        change: "deleted",
         kind: "direct",
+        messageId: message.id,
         userIds: [currentUserId, message.receiverId],
       });
       return { id: message.id };
@@ -1768,7 +1947,9 @@ export const chatRouter = createTRPCRouter({
       });
 
       void publishChatEvent(ctx.db, {
+        change: "updated",
         kind: "direct",
+        messageId: input.messageId,
         userIds: [currentUserId, peerId],
       });
       return { ...result, emoji: input.emoji, messageId: input.messageId };

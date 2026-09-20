@@ -20,18 +20,23 @@ import {
 import { api } from "~/trpc/react";
 
 type UserProfileDialogProps = {
-  children: ReactNode;
+  children?: ReactNode;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
   serverId?: string;
   userId: string;
 };
 
 export function UserProfileDialog({
   children,
+  onOpenChange,
+  open: controlledOpen,
   serverId,
   userId,
 }: UserProfileDialogProps) {
   const utils = api.useUtils();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = controlledOpen ?? internalOpen;
   const profile = api.profile.getByUserId.useQuery(
     { serverId, userId },
     { enabled: isOpen },
@@ -72,7 +77,8 @@ export function UserProfileDialog({
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        setIsOpen(open);
+        setInternalOpen(open);
+        onOpenChange?.(open);
         if (!open) {
           sendFriendRequest.reset();
           acceptFriendRequest.reset();
@@ -81,7 +87,7 @@ export function UserProfileDialog({
         }
       }}
     >
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-x-hidden overflow-y-auto p-0 sm:max-w-xl">
         <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle>プロフィール</DialogTitle>

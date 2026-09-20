@@ -15,6 +15,22 @@ function isUnauthorized(error: unknown) {
   );
 }
 
+function shouldRetryQuery(failureCount: number, error: unknown) {
+  if (failureCount >= 3) return false;
+  const code =
+    error !== null && typeof error === "object" && "data" in error
+      ? (error as { data?: { code?: string } }).data?.code
+      : undefined;
+  return ![
+    "UNAUTHORIZED",
+    "FORBIDDEN",
+    "NOT_FOUND",
+    "BAD_REQUEST",
+    "UNPROCESSABLE_CONTENT",
+    "TOO_MANY_REQUESTS",
+  ].includes(code ?? "");
+}
+
 let isRedirectingToLogin = false;
 
 function handleAuthError(error: unknown) {
@@ -47,8 +63,7 @@ export const createQueryClient = () =>
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
         staleTime: 30 * 1000,
-        retry: (failureCount, error) =>
-          !isUnauthorized(error) && failureCount < 3,
+        retry: shouldRetryQuery,
       },
       dehydrate: {
         serializeData: SuperJSON.serialize,

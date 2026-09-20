@@ -73,3 +73,4 @@ export function getMatchingConversationConsentTarget(
 
   return null;
 }
+export const MATCHING_QUEUE_TTL_MS = 60_000;

@@ -607,12 +607,24 @@ export async function deleteAccount(
       return "missing" as const;
     }
 
+    // Member additions take the same group lock before checking ownership.
+    await transaction.$queryRaw`
+      SELECT "id" FROM "GroupConversation"
+      WHERE "createdById" = ${session.user.id}
+      ORDER BY "id" FOR UPDATE
+    `;
+
     const user = await transaction.user.findUnique({
       where: { id: session.user.id },
       select: {
         email: true,
         userId: true,
         createdServers: { select: { id: true }, take: 1 },
+        createdGroupConversations: {
+          where: { members: { some: { userId: { not: session.user.id } } } },
+          select: { id: true },
+          take: 1,
+        },
         serverMemberships: {
           where: { role: "OWNER" },
           select: { id: true },
@@ -629,6 +641,9 @@ export async function deleteAccount(
     }
     if (user.createdServers.length || user.serverMemberships.length) {
       return "owns-server" as const;
+    }
+    if (user.createdGroupConversations.length) {
+      return "owns-shared-group" as const;
     }
 
     await transaction.user.delete({ where: { id: session.user.id } });
@@ -660,6 +675,12 @@ export async function deleteAccount(
     return {
       error:
         "所有中のサーバーがあります。先に所有権を移譲するかサーバーを削除してください",
+    };
+  }
+  if (deletionResult === "owns-shared-group") {
+    return {
+      error:
+        "所有中のグループDMに他のメンバーがいるため削除できません。先にグループのメンバーを退出させてください",
     };
   }
 

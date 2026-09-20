@@ -85,38 +85,73 @@ export function GlobalSearchDialog({
   const [maxMembers, setMaxMembers] = useState("");
   const [message, setMessage] = useState<string>();
   const utils = api.useUtils();
+  const [isComposing, setIsComposing] = useState(false);
+  const draft = useMemo(
+    () => ({
+      query,
+      senderUserId,
+      from,
+      to,
+      serverCategory,
+      serverTags,
+      minMembers,
+      maxMembers,
+    }),
+    [
+      query,
+      senderUserId,
+      from,
+      to,
+      serverCategory,
+      serverTags,
+      minMembers,
+      maxMembers,
+    ],
+  );
+  const [search, setSearch] = useState(draft);
+  useEffect(() => {
+    if (!open || isComposing) return;
+    const timer = setTimeout(() => setSearch(draft), 300);
+    return () => clearTimeout(timer);
+  }, [draft, open, isComposing]);
+  const searchReady = open && !isComposing && draft === search;
   const canSearchMessages =
-    query.trim().length >= 2 || Boolean(senderUserId.trim() || from || to);
+    search.query.trim().length >= 2 ||
+    Boolean(search.senderUserId.trim() || search.from || search.to);
   const messageSearch = api.chat.searchMessages.useInfiniteQuery(
     {
-      from: startOfDay(from),
-      query: query.trim().length >= 2 ? query.trim() : undefined,
-      senderUserId: senderUserId.trim() || undefined,
-      to: endOfDay(to),
+      from: startOfDay(search.from),
+      query: search.query.trim().length >= 2 ? search.query.trim() : undefined,
+      senderUserId: search.senderUserId.trim() || undefined,
+      to: endOfDay(search.to),
     },
     {
-      enabled: open && scope === "messages" && canSearchMessages,
+      enabled: searchReady && scope === "messages" && canSearchMessages,
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
   const userSearch = api.friend.searchUsers.useQuery(
-    { query: query.trim() },
-    { enabled: open && scope === "people" && query.trim().length >= 2 },
+    { query: search.query.trim() },
+    {
+      enabled:
+        searchReady && scope === "people" && search.query.trim().length >= 2,
+    },
   );
   const recommendations = api.friend.getRecommendedUsers.useQuery(undefined, {
-    enabled: open && scope === "people" && query.trim().length < 2,
+    enabled:
+      searchReady && scope === "people" && search.query.trim().length < 2,
   });
   const serverSearch = api.server.searchPublic.useInfiniteQuery(
     {
-      category: serverCategory || undefined,
-      maxMembers: optionalMemberCount(maxMembers),
-      minMembers: optionalMemberCount(minMembers),
-      query: query.trim() || undefined,
+      category: search.serverCategory || undefined,
+      maxMembers: optionalMemberCount(search.maxMembers),
+      minMembers: optionalMemberCount(search.minMembers),
+      query: search.query.trim() || undefined,
       tags:
-        serverTags.trim().length > 0
+        search.serverTags.trim().length > 0
           ? [
               ...new Set(
-                serverTags
+                search.serverTags
                   .toLowerCase()
                   .split(/[\s,]+/u)
                   .filter(Boolean),
@@ -126,13 +161,15 @@ export function GlobalSearchDialog({
     },
     {
       enabled:
-        open &&
+        searchReady &&
         scope === "servers" &&
-        (!minMembers || Boolean(optionalMemberCount(minMembers))) &&
-        (!maxMembers || Boolean(optionalMemberCount(maxMembers))) &&
-        (!minMembers ||
-          !maxMembers ||
-          Number(minMembers) <= Number(maxMembers)),
+        (!search.minMembers ||
+          Boolean(optionalMemberCount(search.minMembers))) &&
+        (!search.maxMembers ||
+          Boolean(optionalMemberCount(search.maxMembers))) &&
+        (!search.minMembers ||
+          !search.maxMembers ||
+          Number(search.minMembers) <= Number(search.maxMembers)),
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
@@ -237,7 +274,11 @@ export function GlobalSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-connect-paper text-connect-ink flex max-h-[92dvh] min-h-[min(680px,92dvh)] flex-col overflow-hidden p-0 sm:max-w-3xl">
+      <DialogContent
+        onCompositionStart={() => setIsComposing(true)}
+        onCompositionEnd={() => setIsComposing(false)}
+        className="bg-connect-paper text-connect-ink flex max-h-[92dvh] min-h-[min(680px,92dvh)] flex-col overflow-hidden p-0 sm:max-w-3xl"
+      >
         <DialogHeader className="border-connect-ink/15 border-b px-5 py-4">
           <DialogTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" aria-hidden="true" />
@@ -429,7 +470,7 @@ export function GlobalSearchDialog({
             <button
               type="button"
               onClick={() => void messageSearch.fetchNextPage()}
-              disabled={messageSearch.isFetchingNextPage}
+              disabled={!searchReady || messageSearch.isFetchingNextPage}
               className="border-connect-ink/15 bg-connect-surface hover:bg-connect-highlight mx-auto mt-3 block min-h-10 rounded-md border px-4 text-sm font-semibold disabled:opacity-50"
             >
               {messageSearch.isFetchingNextPage ? "読み込み中…" : "さらに表示"}
@@ -502,7 +543,7 @@ export function GlobalSearchDialog({
             <button
               type="button"
               onClick={() => void serverSearch.fetchNextPage()}
-              disabled={serverSearch.isFetchingNextPage}
+              disabled={!searchReady || serverSearch.isFetchingNextPage}
               className="border-connect-ink/15 bg-connect-surface hover:bg-connect-highlight mx-auto mt-3 block min-h-10 rounded-md border px-4 text-sm font-semibold disabled:opacity-50"
             >
               {serverSearch.isFetchingNextPage ? "読み込み中…" : "さらに表示"}

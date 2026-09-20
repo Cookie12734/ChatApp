@@ -13,22 +13,17 @@ import {
   MessageText,
   ProfileAvatar,
 } from "~/features/chat/components/chat-message";
-import type { RouterOutputs } from "~/trpc/react";
-
-type PinnedMessage =
-  RouterOutputs["server"]["getConversation"]["pinnedMessages"][number];
+import { api } from "~/trpc/react";
 
 export function PinnedMessagesDialog({
-  isLoading,
-  messages,
+  channelId,
   onOpenChange,
   onOpenLink,
   onProfileContextMenu,
   open,
   serverId,
 }: {
-  isLoading: boolean;
-  messages?: PinnedMessage[];
+  channelId?: string;
   onOpenChange: (open: boolean) => void;
   onOpenLink: (url: string) => void;
   onProfileContextMenu: (
@@ -38,6 +33,12 @@ export function PinnedMessagesDialog({
   open: boolean;
   serverId?: string;
 }) {
+  const pinnedMessages = api.server.getPinnedMessages.useQuery(
+    { channelId: channelId ?? "", serverId: serverId ?? "" },
+    { enabled: open && Boolean(channelId && serverId) },
+  );
+  const messages = pinnedMessages.data;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-connect-paper text-connect-ink max-h-[92dvh] overflow-y-auto p-0 sm:max-w-xl">
@@ -48,8 +49,13 @@ export function PinnedMessagesDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="divide-connect-ink/10 divide-y px-5 py-2">
-          {isLoading && (
+          {pinnedMessages.isLoading && (
             <p className="text-connect-neutral py-6 text-sm">読み込み中...</p>
+          )}
+          {pinnedMessages.error && (
+            <p className="text-connect-danger py-6 text-sm" role="alert">
+              {pinnedMessages.error.message}
+            </p>
           )}
           {messages?.map((message) => {
             const author = {

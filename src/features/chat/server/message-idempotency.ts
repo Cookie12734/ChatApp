@@ -3,6 +3,18 @@ type DirectMessagePayload = {
   receiverId: string;
 };
 
+export function isSameAttachmentSet(
+  attachments: { id: string }[],
+  attachmentIds: string[],
+) {
+  const ids = new Set(attachmentIds);
+  return (
+    ids.size === attachmentIds.length &&
+    attachments.length === ids.size &&
+    attachments.every(({ id }) => ids.has(id))
+  );
+}
+
 type ServerMessagePayload = {
   channelId: string | null;
   content: string;

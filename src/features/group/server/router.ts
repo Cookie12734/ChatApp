@@ -1,8 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { isSameAttachmentSet } from "~/features/chat/server/message-idempotency";
 
 import {
   decodeMessageCursor,
+  encodeMessageCursor,
   getMessageCursorWhere,
   MESSAGE_PAGE_SIZE,
   prepareMessagePage,
@@ -17,7 +20,7 @@ import {
   assertNotBlocked,
   getBlockedPeerIds,
 } from "~/features/friend/server/blocking";
-import { sendPushNotification } from "~/features/notification/server/push";
+import { schedulePushNotification } from "~/features/notification/server/push";
 import { enforceTRPCRateLimits } from "~/server/api/rate-limit";
 import { publishChatEvent } from "~/server/chat-events";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -191,52 +194,166 @@ function addMemberImages<T extends { user: { userId: string } }>(member: T) {
   return { ...member, user: addProfileImageUrl(member.user) };
 }
 
-export const groupRouter = createTRPCRouter({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const currentUserId = ctx.session.user.id;
-    await enforceGroupRateLimit(currentUserId, "list", 120);
-
-    const groups = await ctx.db.groupConversation.findMany({
-      where: { members: { some: { userId: currentUserId } } },
-      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-      take: 100,
+function groupMessageSelect(currentUserId: string, blockedPeerIds: string[]) {
+  return {
+    attachments: {
       select: {
-        createdAt: true,
-        createdById: true,
+        fileName: true,
         id: true,
-        name: true,
-        updatedAt: true,
-        members: {
-          orderBy: { createdAt: "asc" },
-          select: memberSelect,
+        kind: true,
+        mimeType: true,
+        size: true,
+      },
+    },
+    clientId: true,
+    content: true,
+    createdAt: true,
+    groupId: true,
+    id: true,
+    replyToId: true,
+    senderId: true,
+    sender: { select: { id: true, name: true, userId: true } },
+    replyTo: {
+      where: { senderId: { notIn: blockedPeerIds } },
+      select: {
+        content: true,
+        createdAt: true,
+        id: true,
+        sender: {
+          select: { id: true, name: true, userId: true },
         },
-        messages: {
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          take: 1,
-          select: {
-            content: true,
-            createdAt: true,
-            id: true,
-            senderId: true,
+        senderId: true,
+      },
+    },
+    reactions: {
+      orderBy: [{ emoji: "asc" }, { createdAt: "asc" }],
+      select: { createdAt: true, emoji: true, userId: true },
+    },
+    savedBy: {
+      where: { userId: currentUserId },
+      select: { userId: true },
+    },
+  } satisfies Prisma.GroupMessageSelect;
+}
+
+type GroupMessage = Prisma.GroupMessageGetPayload<{
+  select: ReturnType<typeof groupMessageSelect>;
+}>;
+const addMessageImages = ({
+  replyTo,
+  savedBy,
+  sender,
+  ...message
+}: GroupMessage) => ({
+  ...message,
+  isSaved: savedBy.length > 0,
+  replyTo: replyTo
+    ? { ...replyTo, sender: addProfileImageUrl(replyTo.sender) }
+    : null,
+  sender: addProfileImageUrl(sender),
+});
+
+async function publishGroupChange(
+  database: Pick<
+    PrismaClient,
+    "groupConversationMember" | "chatEvent" | "$transaction"
+  >,
+  groupId: string,
+  removedUserIds: string[] = [],
+  messageId?: string,
+) {
+  const members = await database.groupConversationMember.findMany({
+    where: { groupId },
+    select: { userId: true },
+  });
+  await publishChatEvent(database, {
+    groupId,
+    kind: "group",
+    ...(messageId ? { messageId, change: "updated" as const } : {}),
+    userIds: [
+      ...new Set([...members.map(({ userId }) => userId), ...removedUserIds]),
+    ],
+  });
+}
+
+export const groupRouter = createTRPCRouter({
+  list: protectedProcedure
+    .input(z.object({ cursor: z.string().nullish() }).optional())
+    .query(async ({ ctx, input }) => {
+      const cursor = decodeMessageCursor(input?.cursor);
+      if (input?.cursor && !cursor)
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      const currentUserId = ctx.session.user.id;
+      await enforceGroupRateLimit(currentUserId, "list", 120);
+
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      });
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+
+      const groups = await ctx.db.groupConversation.findMany({
+        where: {
+          members: { some: { userId: currentUserId } },
+          ...(cursor
+            ? {
+                OR: [
+                  { updatedAt: { lt: cursor.createdAt } },
+                  { updatedAt: cursor.createdAt, id: { lt: cursor.id } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        take: 101,
+        select: {
+          createdAt: true,
+          createdById: true,
+          id: true,
+          name: true,
+          updatedAt: true,
+          members: {
+            orderBy: { createdAt: "asc" },
+            select: memberSelect,
+          },
+          messages: {
+            where: { senderId: { notIn: blockedPeerIds } },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 1,
+            select: {
+              content: true,
+              createdAt: true,
+              id: true,
+              senderId: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return {
-      groups: groups.map(({ members, messages, ...group }) => {
-        const membersWithImages = members.map(addMemberImages);
-        return {
-          ...group,
-          lastMessage: messages[0] ?? null,
-          members: membersWithImages,
-          myMembership: membersWithImages.find(
-            (member) => member.user.id === currentUserId,
-          ),
-        };
-      }),
-    };
-  }),
+      const boundary = groups.length > 100 ? groups[99] : undefined;
+      return {
+        currentUserId,
+        nextCursor: boundary
+          ? encodeMessageCursor({
+              createdAt: boundary.updatedAt,
+              id: boundary.id,
+            })
+          : undefined,
+        groups: groups.slice(0, 100).map(({ members, messages, ...group }) => {
+          const membersWithImages = members.map(addMemberImages);
+          return {
+            ...group,
+            lastMessage: messages[0] ?? null,
+            members: membersWithImages,
+            myMembership: membersWithImages.find(
+              (member) => member.user.id === currentUserId,
+            ),
+          };
+        }),
+      };
+    }),
 
   create: protectedProcedure
     .input(createInput)
@@ -298,7 +415,32 @@ export const groupRouter = createTRPCRouter({
 
         return { ...group, members: group.members.map(addMemberImages) };
       });
+      await publishGroupChange(ctx.db, result.id);
       return result;
+    }),
+
+  getMessage: protectedProcedure
+    .input(markReadInput)
+    .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      await enforceGroupRateLimit(currentUserId, "message-read", 240);
+      await requireGroupMembership(ctx.db, input.groupId, currentUserId);
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      });
+      const blockedPeerIds = getBlockedPeerIds(currentUserId, blocks);
+      const message = await ctx.db.groupMessage.findFirst({
+        where: {
+          id: input.messageId,
+          groupId: input.groupId,
+          senderId: { notIn: blockedPeerIds },
+        },
+        select: groupMessageSelect(currentUserId, blockedPeerIds),
+      });
+      return message ? addMessageImages(message) : null;
     }),
 
   getConversation: protectedProcedure
@@ -355,44 +497,7 @@ export const groupRouter = createTRPCRouter({
           },
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           take: MESSAGE_PAGE_SIZE + 1,
-          select: {
-            attachments: {
-              select: {
-                fileName: true,
-                id: true,
-                kind: true,
-                mimeType: true,
-                size: true,
-              },
-            },
-            clientId: true,
-            content: true,
-            createdAt: true,
-            groupId: true,
-            id: true,
-            replyToId: true,
-            senderId: true,
-            sender: { select: { id: true, name: true, userId: true } },
-            replyTo: {
-              select: {
-                content: true,
-                createdAt: true,
-                id: true,
-                sender: {
-                  select: { id: true, name: true, userId: true },
-                },
-                senderId: true,
-              },
-            },
-            reactions: {
-              orderBy: [{ emoji: "asc" }, { createdAt: "asc" }],
-              select: { createdAt: true, emoji: true, userId: true },
-            },
-            savedBy: {
-              where: { userId: currentUserId },
-              select: { userId: true },
-            },
-          },
+          select: groupMessageSelect(currentUserId, blockedPeerIds),
         }),
       ]);
 
@@ -403,16 +508,7 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      const messagePage = messages.map(
-        ({ replyTo, savedBy, sender, ...message }) => ({
-          ...message,
-          isSaved: savedBy.length > 0,
-          replyTo: replyTo
-            ? { ...replyTo, sender: addProfileImageUrl(replyTo.sender) }
-            : null,
-          sender: addProfileImageUrl(sender),
-        }),
-      );
+      const messagePage = messages.map(addMessageImages);
 
       return {
         currentUser: addProfileImageUrl(currentUser),
@@ -454,6 +550,7 @@ export const groupRouter = createTRPCRouter({
           }
         }
 
+        const newMessageId = crypto.randomUUID();
         const message = await tx.groupMessage.upsert({
           where: {
             senderId_clientId: {
@@ -462,6 +559,7 @@ export const groupRouter = createTRPCRouter({
             },
           },
           create: {
+            id: newMessageId,
             clientId: input.clientId,
             content,
             groupId: input.groupId,
@@ -482,6 +580,19 @@ export const groupRouter = createTRPCRouter({
             code: "CONFLICT",
             message: "同じ送信IDを別のメッセージには使用できません",
           });
+        }
+
+        if (message.id !== newMessageId) {
+          const attachments = await tx.messageAttachment.findMany({
+            where: { groupMessageId: message.id },
+            select: { id: true },
+          });
+          if (!isSameAttachmentSet(attachments, input.attachmentIds)) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "同じ送信IDで添付ファイルを変更できません",
+            });
+          }
         }
 
         if (input.attachmentIds.length > 0) {
@@ -508,10 +619,25 @@ export const groupRouter = createTRPCRouter({
               message: "添付ファイルが無効か期限切れです",
             });
           }
-          await tx.messageAttachment.updateMany({
-            where: { groupMessageId: null, id: { in: attachmentIds } },
+          const attached = await tx.messageAttachment.updateMany({
+            where: {
+              id: { in: attachmentIds },
+              directMessageId: null,
+              serverMessageId: null,
+              groupMessageId: null,
+              expiresAt: { gt: new Date() },
+            },
             data: { expiresAt: null, groupMessageId: message.id },
           });
+          if (
+            message.id === newMessageId &&
+            attached.count !== attachmentIds.length
+          ) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "添付ファイルは使用済みか期限切れです",
+            });
+          }
         }
 
         await tx.groupConversation.updateMany({
@@ -528,24 +654,26 @@ export const groupRouter = createTRPCRouter({
         });
         return {
           message,
+          created: message.id === newMessageId,
           recipientIds: groupMembers.map(({ userId }) => userId),
         };
       });
-      void publishChatEvent(ctx.db, {
+      if (!result.created) return result.message;
+      await publishChatEvent(ctx.db, {
         groupId: input.groupId,
         kind: "group",
+        messageId: result.message.id,
+        change: "created",
         userIds: [currentUserId, ...result.recipientIds],
       });
-      await Promise.all(
-        result.recipientIds.map((recipientId) =>
-          sendPushNotification(ctx.db, {
-            body: content,
-            kind: "GROUP_MESSAGE",
-            recipientId,
-            title: "グループDM",
-            url: "/",
-          }),
-        ),
+      result.recipientIds.forEach((recipientId) =>
+        schedulePushNotification(ctx.db, {
+          body: content,
+          kind: "GROUP_MESSAGE",
+          recipientId,
+          title: "グループDM",
+          url: "/",
+        }),
       );
       return result.message;
     }),
@@ -585,7 +713,7 @@ export const groupRouter = createTRPCRouter({
       await enforceGroupRateLimit(currentUserId, "update", 20);
       await requireGroupOwner(ctx.db, input.groupId, currentUserId);
 
-      return ctx.db.groupConversation.update({
+      const result = await ctx.db.groupConversation.update({
         where: { id: input.groupId },
         data: { name: input.name },
         select: {
@@ -596,6 +724,8 @@ export const groupRouter = createTRPCRouter({
           updatedAt: true,
         },
       });
+      await publishGroupChange(ctx.db, input.groupId);
+      return result;
     }),
 
   addMembers: protectedProcedure
@@ -604,7 +734,7 @@ export const groupRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       await enforceGroupRateLimit(currentUserId, "add-members", 20);
 
-      return ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         const lockedGroup = await tx.$queryRaw<Array<{ id: string }>>`
           SELECT "id"
           FROM "GroupConversation"
@@ -669,6 +799,8 @@ export const groupRouter = createTRPCRouter({
         });
         return { members: members.map(addMemberImages) };
       });
+      await publishGroupChange(ctx.db, input.groupId);
+      return result;
     }),
 
   removeMember: protectedProcedure
@@ -677,7 +809,7 @@ export const groupRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       await enforceGroupRateLimit(currentUserId, "remove-member", 20);
 
-      return ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         await requireGroupOwner(tx, input.groupId, currentUserId);
         const member = await tx.groupConversationMember.findUnique({
           where: {
@@ -715,6 +847,8 @@ export const groupRouter = createTRPCRouter({
         });
         return { ok: true };
       });
+      await publishGroupChange(ctx.db, input.groupId, [input.memberId]);
+      return result;
     }),
 
   leave: protectedProcedure
@@ -723,7 +857,13 @@ export const groupRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       await enforceGroupRateLimit(currentUserId, "leave", 20);
 
-      return ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
+        // Serialize the member count and deletion with member additions.
+        await tx.$queryRaw`
+          SELECT "id" FROM "GroupConversation"
+          WHERE "id" = ${input.groupId}
+          FOR UPDATE
+        `;
         const membership = await requireGroupMembership(
           tx,
           input.groupId,
@@ -757,6 +897,8 @@ export const groupRouter = createTRPCRouter({
         });
         return { deleted: false, ok: true };
       });
+      await publishGroupChange(ctx.db, input.groupId, [currentUserId]);
+      return result;
     }),
 
   toggleReaction: protectedProcedure
@@ -765,7 +907,7 @@ export const groupRouter = createTRPCRouter({
       const currentUserId = ctx.session.user.id;
       await enforceGroupRateLimit(currentUserId, "reaction", 60);
 
-      return ctx.db.$transaction(async (tx) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         await requireGroupMembership(tx, input.groupId, currentUserId);
         const message = await tx.groupMessage.findFirst({
           where: { groupId: input.groupId, id: input.messageId },
@@ -818,6 +960,8 @@ export const groupRouter = createTRPCRouter({
           reacted: !reaction,
         };
       });
+      await publishGroupChange(ctx.db, input.groupId, [], input.messageId);
+      return result;
     }),
 
   toggleSaved: protectedProcedure

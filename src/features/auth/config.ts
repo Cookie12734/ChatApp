@@ -7,7 +7,7 @@ import {
   type DefaultSession,
   type NextAuthConfig,
 } from "next-auth";
-import type {} from "next-auth/jwt";
+import { decode } from "next-auth/jwt";
 import { type Adapter, type AdapterUser } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
@@ -148,6 +148,24 @@ const adapter = {
 
 export const authConfig = {
   session: { strategy: "jwt" },
+  jwt: {
+    async decode(params) {
+      const token = await decode(params);
+      if (!token) return null;
+
+      // OAuth account linking also decodes the session, before callbacks.jwt.
+      const user = await getActiveSessionUser(
+        token.sub,
+        token.sessionVersion,
+        (id) =>
+          db.user.findUnique({
+            where: { id },
+            select: { id: true, sessionVersion: true, userId: true },
+          }),
+      );
+      return user ? token : null;
+    },
+  },
   providers: [
     DiscordProvider,
     Credentials({
