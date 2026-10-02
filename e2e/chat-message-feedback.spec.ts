@@ -129,9 +129,12 @@ test.describe.configure({ mode: "serial" });
 
 test("サーバーメンバーからサーバープロフィールを開ける", async ({ page }) => {
   await login(page);
-  const member = page.getByRole("button", {
-    name: "E2E Memberのプロフィールを開く",
-  });
+  const member = page
+    .getByRole("complementary", { name: "メンバー一覧" })
+    .getByRole("button", {
+      name: "E2E Memberのプロフィールを開く",
+      exact: true,
+    });
   await expect(member).toBeVisible();
   await member.click();
   const profile = page.getByRole("dialog", { name: "プロフィール" });
@@ -140,9 +143,194 @@ test("サーバーメンバーからサーバープロフィールを開ける",
   ).toBeVisible();
 });
 
+test("双方向ブロックでサーバープロフィールを伏せ、メンバー管理を維持する", async ({
+  page,
+}) => {
+  const where = { serverId_userId: { serverId, userId: memberId } };
+  const [originalMembership, originalUser] = await Promise.all([
+    prisma.serverMember.findUniqueOrThrow({
+      where,
+      select: { bio: true, nickname: true },
+    }),
+    prisma.user.findUniqueOrThrow({
+      where: { id: memberId },
+      select: { lastSeenAt: true, presenceStatus: true, userId: true },
+    }),
+  ]);
+  const nickname = `private_${userIdRunId.slice(-20)}`;
+  const bio = `private-server-bio-${runId}`;
+  try {
+    await prisma.serverMember.update({ where, data: { nickname, bio } });
+    await prisma.user.update({
+      where: { id: memberId },
+      data: { presenceStatus: "DND", lastSeenAt: new Date() },
+    });
+    await login(page);
+    const client = apiClient(page);
+    const visible = (await client.server.getMembers.query({ serverId })).find(
+      ({ userId }) => userId === memberId,
+    );
+    expect(visible).toMatchObject({
+      bio,
+      nickname,
+      user: { presenceStatus: "DND" },
+    });
+
+    for (const [blockerId, blockedId] of [
+      [ownerId, memberId],
+      [memberId, ownerId],
+    ] as const) {
+      const block = await prisma.userBlock.create({
+        data: { blockerId, blockedId },
+      });
+      try {
+        const members = await client.server.getMembers.query({ serverId });
+        const hidden = members.find(({ userId }) => userId === memberId);
+        expect(hidden).toMatchObject({
+          id: visible!.id,
+          role: "MEMBER",
+          bio: null,
+          nickname: null,
+          user: {
+            id: memberId,
+            name: "E2E Member",
+            presenceStatus: "INVISIBLE",
+          },
+        });
+        expect(hidden!.user).not.toHaveProperty("lastSeenAt");
+        await expect(
+          client.profile.getByUserId.query({
+            serverId,
+            userId: originalUser.userId,
+          }),
+        ).rejects.toMatchObject({ data: { code: "NOT_FOUND" } });
+
+        await page.reload();
+        const roster = page.getByRole("complementary", {
+          name: "メンバー一覧",
+        });
+        const member = roster.getByRole("button", {
+          name: "E2E Memberのプロフィールを開く",
+          exact: true,
+        });
+        await expect(member).toBeVisible();
+        await expect(member).toContainText("オフライン");
+        await expect(roster.getByText(nickname, { exact: true })).toHaveCount(
+          0,
+        );
+        await expect(roster.getByLabel("E2E Memberのロール")).toBeEnabled();
+        await member.click();
+        await expect(
+          page.getByRole("dialog", { name: "プロフィール" }).getByRole("alert"),
+        ).toContainText("プロフィールを表示できませんでした。");
+        await page.keyboard.press("Escape");
+      } finally {
+        await prisma.userBlock.delete({ where: { id: block.id } });
+      }
+    }
+    expect(
+      (await client.server.getMembers.query({ serverId })).find(
+        ({ userId }) => userId === memberId,
+      ),
+    ).toMatchObject({ bio, nickname });
+    await page.reload();
+    await expect(
+      page
+        .getByRole("complementary", { name: "メンバー一覧" })
+        .getByRole("button", {
+          name: `${nickname}のプロフィールを開く`,
+          exact: true,
+        }),
+    ).toBeVisible();
+  } finally {
+    await prisma.serverMember.update({ where, data: originalMembership });
+    await prisma.user.update({
+      where: { id: memberId },
+      data: {
+        lastSeenAt: originalUser.lastSeenAt,
+        presenceStatus: originalUser.presenceStatus,
+      },
+    });
+  }
+});
+
+test("拒否されたログイン試行は全体枠を消費せず別ユーザーがログインできる", async ({
+  page,
+}) => {
+  await login(page);
+  const globalKey = createRateLimitKey("auth:login:global", "credentials");
+  const before = await prisma.rateLimitBucket.findUniqueOrThrow({
+    where: { key: globalKey },
+  });
+  const csrf = (await (await page.request.get("/api/auth/csrf")).json()) as {
+    csrfToken: string;
+  };
+  const email = `missing-rate-${runId}@example.com`;
+  let lastUrl = "";
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const response = await page.request.post("/api/auth/callback/credentials", {
+      form: {
+        csrfToken: csrf.csrfToken,
+        email,
+        password: "invalid-password",
+        callbackUrl: "http://localhost:3000/",
+      },
+      headers: { "X-Auth-Return-Redirect": "1" },
+    });
+    lastUrl = ((await response.json()) as { url: string }).url;
+  }
+  expect(lastUrl).toContain("code=rate_limited");
+  const after = await prisma.rateLimitBucket.findUniqueOrThrow({
+    where: { key: globalKey },
+  });
+  expect(after.count - before.count).toBe(8);
+  await page.context().clearCookies();
+  await login(page, memberEmail);
+});
+
+test("添付APIはJSONとURLの容量上限を守り通常のリンクを送信できる", async ({
+  page,
+}) => {
+  await login(page);
+  const oversized = await page.request.post("/api/attachments", {
+    data: { url: `https://example.com/${"a".repeat(16 * 1024)}` },
+  });
+  expect(oversized.status()).toBe(413);
+  for (const url of [
+    `https://example.com/${"a".repeat(4096)}`,
+    `https://example.com/${"あ".repeat(500)}`,
+  ]) {
+    const response = await page.request.post("/api/attachments", {
+      data: { url },
+    });
+    expect(response.status()).toBe(400);
+  }
+  const url = `https://example.com/security-${runId}`;
+  const response = await page.request.post("/api/attachments", {
+    data: { url },
+  });
+  expect(response.status()).toBe(200);
+  const { attachment } = (await response.json()) as {
+    attachment: { id: string };
+  };
+  try {
+    expect(
+      await prisma.messageAttachment.findUniqueOrThrow({
+        where: { id: attachment.id },
+        select: { externalUrl: true, uploaderId: true },
+      }),
+    ).toEqual({ externalUrl: url, uploaderId: ownerId });
+  } finally {
+    await prisma.messageAttachment.deleteMany({
+      where: { id: attachment.id },
+    });
+  }
+});
+
 test("横断検索は入力を間引き、日本語変換の確定後だけ検索する", async ({
   page,
 }) => {
+  await page.clock.install();
   await login(page);
   await page.getByRole("button", { name: "横断検索", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "横断検索", exact: true });
@@ -160,8 +348,7 @@ test("横断検索は入力を間引き、日本語変換の確定後だけ検�
     >;
     searches.push(data[String(index)]?.json?.query ?? "");
   });
-  await page.clock.install();
-  await page.clock.pauseAt(new Date());
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   await input.fill("debounce-a");
   await page.clock.runFor(150);
   await input.fill("debounce-ab");
@@ -170,6 +357,9 @@ test("横断検索は入力を間引き、日本語変換の確定後だけ検�
   await page.clock.runFor(299);
   expect(searches).toEqual([]);
   await page.clock.runFor(100);
+  await expect(dialog.getByText("検索中…", { exact: true })).toBeVisible();
+  // Flush the batch timer registered after React commits the debounced query.
+  await page.clock.runFor(1);
   await expect.poll(() => searches).toEqual(["debounce-abc"]);
 
   await input.dispatchEvent("compositionstart", { data: "" });
@@ -181,6 +371,8 @@ test("横断検索は入力を間引き、日本語変換の確定後だけ検�
   await page.clock.runFor(299);
   expect(searches).toEqual(["debounce-abc"]);
   await page.clock.runFor(100);
+  await expect(dialog.getByText("検索中…", { exact: true })).toBeVisible();
+  await page.clock.runFor(1);
   await expect.poll(() => searches).toEqual(["debounce-abc", "日本語"]);
 
   await input.fill("cancelled-search");
@@ -1163,7 +1355,11 @@ test("下書きはアカウントを切り替えても他のユーザーへ表�
 }) => {
   await login(page);
   await page.evaluate(
-    ({ channelId, groupId }) => {
+    ({ channelId, groupId, memberId }) => {
+      localStorage.setItem(
+        `connect:draft:direct:${memberId}`,
+        "legacy direct secret",
+      );
       localStorage.setItem(
         `connect:draft:server:${channelId}`,
         "legacy server secret",
@@ -1173,7 +1369,7 @@ test("下書きはアカウントを切り替えても他のユーザーへ表�
         "legacy group secret",
       );
     },
-    { channelId, groupId },
+    { channelId, groupId, memberId },
   );
   await page.reload();
   const serverInput = page.locator("textarea[data-chat-input]");
@@ -1201,12 +1397,28 @@ test("下書きはアカウントを切り替えても他のユーザーへ表�
     )
     .toBe("owner group draft");
 
+  await page.goto("/");
+  await expect(serverInput).toHaveValue("");
+  await serverInput.fill("owner direct draft");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) => localStorage.getItem(key),
+        `connect:draft:${ownerId}:direct:${memberId}`,
+      ),
+    )
+    .toBe("owner direct draft");
+
+  await page.goto("about:blank");
   await page.context().clearCookies();
   await login(page, memberEmail);
   await expect(serverInput).toHaveValue("");
   dialog = await openGroup(page);
   await expect(dialog.getByPlaceholder("グループへメッセージ")).toHaveValue("");
+  await page.goto("/");
+  await expect(serverInput).toHaveValue("");
 
+  await page.goto("about:blank");
   await page.context().clearCookies();
   await login(page);
   await expect(serverInput).toHaveValue("owner server draft");
@@ -1214,6 +1426,8 @@ test("下書きはアカウントを切り替えても他のユーザーへ表�
   await expect(dialog.getByPlaceholder("グループへメッセージ")).toHaveValue(
     "owner group draft",
   );
+  await page.goto("/");
+  await expect(serverInput).toHaveValue("owner direct draft");
 });
 
 test("グループの返信引用にも双方向のブロックを適用する", async ({ page }) => {
@@ -2195,7 +2409,7 @@ test("添付の完了前にグループを切り替えても別の会話へ追�
         }),
       });
     });
-    await dialog.locator('input[aria-label="ファイルを追加"]').setInputFiles({
+    await dialog.locator('input[type="file"]').setInputFiles({
       name: "private.pdf",
       mimeType: "application/pdf",
       buffer: Buffer.from("%PDF-1.7"),
@@ -2208,16 +2422,16 @@ test("添付の完了前にグループを切り替えても別の会話へ追�
     await expect(
       dialog.getByRole("heading", { name: other.name!, exact: true }),
     ).toBeVisible();
-    await expect(
-      dialog.getByRole("list", { name: "選択済みの添付" }),
-    ).toHaveCount(0);
+    await expect(dialog.getByText("private.pdf", { exact: true })).toHaveCount(
+      0,
+    );
     await expect(
       dialog.getByRole("button", { name: "送信", exact: true }),
     ).toBeDisabled();
     const content = `safe-upload-switch-${runId}`;
     const input = dialog.getByPlaceholder("グループへメッセージ");
     await input.fill(content);
-    await input.press("Enter");
+    await dialog.getByRole("button", { name: "送信", exact: true }).click();
     await expect
       .poll(() =>
         prisma.groupMessage.count({ where: { groupId: other.id, content } }),
@@ -2818,8 +3032,11 @@ test("プロフィールアイコンからブロックしてメッセージと�
   await login(page);
 
   const memberAvatar = page
-    .getByRole("button", { name: "E2E Memberのプロフィールを開く" })
-    .last();
+    .getByRole("complementary", { name: "メンバー一覧" })
+    .getByRole("button", {
+      name: "E2E Memberのプロフィールを開く",
+      exact: true,
+    });
   await memberAvatar.click({ button: "right" });
   const blockButton = page.getByRole("menuitem", {
     name: "ブロック",

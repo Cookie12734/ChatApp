@@ -4,12 +4,14 @@ import { auth } from "~/features/auth";
 import { createAttachmentThumbnail } from "~/features/chat/server/attachment-thumbnail";
 import {
   getMessageAttachmentFileKind,
+  MAX_MESSAGE_ATTACHMENT_JSON_SIZE,
   MAX_MESSAGE_ATTACHMENT_SIZE,
   MESSAGE_ATTACHMENT_TTL_MS,
   normalizeAttachmentFileName,
   parseAttachmentUrl,
 } from "~/features/chat/server/message-attachment";
 import {
+  readLimitedRequestBody,
   readLimitedUploadFormData,
   UploadTooLargeError,
 } from "~/lib/static-image";
@@ -47,12 +49,20 @@ export async function POST(request: Request) {
     throw error;
   }
 
+  const isJson = (request.headers.get("content-type") ?? "").startsWith(
+    "application/json",
+  );
   try {
-    const contentType = request.headers.get("content-type") ?? "";
     let file: FormDataEntryValue | null = null;
     let rawUrl: unknown;
-    if (contentType.startsWith("application/json")) {
-      const payload = (await request.json()) as { url?: unknown };
+    if (isJson) {
+      const body = await readLimitedRequestBody(
+        request,
+        MAX_MESSAGE_ATTACHMENT_JSON_SIZE,
+      );
+      const payload = JSON.parse(new TextDecoder().decode(body)) as {
+        url?: unknown;
+      };
       rawUrl = payload.url;
     } else {
       const formData = await readLimitedUploadFormData(
@@ -130,10 +140,10 @@ export async function POST(request: Request) {
     }
 
     if (typeof rawUrl === "string") {
-      const url = parseAttachmentUrl(rawUrl.trim());
+      const url = parseAttachmentUrl(rawUrl);
       if (!url) {
         return NextResponse.json(
-          { message: "HTTPSのURLを入力してください" },
+          { message: "4096文字以内のHTTPSのURLを入力してください" },
           { status: 400 },
         );
       }
@@ -165,6 +175,12 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   } catch (error) {
+    if (isJson && error instanceof UploadTooLargeError) {
+      return NextResponse.json(
+        { message: "添付データが大きすぎます" },
+        { status: 413 },
+      );
+    }
     const message =
       error instanceof UploadTooLargeError
         ? "ファイルは8MB以内にしてください"

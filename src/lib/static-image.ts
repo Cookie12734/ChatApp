@@ -61,31 +61,36 @@ export async function readStaticImageDataUrl(file: File, maxFileSize: number) {
   return `data:${file.type};base64,${buffer.toString("base64")}`;
 }
 
-export async function readLimitedUploadFormData(
+export async function readLimitedRequestBody(
   request: Request,
-  maxFileSize: number,
+  maxBodySize: number,
 ) {
-  const maxBodySize = maxFileSize + multipartOverheadAllowance;
   const contentLength = Number(request.headers.get("content-length"));
 
   if (Number.isFinite(contentLength) && contentLength > maxBodySize) {
+    await request.body?.cancel().catch(() => undefined);
     throw new UploadTooLargeError();
   }
-  if (!request.body) return request.formData();
+  if (!request.body) return new Uint8Array();
 
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    size += value.byteLength;
-    if (size > maxBodySize) {
-      throw new UploadTooLargeError();
+      size += value.byteLength;
+      if (size > maxBodySize) {
+        await reader.cancel().catch(() => undefined);
+        throw new UploadTooLargeError();
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } finally {
+    reader.releaseLock();
   }
 
   const body = new Uint8Array(size);
@@ -94,6 +99,18 @@ export async function readLimitedUploadFormData(
     body.set(chunk, offset);
     offset += chunk.byteLength;
   }
+
+  return body;
+}
+
+export async function readLimitedUploadFormData(
+  request: Request,
+  maxFileSize: number,
+) {
+  const body = await readLimitedRequestBody(
+    request,
+    maxFileSize + multipartOverheadAllowance,
+  );
 
   return new Request(request.url, {
     body,

@@ -611,10 +611,11 @@ export const serverRouter = createTRPCRouter({
   getMembers: protectedProcedure
     .input(serverIdInput)
     .query(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
       const server = await ctx.db.chatServer.findFirst({
         where: {
           id: input.serverId,
-          members: { some: { userId: ctx.session.user.id } },
+          members: { some: { userId: currentUserId } },
         },
         select: {
           members: {
@@ -642,15 +643,28 @@ export const serverRouter = createTRPCRouter({
         });
       }
 
+      const blocks = await ctx.db.userBlock.findMany({
+        where: {
+          OR: [{ blockerId: currentUserId }, { blockedId: currentUserId }],
+        },
+        select: { blockedId: true, blockerId: true },
+      });
+      const blockedPeerIds = new Set(getBlockedPeerIds(currentUserId, blocks));
+
       return server.members.map((member) => {
         const { lastSeenAt, ...user } = member.user;
+        const isBlocked =
+          user.id !== currentUserId && blockedPeerIds.has(user.id);
 
         return {
           ...member,
+          // Keep the roster usable for moderation without exposing blocked profiles.
+          bio: isBlocked ? null : member.bio,
+          nickname: isBlocked ? null : member.nickname,
           user: {
             ...addProfileImageUrl(user),
             presenceStatus: getEffectivePresenceStatus(
-              user.presenceStatus,
+              isBlocked ? "INVISIBLE" : user.presenceStatus,
               lastSeenAt,
             ),
           },

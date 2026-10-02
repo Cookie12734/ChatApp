@@ -984,6 +984,7 @@ export function FriendChatPanel({
   useEffect(() => {
     setMessageContextMenu(null);
     setProfileContextMenu(null);
+    setReplyTarget(null);
     setEditingMessage(null);
     setIsPinnedMessagesOpen(false);
     setIsMemberListOpen(false);
@@ -1823,6 +1824,17 @@ export function FriendChatPanel({
     deleteServer.mutate({ serverId: selectedServer.server.id });
   };
 
+  const draftUserId =
+    currentServerUser?.id ?? directConversation?.currentUserId;
+  const directDraftKey =
+    draftUserId && selectedFriendId
+      ? `connect:draft:${draftUserId}:direct:${selectedFriendId}`
+      : undefined;
+  const serverDraftKey =
+    draftUserId && selectedServerChannel?.id
+      ? `connect:draft:${draftUserId}:server:${selectedServerChannel.id}`
+      : undefined;
+
   const handleSubmit = (draft: string) => {
     if (
       !selectedFriendId ||
@@ -1872,17 +1884,19 @@ export function FriendChatPanel({
               (pendingMessage) => pendingMessage.clientId !== clientId,
             ),
           );
-          if (
-            selectedFriendIdRef.current === friendId &&
-            !directComposerRef.current?.getValue()
+          if (selectedFriendIdRef.current === friendId) {
+            if (!directComposerRef.current?.getValue()) {
+              directComposerRef.current?.setValue(content);
+            }
+            setDirectAttachments(activeAttachments);
+            setMessage(getErrorMessage(error));
+            setReplyTarget(activeReply);
+          } else if (
+            selectedFriendIdRef.current !== friendId &&
+            directDraftKey
           ) {
-            directComposerRef.current?.setValue(content);
-          } else if (selectedFriendIdRef.current !== friendId) {
-            localStorage.setItem(`connect:draft:direct:${friendId}`, content);
+            localStorage.setItem(directDraftKey, content);
           }
-          setDirectAttachments(activeAttachments);
-          setMessage(getErrorMessage(error));
-          setReplyTarget(activeReply);
         },
         onSuccess: (savedMessage) => {
           setPendingDirectMessages((messages) =>
@@ -1953,17 +1967,19 @@ export function FriendChatPanel({
               (pendingMessage) => pendingMessage.clientId !== clientId,
             ),
           );
-          if (
-            selectedServerChannelIdRef.current === channelId &&
-            !serverComposerRef.current?.getValue()
+          if (selectedServerChannelIdRef.current === channelId) {
+            if (!serverComposerRef.current?.getValue()) {
+              serverComposerRef.current?.setValue(content);
+            }
+            setServerAttachments(activeAttachments);
+            setServerMessage(getErrorMessage(error));
+            setReplyTarget(activeReply);
+          } else if (
+            selectedServerChannelIdRef.current !== channelId &&
+            serverDraftKey
           ) {
-            serverComposerRef.current?.setValue(content);
-          } else if (selectedServerChannelIdRef.current !== channelId) {
-            localStorage.setItem(`connect:draft:server:${channelId}`, content);
+            localStorage.setItem(serverDraftKey, content);
           }
-          setServerAttachments(activeAttachments);
-          setServerMessage(getErrorMessage(error));
-          setReplyTarget(activeReply);
         },
         onSuccess: (savedMessage) => {
           setPendingServerMessages((messages) =>
@@ -3545,6 +3561,7 @@ export function FriendChatPanel({
                     attachments={serverAttachments}
                     attachmentsDisabled={sendServerMessage.isPending}
                     disabled={
+                      !serverDraftKey ||
                       !selectedServerChannel?.id ||
                       !canSendSelectedServerMessages
                     }
@@ -3560,11 +3577,7 @@ export function FriendChatPanel({
                         ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
                         : "閲覧のみのためメッセージを送信できません"
                     }
-                    storageKey={
-                      selectedServerChannel?.id
-                        ? `connect:draft:server:${selectedServerChannel.id}`
-                        : undefined
-                    }
+                    storageKey={serverDraftKey}
                   />
                 </>
               ) : isFriendsOpen ? null : (
@@ -3776,7 +3789,11 @@ export function FriendChatPanel({
                         ref={directComposerRef}
                         attachments={directAttachments}
                         attachmentsDisabled={sendMessage.isPending}
-                        disabled={!selectedFriendId || !canSendDirectMessage}
+                        disabled={
+                          !directDraftKey ||
+                          !selectedFriendId ||
+                          !canSendDirectMessage
+                        }
                         hasReply={replyTarget?.kind === "direct"}
                         onSubmit={handleSubmit}
                         onAttachmentsChange={setDirectAttachments}
@@ -3789,11 +3806,7 @@ export function FriendChatPanel({
                               ? `${getDisplayName(selectedFriend)} へメッセージを送信`
                               : "フレンドを選択してください"
                         }
-                        storageKey={
-                          selectedFriendId
-                            ? `connect:draft:direct:${selectedFriendId}`
-                            : undefined
-                        }
+                        storageKey={directDraftKey}
                       />
                     </>
                   ) : null}

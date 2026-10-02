@@ -1,4 +1,6 @@
 export const MAX_MESSAGE_ATTACHMENT_SIZE = 8 * 1024 * 1024;
+export const MAX_MESSAGE_ATTACHMENT_JSON_SIZE = 16 * 1024;
+export const MAX_MESSAGE_ATTACHMENT_URL_LENGTH = 4096;
 export const MESSAGE_ATTACHMENT_TTL_MS = 60 * 60 * 1000;
 
 type FileKind = "IMAGE" | "PDF";
@@ -47,11 +49,14 @@ export function normalizeAttachmentFileName(value: string) {
 }
 
 export function parseAttachmentUrl(value: string) {
+  if (value.length > MAX_MESSAGE_ATTACHMENT_URL_LENGTH) return undefined;
+
   try {
-    const url = new URL(value);
+    const url = new URL(value.trim());
     if (url.protocol !== "https:") return undefined;
     url.username = "";
     url.password = "";
+    if (url.href.length > MAX_MESSAGE_ATTACHMENT_URL_LENGTH) return undefined;
     return url;
   } catch {
     return undefined;

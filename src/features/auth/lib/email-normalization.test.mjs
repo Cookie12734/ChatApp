@@ -40,11 +40,6 @@ test("credential login limits cover both address and normalized email", () => {
     rules.map(({ limit, scope, subject }) => ({ limit, scope, subject })),
     [
       {
-        limit: 500,
-        scope: "auth:login:global",
-        subject: "credentials",
-      },
-      {
         limit: 20,
         scope: "auth:login:address",
         subject: "203.0.113.10",
@@ -53,6 +48,11 @@ test("credential login limits cover both address and normalized email", () => {
         limit: 8,
         scope: "auth:login:email",
         subject: "person@example.com",
+      },
+      {
+        limit: 500,
+        scope: "auth:login:global",
+        subject: "credentials",
       },
     ],
   );
@@ -63,13 +63,13 @@ test("an unknown address does not become one shared user bucket", () => {
     getCredentialsLoginRateLimitRules("person@example.com", "unknown").map(
       ({ scope }) => scope,
     ),
-    ["auth:login:global", "auth:login:email"],
+    ["auth:login:email", "auth:login:global"],
   );
 });
 
 test("signup and verification include shared global abuse ceilings", () => {
   assert.deepEqual(
-    getSignupRateLimitRules("person@example.com", "203.0.113.10")[0],
+    getSignupRateLimitRules("person@example.com", "203.0.113.10").at(-1),
     {
       limit: 100,
       scope: "auth:signup:global",
@@ -78,7 +78,9 @@ test("signup and verification include shared global abuse ceilings", () => {
     },
   );
   assert.deepEqual(
-    getVerificationEmailRateLimitRules("person@example.com", "203.0.113.10")[0],
+    getVerificationEmailRateLimitRules("person@example.com", "203.0.113.10").at(
+      -1,
+    ),
     {
       limit: 100,
       scope: "auth:verification:global",
@@ -95,9 +97,9 @@ test("password reset limits both requests and token consumption", () => {
       "203.0.113.10",
     ).map(({ limit, scope }) => ({ limit, scope })),
     [
-      { limit: 100, scope: "auth:password-reset-request:global" },
       { limit: 10, scope: "auth:password-reset-request:address" },
       { limit: 3, scope: "auth:password-reset-request:email" },
+      { limit: 100, scope: "auth:password-reset-request:global" },
     ],
   );
   assert.deepEqual(
@@ -105,9 +107,9 @@ test("password reset limits both requests and token consumption", () => {
       ({ limit, scope }) => ({ limit, scope }),
     ),
     [
-      { limit: 200, scope: "auth:password-reset:global" },
       { limit: 20, scope: "auth:password-reset:address" },
       { limit: 5, scope: "auth:password-reset:token" },
+      { limit: 200, scope: "auth:password-reset:global" },
     ],
   );
 });
@@ -127,9 +129,9 @@ test("email verification password checks have token and global ceilings", () => 
       "203.0.113.10",
     ).map(({ limit, scope }) => ({ limit, scope })),
     [
-      { limit: 200, scope: "auth:verify-token:global" },
       { limit: 20, scope: "auth:verify-token:address" },
       { limit: 5, scope: "auth:verify-token:token" },
+      { limit: 200, scope: "auth:verify-token:global" },
     ],
   );
 });

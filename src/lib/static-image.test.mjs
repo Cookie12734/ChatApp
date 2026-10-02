@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   decodeStaticImageDataUrl,
+  readLimitedRequestBody,
   readLimitedUploadFormData,
   readStaticImageDataUrl,
 } from "./static-image.ts";
@@ -49,13 +50,126 @@ test("readStaticImageDataUrl accepts only static PNG/JPG bytes", async () => {
 
 test("limited upload parsing rejects a multipart body before buffering it all", async () => {
   const formData = new FormData();
-  formData.set("icon", new File([new Uint8Array(70_000)], "icon.png"));
-  const request = new Request("http://localhost/upload", {
+  formData.set("icon", new File([new Uint8Array(100_000)], "icon.png"));
+  const encoded = new Request("http://localhost/upload", {
     body: formData,
+    method: "POST",
+  });
+  const bytes = new Uint8Array(await encoded.arrayBuffer());
+  let offset = 0;
+  let cancelled = false;
+  const request = new Request(encoded.url, {
+    body: new ReadableStream(
+      {
+        pull(controller) {
+          if (offset >= bytes.length) {
+            controller.close();
+            return;
+          }
+          const chunk = bytes.slice(offset, offset + 8192);
+          offset += chunk.length;
+          controller.enqueue(chunk);
+        },
+        cancel() {
+          cancelled = true;
+        },
+      },
+      { highWaterMark: 0 },
+    ),
+    duplex: "half",
+    headers: encoded.headers,
     method: "POST",
   });
 
   await assert.rejects(readLimitedUploadFormData(request, 1), /大きすぎ/);
+  assert.equal(cancelled, true);
+  assert.ok(offset < bytes.length);
+});
+
+test("limited body parsing accepts the byte limit and empty bodies", async () => {
+  assert.deepEqual(
+    await readLimitedRequestBody(
+      new Request("http://localhost/upload", { body: "abcd", method: "POST" }),
+      4,
+    ),
+    encoder.encode("abcd"),
+  );
+  assert.deepEqual(
+    await readLimitedRequestBody(new Request("http://localhost/upload"), 4),
+    new Uint8Array(),
+  );
+});
+
+test("limited body parsing rejects declared oversized bodies before reading", async () => {
+  let pulls = 0;
+  let cancelled = false;
+  const body = new ReadableStream(
+    {
+      pull(controller) {
+        pulls++;
+        controller.enqueue(encoder.encode("data"));
+      },
+      cancel() {
+        cancelled = true;
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const request = new Request("http://localhost/upload", {
+    body,
+    duplex: "half",
+    headers: { "content-length": "5" },
+    method: "POST",
+  });
+  await assert.rejects(readLimitedRequestBody(request, 4), /大きすぎ/);
+  assert.equal(pulls, 0);
+  assert.equal(cancelled, true);
+});
+
+for (const contentLength of [undefined, "1", "invalid"]) {
+  test(`limited body parsing counts streamed bytes despite content-length ${contentLength}`, async () => {
+    let pulls = 0;
+    let cancelled = false;
+    const body = new ReadableStream(
+      {
+        pull(controller) {
+          pulls++;
+          controller.enqueue(encoder.encode("abc"));
+        },
+        cancel() {
+          cancelled = true;
+        },
+      },
+      { highWaterMark: 0 },
+    );
+    const request = new Request("http://localhost/upload", {
+      body,
+      duplex: "half",
+      headers: contentLength ? { "content-length": contentLength } : {},
+      method: "POST",
+    });
+    await assert.rejects(readLimitedRequestBody(request, 4), /大きすぎ/);
+    assert.equal(pulls, 2);
+    assert.equal(cancelled, true);
+  });
+}
+
+test("limited upload parsing preserves valid multipart fields and files", async () => {
+  const formData = new FormData();
+  formData.set(
+    "file",
+    new File(["%PDF-1.7"], "document.pdf", { type: "application/pdf" }),
+  );
+  formData.set("url", "https://example.com");
+  const parsed = await readLimitedUploadFormData(
+    new Request("http://localhost/upload", { body: formData, method: "POST" }),
+    1024,
+  );
+  assert.equal(parsed.get("url"), "https://example.com");
+  const file = parsed.get("file");
+  assert.ok(file instanceof File);
+  assert.equal(file.name, "document.pdf");
+  assert.equal(await file.text(), "%PDF-1.7");
 });
 
 test("stored static images decode without accepting arbitrary data URLs", () => {
@@ -64,5 +178,8 @@ test("stored static images decode without accepting arbitrary data URLs", () => 
   );
 
   assert.equal(decoded?.contentType, "image/png");
-  assert.equal(decodeStaticImageDataUrl("data:text/html;base64,PGgxPg=="), null);
+  assert.equal(
+    decodeStaticImageDataUrl("data:text/html;base64,PGgxPg=="),
+    null,
+  );
 });

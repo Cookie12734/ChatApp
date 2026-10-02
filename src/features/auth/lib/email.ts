@@ -38,7 +38,7 @@ async function sendEmail(input: {
     html: input.html,
   });
 
-  const failed = result.rejected.concat(result.pending).filter(Boolean);
+  const failed = result.rejected.concat(result.pending ?? []).filter(Boolean);
   if (failed.length || result.accepted.length === 0) {
     throw new Error(
       `メールの送信に失敗しました: ${failed.map(String).join(", ") || "accepted recipient is empty"}`,

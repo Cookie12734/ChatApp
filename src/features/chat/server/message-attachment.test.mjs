@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getMessageAttachmentFileKind,
+  MAX_MESSAGE_ATTACHMENT_URL_LENGTH,
   normalizeAttachmentFileName,
   parseAttachmentUrl,
 } from "./message-attachment.ts";
@@ -37,5 +38,26 @@ test("attachment names and URL cards are normalized safely", () => {
   assert.equal(
     parseAttachmentUrl("https://user:pass@example.com/a")?.href,
     "https://example.com/a",
+  );
+});
+
+test("attachment URLs enforce limits before and after normalization", () => {
+  const prefix = "https://example.com/";
+  const atLimit =
+    prefix + "a".repeat(MAX_MESSAGE_ATTACHMENT_URL_LENGTH - prefix.length);
+  assert.equal(parseAttachmentUrl(atLimit)?.href, atLimit);
+  assert.equal(parseAttachmentUrl(`${atLimit}a`), undefined);
+  assert.equal(parseAttachmentUrl(` ${atLimit} `), undefined);
+
+  // URL serialization percent-encodes Unicode, expanding its stored length.
+  const expandingUrl = prefix + "あ".repeat(500);
+  assert.ok(expandingUrl.length < MAX_MESSAGE_ATTACHMENT_URL_LENGTH);
+  assert.ok(
+    new URL(expandingUrl).href.length > MAX_MESSAGE_ATTACHMENT_URL_LENGTH,
+  );
+  assert.equal(parseAttachmentUrl(expandingUrl), undefined);
+  assert.equal(
+    parseAttachmentUrl("  https://example.com/a  ")?.href,
+    `${prefix}a`,
   );
 });

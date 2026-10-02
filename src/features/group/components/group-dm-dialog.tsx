@@ -21,6 +21,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -103,6 +104,12 @@ export function GroupDmDialog({
   const [isUploading, setIsUploading] = useState(false);
   const utils = api.useUtils();
   const groups = api.group.list.useQuery(undefined, { enabled: open });
+  const draftStorageKey =
+    groups.data?.currentUserId && selectedGroupId
+      ? `connect:draft:${groups.data.currentUserId}:group:${selectedGroupId}`
+      : undefined;
+  const activeDraftKeyRef = useRef(draftStorageKey);
+  activeDraftKeyRef.current = draftStorageKey;
   const friends = api.chat.getFriends.useQuery(undefined, {
     enabled: open && isCreating,
   });
@@ -128,8 +135,7 @@ export function GroupDmDialog({
       setDraft("");
       setReplyTo(undefined);
       setAttachments([]);
-      if (selectedGroupId)
-        localStorage.removeItem(`connect:draft:group:${selectedGroupId}`);
+      if (draftStorageKey) localStorage.removeItem(draftStorageKey);
       await Promise.all([
         utils.group.getConversation.invalidate(),
         utils.group.list.invalidate(),
@@ -170,23 +176,25 @@ export function GroupDmDialog({
   }, [groups.data?.groups, selectedGroupId]);
 
   useEffect(() => {
-    if (!selectedGroupId) return;
     setDraft(
-      localStorage.getItem(`connect:draft:group:${selectedGroupId}`) ?? "",
+      draftStorageKey ? (localStorage.getItem(draftStorageKey) ?? "") : "",
     );
     setReplyTo(undefined);
     setAttachments([]);
-  }, [selectedGroupId]);
+    setUrlDraft("");
+    setShowUrlInput(false);
+  }, [draftStorageKey]);
 
   const updateDraft = (value: string) => {
     setDraft(value);
-    if (!selectedGroupId) return;
-    const key = `connect:draft:group:${selectedGroupId}`;
-    if (value) localStorage.setItem(key, value);
-    else localStorage.removeItem(key);
+    if (!draftStorageKey) return;
+    if (value) localStorage.setItem(draftStorageKey, value);
+    else localStorage.removeItem(draftStorageKey);
   };
 
   const uploadFile = async (file: File) => {
+    const targetDraftKey = draftStorageKey;
+    if (!targetDraftKey) return;
     setMessage(undefined);
     setIsUploading(true);
     try {
@@ -200,11 +208,13 @@ export function GroupDmDialog({
         attachment?: PendingAttachment;
         message?: string;
       };
+      if (activeDraftKeyRef.current !== targetDraftKey) return;
       if (!response.ok || !result.attachment) {
         throw new Error(result.message ?? "添付できませんでした");
       }
       setAttachments((current) => [...current, result.attachment!].slice(0, 4));
     } catch (error) {
+      if (activeDraftKeyRef.current !== targetDraftKey) return;
       setMessage(
         error instanceof Error ? error.message : "添付できませんでした",
       );
@@ -214,7 +224,8 @@ export function GroupDmDialog({
   };
 
   const addUrl = async () => {
-    if (!urlDraft.trim()) return;
+    const targetDraftKey = draftStorageKey;
+    if (!urlDraft.trim() || !targetDraftKey) return;
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -227,11 +238,13 @@ export function GroupDmDialog({
         attachment?: PendingAttachment;
         message?: string;
       };
+      if (activeDraftKeyRef.current !== targetDraftKey) return;
       if (!response.ok || !result.attachment) throw new Error(result.message);
       setAttachments((current) => [...current, result.attachment!].slice(0, 4));
       setUrlDraft("");
       setShowUrlInput(false);
     } catch (error) {
+      if (activeDraftKeyRef.current !== targetDraftKey) return;
       setMessage(
         error instanceof Error ? error.message : "URLを追加できませんでした",
       );

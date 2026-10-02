@@ -69,7 +69,10 @@ async function enforceRateLimit(rule: RateLimitRule) {
 }
 
 export async function enforceRateLimits(rules: RateLimitRule[]) {
-  await Promise.all(rules.map((rule) => enforceRateLimit(rule)));
+  // A rejected specific rule must not consume a later shared abuse ceiling.
+  for (const rule of rules) {
+    await enforceRateLimit(rule);
+  }
 }
 
 export async function getRequestRateLimitSubject() {
