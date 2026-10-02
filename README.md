@@ -4,6 +4,15 @@
 
 フレンドとのダイレクトメッセージ、話題別のランダムマッチング、サーバー形式のグループチャットを一つの画面から利用できます。
 
+## 開発の入口
+
+- 作業時のルールと参照先：[AGENTS.md](AGENTS.md)
+- 検証・Skill適用・DB操作の手順：[docs/agent-workflow.md](docs/agent-workflow.md)
+- 現行UIの設計：[design.md](design.md)
+- 監査の記録：[docs/agent-instructions-audit.md](docs/agent-instructions-audit.md)
+
+`npm run dev`は起動前にDBへmigrationを適用します。接続先を確認してから実行してください。
+
 ## 制作背景
 
 このアプリケーションは、日本での若年層の自殺率が高いことに注目し、気軽に相談できる環境を作りたいという思いから作成しました。
@@ -75,7 +84,7 @@ chat-app/
 ├── src/
 │   ├── app/             # App RouterのページとRoute Handler
 │   ├── components/      # 共通UI
-│   ├── features/        # auth、chat、friend、profile、server
+│   ├── features/        # auth、chat、friend、group、moderation、notification、profile、server
 │   ├── lib/             # 共通処理
 │   ├── server/          # DB、tRPC、SSE、レート制限
 │   ├── styles/          # グローバルスタイル

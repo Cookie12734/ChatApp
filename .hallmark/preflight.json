@@ -1,10 +1,17 @@
 {
-  "date": "2026-08-12",
+  "date": "2026-10-02",
   "framework": "Next.js 15 App Router with React 19",
   "styling": "Tailwind CSS 4 with global CSS tokens",
-  "font": "serif display hierarchy with existing system UI body and native mono",
+  "font": "native UI sans headings and body; native mono for IDs and technical values",
   "palette": "warm paper, deep green, rust accent",
   "motion": "motion-cut; no animation library",
   "spacing": "4-point scale",
-  "preserve": ["palette", "routes", "component ownership"]
+  "preserve": [
+    "palette",
+    "vertical server rail",
+    "routes",
+    "component ownership"
+  ],
+  "sources": ["design.md", "tokens.css", "src/styles/globals.css"],
+  "notes": "Supplemental cache only. design.md and current implementation take precedence. tokens.css retains a legacy serif --font-display token; it is not used by src."
 }
