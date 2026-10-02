@@ -11,6 +11,11 @@ import {
   useState,
 } from "react";
 
+import {
+  MessageAttachmentPicker,
+  type PendingAttachment,
+} from "./message-attachment-picker";
+
 export type ChatComposerHandle = {
   clear: () => void;
   getValue: () => string;
@@ -18,9 +23,12 @@ export type ChatComposerHandle = {
 };
 
 type ChatComposerProps = {
+  attachments: PendingAttachment[];
+  attachmentsDisabled: boolean;
   disabled: boolean;
-  hasAttachments: boolean;
   hasReply: boolean;
+  onAttachmentsChange: (attachments: PendingAttachment[]) => void;
+  onAttachmentError: (message: string) => void;
   onSubmit: (value: string) => void;
   onValueChange?: (value: string) => void;
   placeholder: string;
@@ -40,9 +48,12 @@ function persistDraft({ key, value }: PendingDraftSave) {
 const ChatComposerBase = forwardRef<ChatComposerHandle, ChatComposerProps>(
   function ChatComposer(
     {
+      attachments,
+      attachmentsDisabled,
       disabled,
-      hasAttachments,
       hasReply,
+      onAttachmentsChange,
+      onAttachmentError,
       onSubmit,
       onValueChange,
       placeholder,
@@ -51,6 +62,7 @@ const ChatComposerBase = forwardRef<ChatComposerHandle, ChatComposerProps>(
     ref,
   ) {
     const [value, setValue] = useState("");
+    const hasAttachments = attachments.length > 0;
     const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingSaveRef = useRef<PendingDraftSave | null>(null);
 
@@ -109,40 +121,49 @@ const ChatComposerBase = forwardRef<ChatComposerHandle, ChatComposerProps>(
 
     return (
       <form
+        data-chat-composer
+        noValidate
         onSubmit={(event) => {
           event.preventDefault();
           if (disabled || (!value.trim() && !hasAttachments)) return;
           onSubmit(value);
         }}
-        className={`border-connect-ink/15 bg-connect-paper flex items-end gap-2 border px-3 py-1.5 ${hasReply ? "rounded-b-md" : "rounded-md"}`}
+        className={`border-connect-ink/15 bg-connect-paper focus-within:border-connect-action min-w-0 border px-2 py-1.5 ${hasReply ? "rounded-b-md" : "rounded-md"}`}
       >
-        <textarea
-          data-chat-input
-          value={value}
-          onChange={(event) => updateValue(event.target.value)}
-          onKeyDown={(event) => {
-            if (
-              event.key === "Enter" &&
-              !event.shiftKey &&
-              !event.nativeEvent.isComposing
-            ) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          className="text-connect-ink placeholder:text-connect-placeholder max-h-36 min-h-10 flex-1 resize-none bg-transparent py-2 leading-6 outline-none focus:outline-none focus-visible:outline-none"
-          placeholder={placeholder}
-          disabled={disabled}
-          maxLength={1000}
-        />
-        <button
-          type="submit"
-          disabled={disabled || (!value.trim() && !hasAttachments)}
-          className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="送信"
+        <MessageAttachmentPicker
+          attachments={attachments}
+          disabled={disabled || attachmentsDisabled}
+          onChange={onAttachmentsChange}
+          onError={onAttachmentError}
         >
-          <Send className="h-5 w-5" aria-hidden="true" />
-        </button>
+          <textarea
+            data-chat-input
+            value={value}
+            onChange={(event) => updateValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing
+              ) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            className="text-connect-ink placeholder:text-connect-placeholder focus-visible:ring-connect-action max-h-36 min-h-11 min-w-0 flex-1 resize-none rounded-sm bg-transparent py-2 leading-6 outline-none focus-visible:ring-2"
+            placeholder={placeholder}
+            disabled={disabled}
+            maxLength={1000}
+          />
+          <button
+            type="submit"
+            disabled={disabled || (!value.trim() && !hasAttachments)}
+            className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 focus-visible:outline-connect-action flex size-11 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="送信"
+          >
+            <Send className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </MessageAttachmentPicker>
       </form>
     );
   },

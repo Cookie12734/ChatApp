@@ -49,10 +49,7 @@ import {
 } from "~/features/chat/components/chat-composer";
 import { ChatQueryError } from "~/features/chat/components/chat-query-error";
 import { GlobalSearchDialog } from "~/features/chat/components/global-search-dialog";
-import {
-  MessageAttachmentPicker,
-  type PendingAttachment,
-} from "~/features/chat/components/message-attachment-picker";
+import { type PendingAttachment } from "~/features/chat/components/message-attachment-picker";
 import {
   ExternalLinkDialog,
   PinnedMessagesDialog,
@@ -217,7 +214,7 @@ function MessageAttachmentList({
               className="border-connect-ink/15 bg-connect-paper overflow-hidden rounded-md border"
             >
               <Image
-                src={href}
+                src={`${href}?preview=1`}
                 alt={attachment.fileName}
                 width={640}
                 height={480}
@@ -3543,28 +3540,21 @@ export function FriendChatPanel({
                         </button>
                       </div>
                     )}
-                  {canSendSelectedServerMessages && (
-                    <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
-                      <MessageAttachmentPicker
-                        attachments={serverAttachments}
-                        disabled={sendServerMessage.isPending}
-                        onChange={setServerAttachments}
-                        onError={setServerMessage}
-                      />
-                    </div>
-                  )}
                   <ChatComposer
                     ref={serverComposerRef}
+                    attachments={serverAttachments}
+                    attachmentsDisabled={sendServerMessage.isPending}
                     disabled={
                       !selectedServerChannel?.id ||
                       !canSendSelectedServerMessages
                     }
-                    hasAttachments={serverAttachments.length > 0}
                     hasReply={
                       replyTarget?.kind === "server" &&
                       canSendSelectedServerMessages
                     }
                     onSubmit={handleServerSubmit}
+                    onAttachmentsChange={setServerAttachments}
+                    onAttachmentError={setServerMessage}
                     placeholder={
                       canSendSelectedServerMessages
                         ? `#${selectedServerChannel?.name ?? "general"} へメッセージを送信`
@@ -3775,16 +3765,6 @@ export function FriendChatPanel({
                           </button>
                         </div>
                       )}
-                      {canSendDirectMessage && (
-                        <div className="border-connect-ink/15 bg-connect-surface mb-2 rounded-md border p-3">
-                          <MessageAttachmentPicker
-                            attachments={directAttachments}
-                            disabled={sendMessage.isPending}
-                            onChange={setDirectAttachments}
-                            onError={setMessage}
-                          />
-                        </div>
-                      )}
                       <div className="text-connect-neutral mb-2 min-h-5 px-1 text-sm">
                         {typingUserName
                           ? `${typingUserName} が入力中...`
@@ -3794,10 +3774,13 @@ export function FriendChatPanel({
                       </div>
                       <ChatComposer
                         ref={directComposerRef}
+                        attachments={directAttachments}
+                        attachmentsDisabled={sendMessage.isPending}
                         disabled={!selectedFriendId || !canSendDirectMessage}
-                        hasAttachments={directAttachments.length > 0}
                         hasReply={replyTarget?.kind === "direct"}
                         onSubmit={handleSubmit}
+                        onAttachmentsChange={setDirectAttachments}
+                        onAttachmentError={setMessage}
                         onValueChange={handleDirectDraftChange}
                         placeholder={
                           !canSendDirectMessage
@@ -3822,6 +3805,7 @@ export function FriendChatPanel({
           {selectedServer && (
             <ServerMemberList
               currentUserId={currentServerUser?.id}
+              serverId={selectedServer.server.id}
               currentRole={selectedServer.role}
               isOpen={isMemberListOpen}
               isRemoving={removeServerMember.isPending}
@@ -3831,7 +3815,6 @@ export function FriendChatPanel({
               onProfileContextMenu={openProfileContextMenu}
               onRemove={handleRemoveServerMember}
               onUpdateRole={handleUpdateServerMemberRole}
-              serverId={selectedServer.server.id}
             />
           )}
         </div>
@@ -4194,8 +4177,7 @@ export function FriendChatPanel({
       </Dialog>
 
       <PinnedMessagesDialog
-        isLoading={serverConversation.isLoading}
-        messages={serverConversationData?.pinnedMessages}
+        channelId={selectedServerChannel?.id}
         onOpenChange={setIsPinnedMessagesOpen}
         onOpenLink={setPendingExternalLink}
         onProfileContextMenu={openProfileContextMenu}

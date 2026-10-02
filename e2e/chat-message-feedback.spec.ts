@@ -75,7 +75,70 @@ async function openGroup(page: Page) {
   return dialog;
 }
 
+async function openAttachmentConversation(
+  page: Page,
+  kind: "direct" | "server",
+) {
+  await login(page);
+  if (kind === "direct") {
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /E2E Member/ })
+      .first()
+      .click();
+  }
+  await expect(page.locator("textarea[data-chat-input]")).toBeEnabled();
+}
+
+async function chooseAttachmentFiles(
+  page: Page,
+  files: Array<{ name: string; mimeType: string; buffer: Buffer }>,
+) {
+  const trigger = page.getByRole("button", { name: "添付を追加", exact: true });
+  await trigger.focus();
+  await trigger.press("Enter");
+  const upload = page.getByRole("menuitem", {
+    name: "ファイルをアップロード",
+    exact: true,
+  });
+  await expect(upload).toBeFocused();
+  const chooser = page.waitForEvent("filechooser");
+  await upload.press("Enter");
+  await (await chooser).setFiles(files);
+}
+
+async function cleanPickerAttachments(prefix: string) {
+  const attachments = await prisma.messageAttachment.findMany({
+    where: { uploaderId: ownerId, fileName: { startsWith: prefix } },
+    select: { id: true, directMessageId: true, serverMessageId: true },
+  });
+  const directIds = attachments.flatMap(({ directMessageId }) =>
+    directMessageId ? [directMessageId] : [],
+  );
+  const serverIds = attachments.flatMap(({ serverMessageId }) =>
+    serverMessageId ? [serverMessageId] : [],
+  );
+  await prisma.directMessage.deleteMany({ where: { id: { in: directIds } } });
+  await prisma.serverMessage.deleteMany({ where: { id: { in: serverIds } } });
+  await prisma.messageAttachment.deleteMany({
+    where: { id: { in: attachments.map(({ id }) => id) } },
+  });
+}
+
 test.describe.configure({ mode: "serial" });
+
+test("サーバーメンバーからサーバープロフィールを開ける", async ({ page }) => {
+  await login(page);
+  const member = page.getByRole("button", {
+    name: "E2E Memberのプロフィールを開く",
+  });
+  await expect(member).toBeVisible();
+  await member.click();
+  const profile = page.getByRole("dialog", { name: "プロフィール" });
+  await expect(
+    profile.getByRole("heading", { name: "E2E Member", exact: true }),
+  ).toBeVisible();
+});
 
 test("横断検索は入力を間引き、日本語変換の確定後だけ検索する", async ({
   page,
@@ -251,6 +314,10 @@ test("画像プレビューは縮小して保存し原本と同じ閲覧制限�
     try {
       expect((await peer.request.get(`${url}?preview=1`)).status()).toBe(200);
       await page.goto("/");
+      await page
+        .getByRole("button", { name: /E2E Member/ })
+        .first()
+        .click();
       const image = page.getByAltText("preview.png", { exact: true });
       await expect(image).toBeVisible();
       await expect(image).toHaveAttribute("src", /preview=1/);
@@ -385,6 +452,350 @@ test.afterAll(async () => {
     await prisma.groupConversation.deleteMany({ where: { id: groupId } });
   await prisma.user.deleteMany({ where: { id: { in: [ownerId, memberId] } } });
   await prisma.$disconnect();
+});
+
+for (const kind of ["direct", "server"] as const) {
+  for (const width of [375, 768, 1440]) {
+    test(`${kind}の添付メニューを入力欄の左からキーボードで操作できる (${width}px)`, async ({
+      page,
+    }, testInfo) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openAttachmentConversation(page, kind);
+      const trigger = page.getByRole("button", {
+        name: "添付を追加",
+        exact: true,
+      });
+      const input = page.locator("textarea[data-chat-input]");
+      await expect(trigger).toBeVisible();
+      await expect(page.getByLabel("HTTPS URL", { exact: true })).toHaveCount(
+        0,
+      );
+      await expect(
+        page.getByRole("list", { name: "選択済みの添付" }),
+      ).toHaveCount(0);
+      await expect(page.getByText("添付", { exact: true })).toHaveCount(0);
+      const triggerBox = await trigger.boundingBox();
+      const inputBox = await input.boundingBox();
+      expect(triggerBox).not.toBeNull();
+      expect(inputBox).not.toBeNull();
+      expect(triggerBox!.x + triggerBox!.width).toBeLessThanOrEqual(
+        inputBox!.x,
+      );
+
+      await trigger.focus();
+      await trigger.press("Enter");
+      const upload = page.getByRole("menuitem", {
+        name: "ファイルをアップロード",
+        exact: true,
+      });
+      const url = page.getByRole("menuitem", {
+        name: "URLカードを追加",
+        exact: true,
+      });
+      await expect(upload).toBeFocused();
+      await upload.press("ArrowDown");
+      await expect(url).toBeFocused();
+      const menuBox = await page.getByRole("menu").boundingBox();
+      expect(menuBox).not.toBeNull();
+      expect(menuBox!.x).toBeGreaterThanOrEqual(0);
+      expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(width);
+      if (width === 375 || width === 1440) {
+        await page.screenshot({
+          path: testInfo.outputPath(`attachment-menu-${kind}-${width}.png`),
+        });
+      }
+      await url.press("Escape");
+      await expect(page.getByRole("menu")).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      await trigger.press("Space");
+      await expect(upload).toBeFocused();
+      await upload.press("ArrowDown");
+      await url.press("Enter");
+      await expect(page.getByLabel("HTTPS URL", { exact: true })).toBeFocused();
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth,
+        ),
+      ).toBe(true);
+      await page.getByLabel("HTTPS URL", { exact: true }).press("Escape");
+      await expect(page.getByLabel("HTTPS URL", { exact: true })).toHaveCount(
+        0,
+      );
+      await expect(trigger).toBeFocused();
+      await input.fill("変換中の下書き");
+      await input.dispatchEvent("compositionstart", { data: "" });
+      await input.dispatchEvent("keydown", {
+        key: "Enter",
+        code: "Enter",
+        isComposing: true,
+        keyCode: 229,
+      });
+      await expect(input).toHaveValue("変換中の下書き");
+      await input.dispatchEvent("compositionend", { data: "変換中の下書き" });
+      await input.press("Shift+Enter");
+      await expect(input).toHaveValue("変換中の下書き\n");
+      await input.fill("");
+    });
+  }
+
+  test(`${kind}の＋から画像とPDFを選択し削除後に添付だけを送信できる`, async ({
+    page,
+  }, testInfo) => {
+    const prefix = `${kind}-picker-files-${runId}`;
+    const imageName = `${prefix}.png`;
+    const pdfName = `${prefix}.pdf`;
+    const image = await sharp({
+      create: { width: 48, height: 48, channels: 3, background: "#446633" },
+    })
+      .png()
+      .toBuffer();
+    try {
+      await openAttachmentConversation(page, kind);
+      const fileInput = page.getByLabel("ファイルを追加", { exact: true });
+      await expect(fileInput).toHaveAttribute("multiple", "");
+      await expect(fileInput).toHaveAttribute(
+        "accept",
+        "image/png,image/jpeg,image/gif,image/webp,application/pdf",
+      );
+      await chooseAttachmentFiles(page, [
+        { name: imageName, mimeType: "image/png", buffer: image },
+        {
+          name: pdfName,
+          mimeType: "application/pdf",
+          buffer: Buffer.from("%PDF-1.7\n%%EOF"),
+        },
+      ]);
+      const selected = page.getByRole("list", { name: "選択済みの添付" });
+      await expect(selected.getByRole("listitem")).toHaveCount(2, {
+        timeout: 15_000,
+      });
+      for (const width of [375, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(selected).toBeVisible();
+        await page.screenshot({
+          path: testInfo.outputPath(
+            `attachments-selected-${kind}-${width}.png`,
+          ),
+        });
+      }
+      await selected
+        .getByRole("button", { name: `${imageName}を削除` })
+        .click();
+      await expect(selected.getByRole("listitem")).toHaveCount(1);
+      await expect(selected.getByText(imageName, { exact: true })).toHaveCount(
+        0,
+      );
+      const input = page.locator("textarea[data-chat-input]");
+      await expect(input).toHaveValue("");
+      const send = page.getByRole("button", { name: "送信", exact: true });
+      await expect(send).toBeEnabled();
+      await send.click();
+      await expect(selected).toHaveCount(0);
+      await expect
+        .poll(async () => {
+          const attached = await prisma.messageAttachment.findFirst({
+            where: { uploaderId: ownerId, fileName: pdfName },
+          });
+          const messageId =
+            kind === "direct"
+              ? attached?.directMessageId
+              : attached?.serverMessageId;
+          if (!messageId) return null;
+          const message =
+            kind === "direct"
+              ? await prisma.directMessage.findUnique({
+                  where: { id: messageId },
+                })
+              : await prisma.serverMessage.findUnique({
+                  where: { id: messageId },
+                });
+          return message?.content;
+        })
+        .toBe("添付ファイル");
+      await expect(
+        page
+          .locator("article")
+          .getByRole("link", { name: pdfName, exact: true }),
+      ).toBeVisible();
+      const removed = await prisma.messageAttachment.findFirstOrThrow({
+        where: { uploaderId: ownerId, fileName: imageName },
+      });
+      expect(removed.directMessageId).toBeNull();
+      expect(removed.serverMessageId).toBeNull();
+      await expect(send).toBeDisabled();
+    } finally {
+      await cleanPickerAttachments(prefix);
+    }
+  });
+
+  test(`${kind}の添付はアップロード中の追加を防ぎ失敗から復帰し4件上限を守る`, async ({
+    page,
+  }) => {
+    const prefix = `${kind}-picker-limit-${runId}`;
+    const files = Array.from({ length: 5 }, (_, index) => ({
+      name: `${prefix}-${index}.pdf`,
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.7\n%%EOF"),
+    }));
+    let release!: () => void;
+    let requestStarted!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const started = new Promise<void>((resolve) => {
+      requestStarted = resolve;
+    });
+    let uploads = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/attachments") uploads++;
+    });
+    try {
+      await openAttachmentConversation(page, kind);
+      await page.route(
+        "**/api/attachments",
+        async (route) => {
+          requestStarted();
+          await gate;
+          await route.fulfill({
+            status: 400,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "添付の保存に失敗しました" }),
+          });
+        },
+        { times: 1 },
+      );
+      await chooseAttachmentFiles(page, files.slice(0, 1));
+      await started;
+      const trigger = page.getByRole("button", {
+        name: "添付を追加",
+        exact: true,
+      });
+      await expect(trigger).toBeDisabled();
+      await expect(
+        page.getByLabel("ファイルを追加", { exact: true }),
+      ).toBeDisabled();
+      await expect(
+        page.getByRole("status").filter({ hasText: "アップロード中" }),
+      ).toBeVisible();
+      release();
+      await expect(
+        page.getByRole("alert").filter({ hasText: "添付の保存に失敗しました" }),
+      ).toBeVisible();
+      await expect(trigger).toBeEnabled();
+      const selected = page.getByRole("list", { name: "選択済みの添付" });
+      await expect(selected).toHaveCount(0);
+      expect(uploads).toBe(1);
+
+      await chooseAttachmentFiles(page, files);
+      await expect(
+        page.getByRole("alert").filter({ hasText: "添付は最大4件です" }),
+      ).toBeVisible();
+      expect(uploads).toBe(1);
+      await expect(selected).toHaveCount(0);
+      await chooseAttachmentFiles(page, files.slice(0, 4));
+      await expect(selected.getByRole("listitem")).toHaveCount(4, {
+        timeout: 15_000,
+      });
+      expect(uploads).toBe(5);
+      await expect(trigger).toBeDisabled();
+      await expect(
+        page.getByLabel("ファイルを追加", { exact: true }),
+      ).toBeDisabled();
+      await selected
+        .getByRole("button", { name: `${files[0]!.name}を削除` })
+        .click();
+      await expect(selected.getByRole("listitem")).toHaveCount(3);
+      await expect(trigger).toBeEnabled();
+    } finally {
+      release();
+      await page.unroute("**/api/attachments");
+      await cleanPickerAttachments(prefix);
+    }
+  });
+
+  test(`${kind}の＋からHTTPSのURLカードを追加して送信できる`, async ({
+    page,
+  }) => {
+    const prefix = `${kind}-picker-url-${runId}`;
+    const host = `${prefix}.example.com`;
+    const url = `https://${host}/path?q=1#section`;
+    try {
+      await openAttachmentConversation(page, kind);
+      await page
+        .getByRole("button", { name: "添付を追加", exact: true })
+        .click();
+      await page
+        .getByRole("menuitem", { name: "URLカードを追加", exact: true })
+        .click();
+      const input = page.getByLabel("HTTPS URL", { exact: true });
+      await expect(input).toBeFocused();
+      await input.fill(`http://${host}/`);
+      await input.press("Enter");
+      await expect(input).toHaveAttribute("aria-invalid", "true");
+      await expect(
+        page
+          .getByRole("alert")
+          .filter({ hasText: "HTTPS URLを入力してください" }),
+      ).toBeVisible();
+      await input.fill(url);
+      await input.press("Enter");
+      const selected = page.getByRole("list", { name: "選択済みの添付" });
+      await expect(selected.getByRole("listitem")).toHaveCount(1);
+      await expect(selected.getByText(host, { exact: true })).toBeVisible();
+      await expect(input).toHaveCount(0);
+      await expect(page.locator("textarea[data-chat-input]")).toBeFocused();
+      await page.getByRole("button", { name: "送信", exact: true }).click();
+      await expect(selected).toHaveCount(0);
+      await expect
+        .poll(async () => {
+          const attached = await prisma.messageAttachment.findFirst({
+            where: { uploaderId: ownerId, fileName: host },
+          });
+          return Boolean(
+            attached?.externalUrl === url &&
+            (kind === "direct"
+              ? attached.directMessageId
+              : attached.serverMessageId),
+          );
+        })
+        .toBe(true);
+      await expect(
+        page.locator("article").getByRole("link", { name: host, exact: true }),
+      ).toBeVisible();
+    } finally {
+      await cleanPickerAttachments(prefix);
+    }
+  });
+}
+
+test("閲覧専用メンバーは入力欄の＋から添付を追加できない", async ({ page }) => {
+  await login(page, memberEmail);
+  try {
+    await prisma.serverMember.update({
+      where: { serverId_userId: { serverId, userId: memberId } },
+      data: { role: "READ_ONLY" },
+    });
+    await page.reload();
+    await expect(page.locator("textarea[data-chat-input]")).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "添付を追加", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByLabel("ファイルを追加", { exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "送信", exact: true }),
+    ).toBeDisabled();
+    await expect(page.getByLabel("HTTPS URL", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("menu")).toHaveCount(0);
+  } finally {
+    await prisma.serverMember.update({
+      where: { serverId_userId: { serverId, userId: memberId } },
+      data: { role: "MEMBER" },
+    });
+  }
 });
 
 test("DMとサーバーは最新25件だけ表示し上スクロールで履歴を追加する", async ({

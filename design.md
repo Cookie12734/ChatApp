@@ -46,6 +46,9 @@ the palette between pages.
 - Group DMs appear with one-to-one DMs in the contextual navigator.
 - Reply, quote, reactions, saved messages, and attachments stay attached to the
   message and composer flow.
+- DM and server composers use a leading plus button for file uploads and URL
+  cards. Show selected attachments, upload status, and the URL field only when
+  needed inside the composer; do not add a permanent attachment panel above it.
 - Role controls stay in the member inspector and wrap below member identity when
   needed.
 - Public server discovery, user discovery, saved messages, and matching history
