@@ -76,9 +76,7 @@ import { sortFriendsByLatestMessage } from "../friend-overview";
 import { useMessageViewport } from "~/features/chat/components/use-message-viewport";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
 import {
-  MATCHING_SAFETY_NOTICE,
   MATCHING_TOPICS,
-  SAFETY_RESOURCES,
   type MatchingTopic,
 } from "~/features/chat/matching-prompts";
 import { shouldGroupMessage } from "~/features/chat/message-grouping";
@@ -387,7 +385,6 @@ export function FriendChatPanel({
     "idle",
   );
   const [matchingMessage, setMatchingMessage] = useState<string | null>(null);
-  const [matchingSafetyAccepted, setMatchingSafetyAccepted] = useState(false);
   const [directAttachments, setDirectAttachments] = useState<
     PendingAttachment[]
   >([]);
@@ -1243,22 +1240,11 @@ export function FriendChatPanel({
       onError: (error) => setMessage(getErrorMessage(error)),
     });
 
-  const confirmMatchingSafety = api.chat.confirmMatchingSafety.useMutation({
-    onError: (error) => setMatchingMessage(getErrorMessage(error)),
-  });
-
   const matchRandom = api.chat.matchRandom.useMutation({
     onSuccess: async (result) => {
       if (result.status === "matched") {
-        if (result.matchId) {
-          await confirmMatchingSafety.mutateAsync({
-            consent: true,
-            matchId: result.matchId,
-          });
-        }
+        utils.chat.getMatchingStatus.setData(undefined, { status: "idle" });
         openDirectFriend(result.friend.id);
-        setMatchingSafetyAccepted(false);
-        sessionStorage.removeItem("connect:matching-safety-confirmed");
         setMatchingState("idle");
         setMatchingMessage(
           `${getDisplayName(result.friend)}さんとマッチしました`,
@@ -1330,23 +1316,9 @@ export function FriendChatPanel({
       return;
     }
 
-    const safetyConfirmed =
-      matchingSafetyAccepted ||
-      sessionStorage.getItem("connect:matching-safety-confirmed") === "1";
-    if (!safetyConfirmed) {
-      setIsNavigationOpen(false);
-      setIsMatchingOpen(true);
-      setMatchingMessage("安全上の確認に同意して会話を開始してください");
-      return;
-    }
-
     const friend = status.friend;
-    if (status.matchId) {
-      confirmMatchingSafety.mutate({ consent: true, matchId: status.matchId });
-    }
+    utils.chat.getMatchingStatus.setData(undefined, { status: "idle" });
     openDirectFriend(friend.id);
-    setMatchingSafetyAccepted(false);
-    sessionStorage.removeItem("connect:matching-safety-confirmed");
     setMatchingState("idle");
     setMatchingMessage(`${getDisplayName(friend)}さんとマッチしました`);
     void Promise.all([
@@ -1357,13 +1329,12 @@ export function FriendChatPanel({
     cancelMatching.mutate();
   }, [
     cancelMatching,
-    confirmMatchingSafety,
-    matchingSafetyAccepted,
     matchingState,
     matchingStatus.data,
     openDirectFriend,
     utils.chat.getConversation,
     utils.chat.getFriends,
+    utils.chat.getMatchingStatus,
     utils.chat.getPendingMatchFeedback,
   ]);
 
@@ -1659,11 +1630,6 @@ export function FriendChatPanel({
   };
 
   const handleStartMatching = () => {
-    if (!matchingSafetyAccepted) {
-      setMatchingMessage("安全上の確認に同意してから開始してください");
-      return;
-    }
-    sessionStorage.setItem("connect:matching-safety-confirmed", "1");
     setMatchingMessage(null);
     matchRandom.mutate({ topic: matchingTopic });
   };
@@ -1722,8 +1688,6 @@ export function FriendChatPanel({
   const handleCancelMatching = () => {
     setMatchingState("idle");
     setMatchingMessage(null);
-    setMatchingSafetyAccepted(false);
-    sessionStorage.removeItem("connect:matching-safety-confirmed");
     cancelMatching.mutate();
   };
 
@@ -3645,38 +3609,6 @@ export function FriendChatPanel({
                         }}
                         className="border-connect-ink/15 bg-connect-surface grid gap-3 rounded-lg border px-4 py-3 shadow-[6px_6px_0_var(--color-focus-on-dark)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
                       >
-                        <div className="border-connect-ink/10 bg-connect-highlight space-y-2 rounded-md border p-3 sm:col-span-2">
-                          <p className="text-sm font-semibold">
-                            {
-                              MATCHING_TOPICS.find(
-                                ({ value }) => value === matchingTopic,
-                              )?.prompts[0]
-                            }
-                          </p>
-                          <p className="text-connect-muted text-xs leading-5">
-                            {MATCHING_SAFETY_NOTICE}
-                          </p>
-                          <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
-                            <input
-                              type="checkbox"
-                              checked={matchingSafetyAccepted}
-                              onChange={(event) =>
-                                setMatchingSafetyAccepted(event.target.checked)
-                              }
-                              disabled={matchingState === "waiting"}
-                              className="accent-connect-action h-5 w-5"
-                            />
-                            内容を確認し、会話を始めることに同意します
-                          </label>
-                          <a
-                            href={SAFETY_RESOURCES.officialUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-connect-action inline-flex min-h-10 items-center text-xs font-semibold underline"
-                          >
-                            相談先と安全情報を確認
-                          </a>
-                        </div>
                         <select
                           value={matchingTopic}
                           onChange={(event) =>
@@ -3699,7 +3631,6 @@ export function FriendChatPanel({
                             type="submit"
                             disabled={
                               matchRandom.isPending ||
-                              !matchingSafetyAccepted ||
                               matchingState === "waiting"
                             }
                             className="bg-connect-ink text-connect-paper hover:bg-connect-ink-2 flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md px-4 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"

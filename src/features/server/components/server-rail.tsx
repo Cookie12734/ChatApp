@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Bell,
-  LogOut,
-  Plus,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { Bell, LogOut, Plus, RefreshCw, Search, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -226,14 +218,6 @@ export function ServerRail({
             <Bell className="h-5 w-5" aria-hidden="true" />
           </button>
         </NotificationSettingsDialog>
-        <Link
-          href="/safety"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2f3c37] text-[#f6f0e4] transition hover:rounded-xl hover:bg-[#fff8ed] hover:text-[#18221f]"
-          aria-label="安全に利用するための案内"
-          title="安全に利用するための案内"
-        >
-          <ShieldCheck className="h-5 w-5" aria-hidden="true" />
-        </Link>
         <ProfileSettingsDialog>
           <button
             type="button"

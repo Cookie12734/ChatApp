@@ -3025,6 +3025,155 @@ test("候補取得後に相手の話題が変わった場合はマッチを確�
   }
 });
 
+for (const width of [1280, 375]) {
+  test(`案内カードなしでマッチングの開始・取消・会話への遷移ができる (${width}px)`, async ({
+    page,
+    browser,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 812 });
+    await login(page);
+    await page.goto("/");
+    let cancellations = 0;
+    page.on("request", (request) => {
+      const names =
+        new URL(request.url()).pathname.split("/").at(-1)?.split(",") ?? [];
+      cancellations += names.filter(
+        (name) => name === "chat.cancelMatching",
+      ).length;
+    });
+    await expect(page.locator('a[href="/safety"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "安全に利用するための案内" }),
+    ).toHaveCount(0);
+    const matchingNavigation = page.getByRole("button", {
+      name: "マッチング",
+      exact: true,
+    });
+    await matchingNavigation.focus();
+    await page.keyboard.press("Enter");
+    const matchingForm = page.locator("form").filter({
+      has: page.getByLabel("話したいこと"),
+    });
+    const topic = matchingForm.getByLabel("話したいこと");
+    const start = matchingForm.getByRole("button", {
+      name: "マッチング",
+      exact: true,
+    });
+    await expect(topic).toBeVisible();
+    await expect(matchingForm.getByRole("checkbox")).toHaveCount(0);
+    await expect(
+      matchingForm.getByRole("link", { name: "相談先と安全情報を確認" }),
+    ).toHaveCount(0);
+    for (const [value, prompt] of [
+      ["CASUAL", "最近よかった小さな出来事は？"],
+      ["GAME", "最近遊んでいるゲームは？"],
+      ["WORRIES", "まず、聞いてほしいか意見がほしいかを伝えてみましょう"],
+    ] as const) {
+      await topic.selectOption(value);
+      await expect(page.getByText(prompt, { exact: true })).toHaveCount(0);
+      await expect(start).toBeEnabled();
+    }
+    await topic.selectOption("GAME");
+    await page.screenshot({
+      path: testInfo.outputPath("matching.png"),
+      fullPage: true,
+    });
+    await topic.focus();
+    await page.keyboard.press("Tab");
+    await expect(start).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText("同じ話題の相手を探しています..."),
+    ).toBeVisible();
+    await expect(topic).toBeDisabled();
+    await page.getByRole("button", { name: "マッチングをキャンセル" }).click();
+    await expect(start).toBeEnabled();
+    await expect
+      .poll(() =>
+        prisma.matchingQueue.findUnique({ where: { userId: ownerId } }),
+      )
+      .toBeNull();
+
+    const peerContext = await browser.newContext();
+    try {
+      await prisma.friendship.deleteMany({
+        where: {
+          OR: [
+            { userId: ownerId, friendId: memberId },
+            { userId: memberId, friendId: ownerId },
+          ],
+        },
+      });
+      if (width === 1280) {
+        await prisma.matchingQueue.create({
+          data: { topic: "GAME", userId: memberId },
+        });
+      }
+      await start.click();
+      if (width === 375) {
+        await expect(
+          page.getByText("同じ話題の相手を探しています..."),
+        ).toBeVisible();
+        await page.reload();
+        await expect(topic).toBeDisabled();
+        const peer = await peerContext.newPage();
+        await login(peer, memberEmail);
+        expect(
+          (await apiClient(peer).chat.matchRandom.mutate({ topic: "GAME" }))
+            .status,
+        ).toBe("matched");
+      }
+      await expect(page.locator("textarea[data-chat-input]")).toBeEnabled();
+      await expect(
+        page.getByRole("heading", {
+          name: "E2E Member",
+          exact: true,
+          level: 1,
+        }),
+      ).toBeVisible();
+      const match = await prisma.matchingResult.findFirstOrThrow({
+        where: {
+          OR: [
+            { firstUserId: ownerId, secondUserId: memberId },
+            { firstUserId: memberId, secondUserId: ownerId },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      expect(match.firstUserChatConsentAt).toBeNull();
+      expect(match.secondUserChatConsentAt).toBeNull();
+      await expect
+        .poll(() =>
+          prisma.matchingQueue.findUnique({ where: { userId: ownerId } }),
+        )
+        .toBeNull();
+      expect(cancellations).toBe(2);
+      const response = await page.goto("/safety");
+      expect(response?.status()).toBe(404);
+    } finally {
+      await peerContext.close();
+      await prisma.matchingQueue.deleteMany({
+        where: { userId: { in: [ownerId, memberId] } },
+      });
+      await prisma.matchingResult.deleteMany({
+        where: {
+          OR: [
+            { firstUserId: ownerId, secondUserId: memberId },
+            { firstUserId: memberId, secondUserId: ownerId },
+          ],
+        },
+      });
+      await prisma.friendship.createMany({
+        data: [
+          { userId: ownerId, friendId: memberId },
+          { userId: memberId, friendId: ownerId },
+        ],
+        skipDuplicates: true,
+      });
+    }
+  });
+}
+
 test("プロフィールアイコンからブロックしてメッセージとマッチングを除外する", async ({
   page,
 }) => {
@@ -3032,6 +3181,7 @@ test("プロフィールアイコンからブロックしてメッセージと�
     data: { topic: "CASUAL", userId: memberId },
   });
   await login(page);
+  await expect(page.locator("article").last()).toBeInViewport();
 
   const memberAvatar = page
     .getByRole("complementary", { name: "メンバー一覧" })
@@ -3086,11 +3236,6 @@ test("プロフィールアイコンからブロックしてメッセージと�
   const matchingForm = page.locator("form").filter({
     has: page.getByLabel("話したいこと"),
   });
-  await matchingForm
-    .getByRole("checkbox", {
-      name: "内容を確認し、会話を始めることに同意します",
-    })
-    .check();
   await matchingForm
     .getByRole("button", { name: "マッチング", exact: true })
     .click();
