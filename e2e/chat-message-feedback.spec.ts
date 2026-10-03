@@ -1223,6 +1223,8 @@ test("グループDMの過去ログと相手の新着が時系列で表示され
   ).toHaveCount(1);
   const viewport = dialog.locator("[data-group-chat-viewport]");
   await expect(dialog.locator("article")).toHaveCount(25);
+  // Keeping focus in the composer must not prevent intentional history scrolling.
+  await dialog.getByPlaceholder("グループへメッセージ").focus();
   for (const count of [50, 75, 100, 105]) {
     const anchor = await viewport.evaluate((element) => {
       element.scrollTop = 0;

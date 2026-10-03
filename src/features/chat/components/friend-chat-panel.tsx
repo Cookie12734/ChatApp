@@ -65,6 +65,14 @@ import {
   ProfileAvatar,
 } from "~/features/chat/components/chat-message";
 import { ServerMemberList } from "~/features/chat/components/server-member-list";
+import { useChatEvents } from "./use-chat-events";
+import { useMessageHistory } from "./use-message-history";
+import { ChatConnectionStatus } from "./chat-connection-status";
+import {
+  getMessageSendAttempt,
+  type MessageSendAttempt,
+} from "../message-send-attempt";
+import { sortFriendsByLatestMessage } from "../friend-overview";
 import { useMessageViewport } from "~/features/chat/components/use-message-viewport";
 import { matchesFriendSearch } from "~/features/chat/friend-search";
 import {
@@ -99,23 +107,6 @@ type ChatFriend = RouterOutputs["chat"]["getFriends"][number];
 type ChatGroup = RouterOutputs["group"]["list"]["groups"][number];
 type ChatServerMembership =
   RouterOutputs["server"]["getOverview"]["memberships"][number];
-type ChatEventPayload =
-  | { kind: "direct"; userIds: string[] }
-  | { groupId: string; kind: "group"; userIds: string[] }
-  | {
-      change: "created" | "deleted" | "updated";
-      channelId: string | null;
-      kind: "server";
-      senderId: string;
-      serverId: string;
-    }
-  | {
-      isTyping: boolean;
-      kind: "typing";
-      senderId: string;
-      userIds: string[];
-      userName: string;
-    };
 type FriendChatPanelProps = {
   initialSearchOpen?: boolean;
   initialServerId?: string;
@@ -479,9 +470,27 @@ export function FriendChatPanel({
         ? false
         : matchingState === "waiting" || !isRealtimeConnected
           ? 5000
-          : 30000,
+          : false,
   });
-  const groupConversations = api.group.list.useQuery();
+  const groupConversations = api.group.list.useInfiniteQuery(
+    {},
+    { getNextPageParam: (page) => page.nextCursor },
+  );
+  const refreshFriend = async (friendId: string) => {
+    const updated = await utils.chat.getFriends.fetch(
+      { friendId },
+      { staleTime: 0 },
+    );
+    utils.chat.getFriends.setData(undefined, (current) =>
+      current
+        ? sortFriendsByLatestMessage([
+            ...current.filter((item) => item.friend.id !== friendId),
+            ...updated,
+          ])
+        : current,
+    );
+  };
+  const sendAttempts = useRef(new Map<string, MessageSendAttempt>());
   const filteredFriends = useMemo(
     () =>
       (friends.data ?? []).filter((item) =>
@@ -503,7 +512,7 @@ export function FriendChatPanel({
       query.state.status === "error"
         ? false
         : isRealtimeConnected
-          ? 60000
+          ? false
           : 15000,
   });
   const selectedServer = useMemo(() => {
@@ -533,7 +542,7 @@ export function FriendChatPanel({
         !isMemberListOpen || query.state.status === "error"
           ? false
           : isRealtimeConnected
-            ? 60000
+            ? false
             : 15000,
     },
   );
@@ -612,7 +621,7 @@ export function FriendChatPanel({
           ? false
           : selectedServerId && selectedServerChannel?.id
             ? isRealtimeConnected
-              ? 30000
+              ? false
               : 3000
             : false,
     },
@@ -669,7 +678,7 @@ export function FriendChatPanel({
           ? false
           : selectedFriendId
             ? isRealtimeConnected
-              ? 30000
+              ? false
               : 3000
             : false,
     },
@@ -772,7 +781,7 @@ export function FriendChatPanel({
   const { mutateAsync: markDirectConversationRead } =
     api.chat.markConversationRead.useMutation({
       onSuccess: (result, variables) => {
-        void utils.chat.getFriends.invalidate();
+        void refreshFriend(variables.friendId);
         utils.chat.getConversation.setInfiniteData(
           { friendId: variables.friendId },
           (data) =>
@@ -876,6 +885,18 @@ export function FriendChatPanel({
       : (activeDirectPendingMessages.at(-1)?.clientId ?? latestDirectMessageId),
     onReadLatest: markLatestMessageRead,
     unreadCount: selectedServerId ? serverUnreadCount : directUnreadCount,
+  });
+
+  const historyQuery = selectedServerId ? serverConversation : conversation;
+  const messageHistory = useMessageHistory({
+    containerRef: messageViewport.containerRef,
+    conversationKey: selectedServerId
+      ? `server:${selectedServerId}:${selectedServerChannel?.id ?? ""}`
+      : selectedFriendId,
+    pageCount: historyQuery.data?.pages.length ?? 0,
+    hasNextPage: historyQuery.hasNextPage,
+    isFetching: historyQuery.isFetching,
+    fetchNextPage: () => historyQuery.fetchNextPage(),
   });
 
   useEffect(() => {
@@ -997,17 +1018,12 @@ export function FriendChatPanel({
     pendingMatchFeedback.data?.friend.id === selectedFriendId
       ? pendingMatchFeedback.data
       : null;
-  const canSendDirectMessage =
-    directConversation?.canSend ??
-    Boolean(
-      selectedFriendContact?.isFriend && !selectedFriendContact.isBlocked,
-    );
+  const canSendDirectMessage = directConversation?.canSend ?? false;
   const { mutate: publishTyping } = api.chat.setTyping.useMutation();
 
-  useEffect(() => {
-    const events = new EventSource("/api/chat/events");
-    events.onopen = () => {
-      setIsRealtimeConnected(true);
+  useChatEvents({
+    onConnectionChange: setIsRealtimeConnected,
+    onOpen: () => {
       void utils.chat.getFriends.invalidate();
       void utils.server.getOverview.invalidate();
       if (selectedFriendId) {
@@ -1026,19 +1042,18 @@ export function FriendChatPanel({
           serverId: selectedServerId,
         });
       }
-    };
-    events.onerror = () => setIsRealtimeConnected(false);
-    const handleChatEvent = (event: MessageEvent<string>) => {
-      let payload: ChatEventPayload;
-
-      try {
-        payload = JSON.parse(event.data) as ChatEventPayload;
-      } catch {
+    },
+    onEvent: (payload) => {
+      if (payload.kind === "server-state") {
+        void utils.server.getOverview.invalidate();
+        void utils.server.getMembers.invalidate({ serverId: payload.serverId });
         return;
       }
-
       if (payload.kind === "direct") {
-        void utils.chat.getFriends.invalidate();
+        const peerId = payload.userIds.find(
+          (id) => id !== currentServerUser?.id,
+        );
+        if (peerId) void refreshFriend(peerId);
         if (selectedFriendId && payload.userIds.includes(selectedFriendId)) {
           void utils.chat.getConversation.invalidate({
             friendId: selectedFriendId,
@@ -1122,29 +1137,15 @@ export function FriendChatPanel({
       } else {
         setTypingUserName(null);
       }
-    };
-    events.addEventListener("chat", handleChatEvent as EventListener);
-
-    return () => {
-      events.close();
-      setIsRealtimeConnected(false);
-      if (typingResetTimerRef.current) {
+    },
+  });
+  useEffect(
+    () => () => {
+      if (typingResetTimerRef.current)
         clearTimeout(typingResetTimerRef.current);
-      }
-      setTypingUserName(null);
-    };
-  }, [
-    selectedFriendId,
-    selectedServerChannel?.id,
-    selectedServerChannel?.name,
-    selectedServerId,
-    utils.chat.getConversation,
-    utils.chat.getFriends,
-    utils.group.list,
-    utils.server.getConversation,
-    utils.server.getMembers,
-    utils.server.getOverview,
-  ]);
+    },
+    [],
+  );
 
   const broadcastTyping = useCallback(
     (isTyping: boolean) => {
@@ -1842,10 +1843,22 @@ export function FriendChatPanel({
       (!draft.trim() && directAttachments.length === 0)
     )
       return;
-    const clientId = crypto.randomUUID();
     const content = draft.trim() || "添付ファイル";
     const friendId = selectedFriendId;
     const activeAttachments = directAttachments;
+    const activeReply = replyTarget?.kind === "direct" ? replyTarget : null;
+    const attemptKey = `direct:${friendId}`;
+    const attempt = getMessageSendAttempt(
+      sendAttempts.current.get(attemptKey),
+      {
+        conversationId: attemptKey,
+        content,
+        attachmentIds: activeAttachments.map((item) => item.id),
+        replyToId: activeReply?.id,
+      },
+    );
+    sendAttempts.current.set(attemptKey, attempt);
+    const clientId = attempt.clientId;
 
     broadcastTyping(false);
     directComposerRef.current?.clear();
@@ -1867,7 +1880,6 @@ export function FriendChatPanel({
       clearTimeout(localTypingStopTimerRef.current);
     }
 
-    const activeReply = replyTarget?.kind === "direct" ? replyTarget : null;
     setReplyTarget(null);
     sendMessage.mutate(
       {
@@ -1899,6 +1911,8 @@ export function FriendChatPanel({
           }
         },
         onSuccess: (savedMessage) => {
+          if (sendAttempts.current.get(attemptKey) === attempt)
+            sendAttempts.current.delete(attemptKey);
           setPendingDirectMessages((messages) =>
             messages.map((pendingMessage) =>
               pendingMessage.clientId === clientId
@@ -1912,7 +1926,7 @@ export function FriendChatPanel({
           );
           void Promise.all([
             utils.chat.getConversation.invalidate({ friendId }),
-            utils.chat.getFriends.invalidate(),
+            refreshFriend(friendId),
           ]);
         },
       },
@@ -1929,10 +1943,22 @@ export function FriendChatPanel({
       return;
     }
     const channelId = selectedServerChannel.id;
-    const clientId = crypto.randomUUID();
     const content = serverDraft.trim() || "添付ファイル";
     const serverId = selectedServerId;
     const activeAttachments = serverAttachments;
+    const activeReply = replyTarget?.kind === "server" ? replyTarget : null;
+    const attemptKey = `server:${channelId}`;
+    const attempt = getMessageSendAttempt(
+      sendAttempts.current.get(attemptKey),
+      {
+        conversationId: attemptKey,
+        content,
+        attachmentIds: activeAttachments.map((item) => item.id),
+        replyToId: activeReply?.id,
+      },
+    );
+    sendAttempts.current.set(attemptKey, attempt);
+    const clientId = attempt.clientId;
 
     serverComposerRef.current?.clear();
     setServerAttachments([]);
@@ -1949,7 +1975,6 @@ export function FriendChatPanel({
       },
     ]);
     requestAnimationFrame(messageViewport.scrollToBottom);
-    const activeReply = replyTarget?.kind === "server" ? replyTarget : null;
     setReplyTarget(null);
     sendServerMessage.mutate(
       {
@@ -1982,6 +2007,8 @@ export function FriendChatPanel({
           }
         },
         onSuccess: (savedMessage) => {
+          if (sendAttempts.current.get(attemptKey) === attempt)
+            sendAttempts.current.delete(attemptKey);
           setPendingServerMessages((messages) =>
             messages.map((pendingMessage) =>
               pendingMessage.clientId === clientId
@@ -2781,34 +2808,46 @@ export function FriendChatPanel({
                 <div className="bg-connect-surface mx-2 h-14 animate-pulse rounded-md" />
               )}
 
-              {groupConversations.data?.groups.map((group) => (
-                <button
-                  key={group.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedGroupId(group.id);
-                    setIsGroupDmOpen(true);
-                  }}
-                  className={`flex min-h-14 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-ink text-connect-paper" : "hover:bg-connect-surface"}`}
-                >
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-paper/15" : "bg-connect-highlight text-connect-action"}`}
+              {groupConversations.data?.pages
+                .flatMap((page) => page.groups)
+                .map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedGroupId(group.id);
+                      setIsGroupDmOpen(true);
+                    }}
+                    className={`flex min-h-14 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-ink text-connect-paper" : "hover:bg-connect-surface"}`}
                   >
-                    <Users className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">
-                      {getGroupDisplayName(group)}
-                    </span>
                     <span
-                      className={`mt-0.5 block truncate text-xs ${isGroupDmOpen && selectedGroupId === group.id ? "text-connect-focus-soft" : "text-connect-muted"}`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${isGroupDmOpen && selectedGroupId === group.id ? "bg-connect-paper/15" : "bg-connect-highlight text-connect-action"}`}
                     >
-                      {getGroupPreview(group)}
+                      <Users className="h-5 w-5" aria-hidden="true" />
                     </span>
-                  </span>
-                </button>
-              ))}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">
+                        {getGroupDisplayName(group)}
+                      </span>
+                      <span
+                        className={`mt-0.5 block truncate text-xs ${isGroupDmOpen && selectedGroupId === group.id ? "text-connect-focus-soft" : "text-connect-muted"}`}
+                      >
+                        {getGroupPreview(group)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
 
+              {groupConversations.hasNextPage && (
+                <button
+                  type="button"
+                  className="min-h-11 w-full rounded-md px-3 text-sm"
+                  disabled={groupConversations.isFetchingNextPage}
+                  onClick={() => void groupConversations.fetchNextPage()}
+                >
+                  グループをさらに表示
+                </button>
+              )}
               {friends.isLoading && (
                 <div className="space-y-2 px-2">
                   {[0, 1, 2].map((item) => (
@@ -2964,6 +3003,7 @@ export function FriendChatPanel({
           </div>
         </header>
 
+        <ChatConnectionStatus isReconnecting={!isRealtimeConnected} />
         {hasChatQueryError && <ChatQueryError onRetry={retryChatQueries} />}
 
         <div className="flex min-h-0 flex-1">
@@ -2971,7 +3011,16 @@ export function FriendChatPanel({
             <div
               ref={messageViewport.containerRef}
               data-chat-viewport
-              onScroll={messageViewport.handleScroll}
+              tabIndex={0}
+              style={{ overflowAnchor: "none" }}
+              onScroll={() => {
+                messageViewport.handleScroll();
+                messageHistory.handleScroll();
+              }}
+              onWheel={messageHistory.handleWheel}
+              onKeyDown={messageHistory.handleKeyDown}
+              onTouchStart={messageHistory.handleTouchStart}
+              onTouchMove={messageHistory.handleTouchMove}
               className="chat-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5"
             >
               {selectedServer ? (

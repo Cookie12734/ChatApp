@@ -37,7 +37,8 @@ export function useMessageViewport({
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
+    const element = containerRef.current;
+    if (element) element.scrollTop = element.scrollHeight;
   }, []);
 
   const scrollToNewMessages = useCallback(() => {

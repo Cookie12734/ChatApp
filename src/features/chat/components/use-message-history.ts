@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   type RefObject,
@@ -31,9 +32,15 @@ export function useMessageHistory({
     pageCount: number;
     height: number;
     top: number;
+    focusedElement: Element | null;
   } | null>(null);
   const inFlight = useRef(false);
   const touchY = useRef<number | undefined>(undefined);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
+
+  useEffect(() => () => clearTimeout(scrollTimer.current), [conversationKey]);
 
   useLayoutEffect(() => {
     previousTop.current = 0;
@@ -48,7 +55,13 @@ export function useMessageHistory({
       anchor?.key === conversationKey &&
       anchor.pageCount !== pageCount
     ) {
-      element.scrollTop = anchor.top + element.scrollHeight - anchor.height;
+      // Once the user moves into the composer, keep their current position.
+      if (
+        document.activeElement === anchor.focusedElement ||
+        !document.activeElement?.closest("[data-chat-composer]")
+      ) {
+        element.scrollTop = anchor.top + element.scrollHeight - anchor.height;
+      }
       previousTop.current = element.scrollTop;
       pending.current = null;
     }
@@ -62,6 +75,7 @@ export function useMessageHistory({
       pageCount,
       height: element.scrollHeight,
       top: element.scrollTop,
+      focusedElement: document.activeElement,
     };
     pending.current = anchor;
     inFlight.current = true;
@@ -117,7 +131,21 @@ export function useMessageHistory({
       }
       const movingUp = top < previousTop.current;
       previousTop.current = top;
-      if (movingUp && top <= 80) void loadOlder().catch(() => undefined);
+      clearTimeout(scrollTimer.current);
+      if (movingUp && top <= 80) {
+        const focusedElement = document.activeElement;
+        // Wheel/touch/keyboard gestures load immediately. Defer a bare scroll
+        // event so focusing the composer does not start a history request.
+        scrollTimer.current = setTimeout(() => {
+          if (
+            element.scrollTop <= 80 &&
+            (document.activeElement === focusedElement ||
+              !document.activeElement?.closest("[data-chat-composer]"))
+          ) {
+            void loadOlder().catch(() => undefined);
+          }
+        }, 150);
+      }
     },
   };
 }

@@ -144,7 +144,8 @@ const ChatComposerBase = forwardRef<ChatComposerHandle, ChatComposerProps>(
               if (
                 event.key === "Enter" &&
                 !event.shiftKey &&
-                !event.nativeEvent.isComposing
+                !event.nativeEvent.isComposing &&
+                event.nativeEvent.keyCode !== 229
               ) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
